@@ -16,6 +16,7 @@ settings = Dynaconf(
     env="test",
 )
 
+
 if __name__ == "__main__":
     print(root_path)
     print(settings.aimodel.api_key)

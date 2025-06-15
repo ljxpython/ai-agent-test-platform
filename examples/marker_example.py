@@ -1,3 +1,5 @@
+import os
+import tempfile
 from unittest.mock import MagicMock
 
 # llm_service = OpenAIService({"openai_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "openai_model": "qwen-vl-max-latest", "openai_api_key": "sk-9d64fad24f9e402c81e99add13cfae97"})
@@ -16,9 +18,9 @@ config = {
     "use_llm": True,
     "disable_image_extraction": True,
     "llm_service": "marker.services.openai.OpenAIService",
-    "openai_base_url": settings.qwenmodel.base_url,
-    "openai_model": settings.qwenmodel.model,
-    "openai_api_key": settings.qwenmodel.api_key,
+    "openai_base_url": settings.qwen_model.base_url,
+    "openai_model": settings.qwen_model.model,
+    "openai_api_key": settings.qwen_model.api_key,
 }
 
 config_parser = ConfigParser(config)

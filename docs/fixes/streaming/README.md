@@ -20,6 +20,7 @@
 
 ### 📁 文件处理相关
 - [文件上传优化](./FILE_UPLOAD_OPTIMIZATION.md) - 优化文件上传和流式处理集成
+- [Markdown文件解析支持](./MARKDOWN_FILE_SUPPORT.md) - 新增Markdown格式文档解析功能
 
 ## 🔍 按问题类型分类
 

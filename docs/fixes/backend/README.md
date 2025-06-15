@@ -14,6 +14,9 @@
 - [后端日志标准输出修复](./BACKEND_LOG_STDOUT_FIX.md) - 修复日志输出到控制台问题
 - [日志优化记录](./LOG_OPTIMIZATION.md) - 日志系统性能和格式优化
 
+### 💾 数据序列化相关
+- [JSON序列化问题修复](./JSON_SERIALIZATION_FIX.md) - 解决Image对象JSON序列化失败问题
+
 ### 🤖 AI智能体相关
 - [共享LLM客户端重构](./SHARED_LLM_CLIENT_REFACTOR.md) - 统一LLM客户端管理
 

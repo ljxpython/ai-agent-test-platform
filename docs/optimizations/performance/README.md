@@ -13,6 +13,8 @@
 
 ### 📁 文件处理性能优化
 - [LlamaIndex文件解析优化](./LLAMA_INDEX_FILE_PARSING_OPTIMIZATION.md) - 文件解析性能和准确性提升
+- [FileProcessor性能优化](./FILE_PROCESSOR_OPTIMIZATION.md) - 详细日志记录和Markdown直接处理优化
+- [图片分析功能集成](./IMAGE_ANALYSIS_INTEGRATION.md) - 大模型图片分析和智能描述功能
 
 ## 🔍 按优化类型分类
 
