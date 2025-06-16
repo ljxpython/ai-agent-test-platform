@@ -6,6 +6,9 @@
 
 [AI测试平台](https://www.coder-ljx.cn:3100/login)
 
+[当前项目体验地址](http://101.126.90.71:3000/)
+账号密码:test
+
 个人微信号:
 
 <img src="docs/work/assets/image-20250531212549739.png" alt="Description" width="300"/>
