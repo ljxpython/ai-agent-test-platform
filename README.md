@@ -99,17 +99,245 @@ Nginx
 
 ## 架构
 
-技术架构图
+### 🏗️ 技术架构概览
 
-这部分我应该会在项目将要结束或者主要功能搭建完成后补充,当然具体要实现什么,我心中已经有了
+本项目采用现代化的前后端分离架构，基于AI驱动的测试平台设计，支持多智能体协作和企业级权限管理。
 
+#### 🔧 技术栈总览
 
+**后端技术栈**:
+- **FastAPI + Tortoise ORM**: 高性能异步Web框架 + 异步数据库ORM
+- **AutoGen 0.5.7**: Microsoft多智能体对话框架
+- **多数据库支持 + Aerich**: 支持MySQL/PostgreSQL/SQLite等 + 迁移管理工具
+- **JWT + RBAC**: 无状态认证 + 基于角色的权限控制
+- **Poetry + Loguru**: 依赖管理 + 现代化日志系统
 
-代码结构
+**前端技术栈**:
+- **React 18 + TypeScript**: 现代化前端框架 + 类型安全
+- **Ant Design Pro**: 企业级UI组件库
+- **Vite + SWR**: 快速构建工具 + 数据获取库
+- **React Router + SSE**: 路由管理 + 流式数据处理
+
+#### 🏛️ 架构设计模式
+
+**后端架构模式**:
+- **工厂模式**: 统一的应用创建和初始化流程
+- **分层架构**: API → 控制器 → 服务 → 模型的清晰分层
+- **依赖注入**: 基于FastAPI的权限依赖注入系统
+- **智能体模式**: AutoGen多智能体协作框架
+
+**前端架构模式**:
+- **组件化架构**: 页面 → 布局 → 业务 → 通用组件分层
+- **状态管理**: 本地状态 + 全局Context + 服务端状态
+- **路由保护**: 基于认证状态的路由访问控制
+- **流式处理**: SSE实时数据流处理机制
+
+#### 📊 系统架构图
+
+```mermaid
+graph TB
+    subgraph "前端层 (Frontend)"
+        A[React 18 + TypeScript]
+        B[Ant Design Pro UI]
+        C[SSE流式处理]
+        D[路由权限控制]
+    end
+
+    subgraph "API网关层 (API Gateway)"
+        E[FastAPI路由]
+        F[JWT认证中间件]
+        G[CORS跨域处理]
+        H[异常处理器]
+    end
+
+    subgraph "业务服务层 (Business Services)"
+        I[AI对话服务]
+        J[测试用例生成服务]
+        K[Midscene智能体服务]
+        L[权限管理服务]
+    end
+
+    subgraph "AI智能体层 (AI Agents)"
+        M[AutoGen多智能体框架]
+        N[需求分析智能体]
+        O[测试用例专家]
+        P[UI分析智能体]
+        Q[脚本生成智能体]
+    end
+
+    subgraph "数据访问层 (Data Access)"
+        R[Tortoise ORM]
+        S[数据模型层]
+        T[CRUD操作]
+    end
+
+    subgraph "数据存储层 (Data Storage)"
+        U[关系数据库<br/>MySQL/PostgreSQL/SQLite]
+        V[文件存储系统]
+        W[日志文件]
+    end
+
+    A --> E
+    B --> E
+    C --> E
+    D --> E
+
+    E --> I
+    F --> I
+    G --> J
+    H --> K
+
+    I --> M
+    J --> N
+    K --> O
+    L --> P
+
+    M --> R
+    N --> R
+    O --> S
+    P --> T
+
+    R --> U
+    S --> V
+    T --> W
+```
+
+#### 🔄 数据流架构
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant F as 前端
+    participant A as API网关
+    participant S as 业务服务
+    participant AI as AI智能体
+    participant D as 数据库
+
+    U->>F: 发起请求
+    F->>A: HTTP/SSE请求
+    A->>A: JWT认证
+    A->>A: 权限检查
+    A->>S: 调用业务服务
+    S->>AI: 启动智能体
+    AI->>AI: 多智能体协作
+    AI->>S: 返回结果
+    S->>D: 数据持久化
+    S->>A: 流式响应
+    A->>F: SSE数据流
+    F->>U: 实时更新UI
+```
+
+### 📁 项目结构
 
 ```
-# 占位,待项目完工
+AITestLab/
+├── main.py                    # 应用启动入口
+├── backend/                   # 后端服务
+│   ├── __init__.py           # 工厂模式应用创建
+│   ├── api/v1/               # API路由层
+│   │   ├── auth.py           # 认证API
+│   │   ├── chat.py           # AI对话API
+│   │   ├── testcase.py       # 测试用例生成API
+│   │   ├── midscene.py       # Midscene智能体API
+│   │   └── system.py         # 系统管理API
+│   ├── controllers/          # 控制器层
+│   ├── services/             # 业务服务层
+│   │   ├── autogen_service.py    # AutoGen智能体服务
+│   │   ├── testcase_service.py   # 测试用例生成服务
+│   │   ├── midscene_service.py   # Midscene智能体服务
+│   │   └── permission_service.py # 权限管理服务
+│   ├── models/               # 数据模型层
+│   │   ├── user.py           # 用户模型
+│   │   ├── chat.py           # 对话模型
+│   │   ├── testcase.py       # 测试用例模型
+│   │   └── role.py           # 角色权限模型
+│   ├── core/                 # 核心功能模块
+│   │   ├── init_app.py       # 应用初始化
+│   │   ├── database.py       # 数据库配置
+│   │   ├── security.py       # 安全认证
+│   │   ├── dependency.py     # 权限依赖注入
+│   │   └── llm.py           # LLM客户端管理
+│   ├── conf/                 # 配置管理
+│   └── utils/                # 工具函数
+├── frontend/                  # 前端应用
+│   ├── src/
+│   │   ├── App.tsx           # 根组件
+│   │   ├── main.tsx          # 应用入口
+│   │   ├── pages/            # 页面组件
+│   │   │   ├── HomePage.tsx      # 首页
+│   │   │   ├── ChatPage.tsx      # AI对话页面
+│   │   │   ├── TestCasePage.tsx  # 测试用例生成页面
+│   │   │   ├── MidscenePage.tsx  # Midscene智能体页面
+│   │   │   └── system/           # 系统管理页面
+│   │   ├── components/       # 通用组件
+│   │   │   ├── SideNavigation.tsx    # 侧边导航
+│   │   │   ├── ChatMessage.tsx       # 聊天消息组件
+│   │   │   ├── StreamingContent.tsx  # 流式内容组件
+│   │   │   └── FileUpload.tsx        # 文件上传组件
+│   │   ├── services/         # API服务层
+│   │   │   ├── auth.ts           # 认证服务
+│   │   │   ├── chat.ts           # 对话服务
+│   │   │   └── testcase.ts       # 测试用例服务
+│   │   ├── hooks/            # 自定义Hooks
+│   │   │   ├── useAuth.ts        # 认证Hook
+│   │   │   ├── useSSE.ts         # SSE流式数据Hook
+│   │   │   └── useLocalStorage.ts # 本地存储Hook
+│   │   ├── types/            # 类型定义
+│   │   └── utils/            # 工具函数
+│   ├── package.json          # 前端依赖配置
+│   └── vite.config.ts        # Vite构建配置
+├── docs/                      # 项目文档
+│   ├── architecture/         # 架构文档
+│   │   ├── BACKEND_ARCHITECTURE.md   # 后端架构详解
+│   │   └── FRONTEND_ARCHITECTURE.md  # 前端架构详解
+│   ├── setup/                # 项目设置文档
+│   ├── development/          # 开发指南文档
+│   └── security/             # 安全相关文档
+├── migrations/               # 数据库迁移文件
+├── pyproject.toml           # Python项目配置
+└── Makefile                 # 项目管理脚本
 ```
+
+### 📖 详细架构文档
+
+为了更好地理解和使用本项目，我们提供了详细的架构文档：
+
+#### 🔗 架构文档导航
+
+| 文档 | 描述 | 主要内容 |
+|------|------|----------|
+| **[后端架构详解](./docs/architecture/BACKEND_ARCHITECTURE.md)** | 后端技术栈和设计模式详解 | FastAPI工厂模式、分层架构、AI智能体集成、权限管理、数据库设计 |
+| **[前端架构详解](./docs/architecture/FRONTEND_ARCHITECTURE.md)** | 前端技术栈和组件设计详解 | React组件化架构、状态管理、SSE流式处理、性能优化、测试策略 |
+
+#### 🎯 架构特色
+
+**后端架构特色**:
+- ✅ **工厂模式**: 统一的应用创建和生命周期管理
+- ✅ **分层设计**: API → 控制器 → 服务 → 模型的清晰分层
+- ✅ **智能体集成**: 基于AutoGen的多智能体协作框架
+- ✅ **权限管理**: 企业级RBAC权限控制系统
+- ✅ **异步处理**: 全异步的数据库操作和API响应
+
+**前端架构特色**:
+- ✅ **组件化设计**: 可复用的组件库和清晰的组件层次
+- ✅ **类型安全**: 完整的TypeScript类型定义
+- ✅ **流式处理**: SSE实时数据流和用户体验优化
+- ✅ **响应式布局**: 适配桌面和移动端的现代化UI
+- ✅ **性能优化**: 代码分割、懒加载和缓存策略
+
+#### 🚀 快速上手
+
+**开发者指南**:
+1. **后端开发**: 阅读 [后端架构详解](./docs/architecture/BACKEND_ARCHITECTURE.md) 了解API设计、服务层实现和数据库操作
+2. **前端开发**: 阅读 [前端架构详解](./docs/architecture/FRONTEND_ARCHITECTURE.md) 了解组件设计、状态管理和API集成
+3. **AI集成**: 参考智能体服务实现，了解AutoGen多智能体协作模式
+4. **权限扩展**: 参考权限管理系统，了解如何添加新的权限控制
+
+**架构扩展**:
+- 📝 **添加新模块**: 按照分层架构模式添加新的业务模块
+- 🤖 **集成AI模型**: 扩展LLM客户端支持更多AI模型
+- 🔐 **权限定制**: 根据业务需求定制权限控制策略
+- 📊 **性能监控**: 集成监控和日志分析系统
 
 
 
