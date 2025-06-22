@@ -467,7 +467,7 @@ midscene-migrate:
 midscene-init:
 	@echo "🤖 初始化 Midscene 系统..."
 	@$(MAKE) midscene-migrate
-	@poetry run python -c "from backend.services.midscene_service import midscene_service; import asyncio; asyncio.run(midscene_service.update_daily_statistics())"
+	@poetry run python -c "from backend.services.ui_testing.midscene_service import midscene_service; import asyncio; asyncio.run(midscene_service.update_daily_statistics())"
 	@echo "✅ Midscene 系统初始化完成"
 
 midscene-clean:
@@ -478,7 +478,7 @@ midscene-clean:
 
 midscene-stats:
 	@echo "📊 更新 Midscene 统计数据..."
-	@poetry run python -c "from backend.services.midscene_service import midscene_service; import asyncio; asyncio.run(midscene_service.update_daily_statistics())"
+	@poetry run python -c "from backend.services.ui_testing.midscene_service import midscene_service; import asyncio; asyncio.run(midscene_service.update_daily_statistics())"
 	@echo "✅ Midscene 统计数据更新完成"
 
 midscene-test:

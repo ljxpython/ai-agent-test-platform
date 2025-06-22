@@ -10,7 +10,9 @@ from backend.core.dependency import (
 )
 from backend.core.security import decode_access_token
 from backend.models.user import User
-from backend.services.auth_service import auth_service
+from backend.services.auth.auth_service import AuthService
+
+auth_service = AuthService()
 
 # HTTP Bearer 认证
 security = HTTPBearer()

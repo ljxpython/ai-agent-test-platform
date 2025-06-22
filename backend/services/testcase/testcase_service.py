@@ -1080,7 +1080,7 @@ class TestCaseService:
             str: 合并的文件内容，如果没有文件则返回空字符串
         """
         try:
-            from backend.services.document_service import document_service
+            from backend.services.document import document_service
 
             # 使用conversation_id作为session_id获取文件内容
             content = document_service.get_session_content(conversation_id)
@@ -1113,7 +1113,7 @@ class TestCaseService:
             List[Dict]: 文件信息列表
         """
         try:
-            from backend.services.document_service import document_service
+            from backend.services.document import document_service
 
             # 使用conversation_id作为session_id获取文件信息
             files_info = document_service.get_session_files(conversation_id)

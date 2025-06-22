@@ -13,8 +13,12 @@
 
 ### 🏗️ 系统架构
 - [系统架构概览](./architecture/SYSTEM_ARCHITECTURE.md) - 整体架构设计
+- [后端架构文档](./architecture/BACKEND_ARCHITECTURE.md) - 后端详细架构说明
+- [前端架构文档](./architecture/FRONTEND_ARCHITECTURE.md) - 前端架构设计
 - [AI模块架构](./architecture/AI_MODULES.md) - AI智能体协作架构
 - [用户系统架构](./architecture/USER_SYSTEM.md) - 用户认证和权限管理
+- [服务重构文档](./architecture/SERVICES_REFACTORING.md) - 后端服务模块化重构
+- [服务优化总结](./architecture/SERVICES_OPTIMIZATION_SUMMARY.md) - 服务框架优化成果
 
 ### 💻 开发指南
 - [开发环境配置](./development/README.md) - 开发环境详细配置

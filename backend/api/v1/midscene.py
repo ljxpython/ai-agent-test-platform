@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
 
-from backend.services.midscene_service import midscene_service
+from backend.services.ui_testing.midscene_service import midscene_service
 
 # 创建路由器
 midscene_router = APIRouter()

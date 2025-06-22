@@ -21,7 +21,7 @@ from loguru import logger
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from backend.conf.file_extractor_config import MarkerConfig
-from backend.services.file_processor import FileProcessor
+from backend.services.document.file_processor import FileProcessor
 
 
 def serialize_for_json(obj):

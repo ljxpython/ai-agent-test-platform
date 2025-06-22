@@ -8,7 +8,7 @@ from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
 from backend.models.chat import ChatRequest, ChatResponse, StreamChunk
-from backend.services.autogen_service import autogen_service
+from backend.services.ai_chat.autogen_service import autogen_service
 
 chat_router = APIRouter()
 

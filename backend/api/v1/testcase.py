@@ -21,8 +21,8 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from backend.models.chat import FileUpload, TestCaseRequest
-from backend.services.document_service import document_service
-from backend.services.testcase_service import (
+from backend.services.document.document_service import document_service
+from backend.services.testcase.testcase_service import (
     FeedbackMessage,
     RequirementMessage,
     get_message_queue,
@@ -65,7 +65,7 @@ async def testcase_message_generator(conversation_id: str):
         yield f"data: {json.dumps(error_message, ensure_ascii=False)}\n\n"
     finally:
         # 清理资源 - 参考examples/topic1.py
-        from backend.services.testcase_service import message_queues
+        from backend.services.testcase.testcase_service import message_queues
 
         message_queues.pop(conversation_id, None)
         logger.debug(f"🗑️ [队列消费者] 队列资源已清理 | 对话ID: {conversation_id}")

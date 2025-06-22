@@ -281,11 +281,9 @@ def create_default_analyzer() -> ImageAnalyzer:
     qwen_key = os.getenv("QWEN_API_KEY")
     if qwen_key:
         return ImageAnalyzer(
-            api_key=qwen_key,
-            base_url=os.getenv(
-                "QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
-            ),
-            model="qwen-vl-max-latest",
+            api_key=settings.qwen_model.api_key,
+            base_url=settings.qwen_model.base_url,
+            model=settings.qwen_model.model,
             default_prompt="请详细描述这张图片的内容，包括文字、图表、数据等所有可见信息。如果图片包含表格或数据，请尽可能准确地描述其内容。",
         )
 

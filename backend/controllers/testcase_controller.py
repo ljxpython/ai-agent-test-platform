@@ -7,7 +7,7 @@ from typing import List, Optional
 from backend.core.crud import CRUDBase
 from backend.models.testcase import TestCaseConversation
 from backend.schemas.base import Fail, Success
-from backend.services.testcase_service import testcase_service
+from backend.services.testcase.testcase_service import testcase_service
 
 
 class TestCaseController(CRUDBase[TestCaseConversation, dict, dict]):

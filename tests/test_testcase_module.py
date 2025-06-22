@@ -30,7 +30,7 @@ def test_imports():
 
         print("✅ 后端模型导入成功")
 
-        from backend.services.testcase_service import testcase_service
+        from backend.services.testcase.testcase_service import testcase_service
 
         print("✅ 测试用例服务导入成功")
 

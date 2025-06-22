@@ -241,11 +241,20 @@ AITestLab/
 │   │   ├── midscene.py       # Midscene智能体API
 │   │   └── system.py         # 系统管理API
 │   ├── controllers/          # 控制器层
-│   ├── services/             # 业务服务层
-│   │   ├── autogen_service.py    # AutoGen智能体服务
-│   │   ├── testcase_service.py   # 测试用例生成服务
-│   │   ├── midscene_service.py   # Midscene智能体服务
-│   │   └── permission_service.py # 权限管理服务
+│   ├── services/             # 业务服务层（按功能模块组织）
+│   │   ├── ai_chat/          # AI对话模块
+│   │   │   └── autogen_service.py    # AutoGen智能体服务
+│   │   ├── testcase/         # 测试用例生成模块
+│   │   │   └── testcase_service.py   # 测试用例生成服务
+│   │   ├── ui_testing/       # UI测试模块
+│   │   │   └── midscene_service.py   # Midscene智能体服务
+│   │   ├── document/         # 文档处理模块
+│   │   │   ├── document_service.py   # 文档处理服务
+│   │   │   ├── file_processor.py     # 文件处理器
+│   │   │   └── image_analyzer.py     # 图像分析器
+│   │   └── auth/             # 认证权限模块
+│   │       ├── auth_service.py       # 认证服务
+│   │       └── permission_service.py # 权限管理服务
 │   ├── models/               # 数据模型层
 │   │   ├── user.py           # 用户模型
 │   │   ├── chat.py           # 对话模型

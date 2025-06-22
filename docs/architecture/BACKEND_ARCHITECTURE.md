@@ -49,16 +49,26 @@ backend/
 │   ├── chat_controller.py      # 对话控制器
 │   ├── testcase_controller.py  # 测试用例控制器
 │   └── system_controller.py    # 系统管理控制器
-├── services/                   # 业务服务层
-│   ├── __init__.py
-│   ├── auth_service.py         # 认证服务
-│   ├── autogen_service.py      # AutoGen智能体服务
-│   ├── testcase_service.py     # 测试用例生成服务
-│   ├── midscene_service.py     # Midscene智能体服务
-│   ├── document_service.py     # 文档处理服务
-│   ├── file_processor.py       # 文件处理器
-│   ├── image_analyzer.py       # 图像分析服务
-│   └── permission_service.py   # 权限管理服务
+├── services/                   # 业务服务层（按功能模块组织）
+│   ├── __init__.py             # 统一导出接口
+│   ├── ai_chat/                # AI对话模块
+│   │   ├── __init__.py
+│   │   └── autogen_service.py  # AutoGen智能体服务
+│   ├── testcase/               # 测试用例生成模块
+│   │   ├── __init__.py
+│   │   └── testcase_service.py # 测试用例生成服务
+│   ├── ui_testing/             # UI测试模块
+│   │   ├── __init__.py
+│   │   └── midscene_service.py # Midscene智能体服务
+│   ├── document/               # 文档处理模块
+│   │   ├── __init__.py
+│   │   ├── document_service.py # 文档处理服务
+│   │   ├── file_processor.py   # 文件处理器
+│   │   └── image_analyzer.py   # 图像分析服务
+│   └── auth/                   # 认证权限模块
+│       ├── __init__.py
+│       ├── auth_service.py     # 认证服务
+│       └── permission_service.py # 权限管理服务
 ├── models/                     # 数据模型层
 │   ├── __init__.py
 │   ├── base.py                 # 基础模型类
@@ -161,6 +171,7 @@ if __name__ == "__main__":
 - 核心业务逻辑实现
 - 数据处理和转换
 - 外部服务集成
+- **按功能模块组织**：AI对话、测试用例生成、UI测试、文档处理、认证权限
 
 **模型层** (`backend/models/`):
 - 数据库模型定义
@@ -398,6 +409,62 @@ interaction_task = asyncio.create_task(interaction_agent.analyze(requirements))
 
 ui_result, interaction_result = await asyncio.gather(ui_task, interaction_task)
 ```
+
+## 服务模块架构
+
+### 模块化组织原则
+
+后端服务层采用**按功能模块组织**的架构，将相关的服务文件组织在同一个模块目录下，提高代码的可维护性和可扩展性。
+
+### 服务模块说明
+
+#### 1. AI对话模块 (`ai_chat/`)
+- **autogen_service.py**: AutoGen智能体服务，管理对话Agent生命周期
+- **功能**: 流式聊天、Agent管理、对话历史
+
+#### 2. 测试用例生成模块 (`testcase/`)
+- **testcase_service.py**: 多智能体协作的测试用例生成服务
+- **功能**: 需求分析、用例生成、用户反馈处理
+
+#### 3. UI测试模块 (`ui_testing/`)
+- **midscene_service.py**: 四智能体协作的UI测试脚本生成
+- **功能**: UI分析、交互分析、脚本生成
+
+#### 4. 文档处理模块 (`document/`)
+- **document_service.py**: 文档上传和内容提取服务
+- **file_processor.py**: 多格式文件处理器
+- **image_analyzer.py**: AI图像内容分析器
+
+#### 5. 认证权限模块 (`auth/`)
+- **auth_service.py**: 用户认证和登录服务
+- **permission_service.py**: API权限管理和同步服务
+
+### 统一导入接口
+
+```python
+# 通过主模块导入（推荐）
+from backend.services import (
+    autogen_service,
+    document_service,
+    permission_service
+)
+
+# 直接从子模块导入
+from backend.services.ai_chat import autogen_service
+from backend.services.document import FileProcessor
+```
+
+### 扩展指南
+
+添加新功能模块时，请遵循以下结构：
+```
+backend/services/new_module/
+├── __init__.py          # 导出接口
+├── main_service.py      # 主要服务
+└── helper_service.py    # 辅助服务
+```
+
+详细信息请参考：[服务重构文档](./SERVICES_REFACTORING.md)
 
 ## 安全认证系统
 

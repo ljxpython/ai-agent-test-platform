@@ -7,7 +7,7 @@ from typing import Optional
 from backend.core.crud import CRUDBase
 from backend.models.chat import ChatMessage
 from backend.schemas.base import Fail, Success
-from backend.services.autogen_service import autogen_service
+from backend.services.ai_chat.autogen_service import autogen_service
 
 
 class ChatController(CRUDBase[ChatMessage, dict, dict]):

@@ -77,7 +77,7 @@ async def init_data(app=None):
         # 如果提供了app实例，同步API权限
         if app:
             try:
-                from backend.services.permission_service import permission_service
+                from backend.services.auth.permission_service import permission_service
 
                 logger.info("开始同步API权限...")
                 result = await permission_service.sync_apis_from_app(app)

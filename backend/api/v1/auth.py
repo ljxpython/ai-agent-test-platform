@@ -11,7 +11,9 @@ from backend.models.auth import (
     UserUpdate,
 )
 from backend.models.user import User
-from backend.services.auth_service import auth_service
+from backend.services.auth.auth_service import AuthService
+
+auth_service = AuthService()
 
 auth_router = APIRouter()
 

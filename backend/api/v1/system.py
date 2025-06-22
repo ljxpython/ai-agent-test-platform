@@ -29,7 +29,7 @@ from backend.schemas.system import (
     UserResponse,
     UserUpdate,
 )
-from backend.services.permission_service import permission_service
+from backend.services.auth.permission_service import permission_service
 
 # 创建路由
 system_router = APIRouter()

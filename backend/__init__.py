@@ -18,6 +18,7 @@ from backend.core.logger import setup_logging
 
 try:
     import os
+    import sys
 
     from backend.conf.config import settings
 
@@ -25,8 +26,8 @@ try:
     force_no_color = (
         os.getenv("FORCE_NO_COLOR") is not None
         or os.getenv("NO_COLOR") is not None
-        or not hasattr(os.sys.stdout, "isatty")
-        or not os.sys.stdout.isatty()
+        or not hasattr(sys.stdout, "isatty")
+        or not sys.stdout.isatty()
     )
 
     # 初始化日志系统

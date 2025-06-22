@@ -20,7 +20,7 @@ from backend.conf.file_extractor_config import (
     MarkdownExtractor,
     MarkerConfig,
 )
-from backend.services.image_analyzer import ImageAnalyzer, default_analyzer
+from backend.services.document.image_analyzer import ImageAnalyzer, default_analyzer
 
 
 class FileProcessor:
