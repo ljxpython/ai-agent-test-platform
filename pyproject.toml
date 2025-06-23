@@ -36,6 +36,8 @@ dependencies = [
     "weasyprint (>=65.1,<66.0)",
     "python-docx (>=1.1.2,<2.0.0)",
     "argon2-cffi (>=25.1.0,<26.0.0)",
+    "pymilvus (>=2.5.11,<3.0.0)",
+    "pypdf2 (>=3.0.1,<4.0.0)",
 ]
 
 
