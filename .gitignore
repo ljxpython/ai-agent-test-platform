@@ -333,3 +333,8 @@ frontend.log
 logs/
 *.log
 uploads
+
+# sqlite 数据库
+**/aitestlab.db-shm
+**/aitestlab.db-wal
+**/aitestlab.db

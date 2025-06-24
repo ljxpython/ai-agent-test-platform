@@ -2771,14 +2771,14 @@ reference = "tuna"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.40"
+version = "0.12.43"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.12.40-py3-none-any.whl", hash = "sha256:2ebc75b3753a4182d80ffa467196ec113d83a3b186af1dd765100500551c322c"},
-    {file = "llama_index_core-0.12.40.tar.gz", hash = "sha256:f1a95bcdc57f22b62fb28efb9a8bf85fa042c0044837bdb56d46b8b536795048"},
+    {file = "llama_index_core-0.12.43-py3-none-any.whl", hash = "sha256:964e24969296abe9bdc662b5b185c630cc61e627f90d4194b885a707577b5b48"},
+    {file = "llama_index_core-0.12.43.tar.gz", hash = "sha256:155a8602010fb7d8538e6b52b6a3e1fdc029ee02e71a70d2b0a2278de22c8fa9"},
 ]
 
 [package.dependencies]
@@ -2791,6 +2791,7 @@ dirtyjson = ">=1.0.8,<2"
 filetype = ">=1.2.0,<2"
 fsspec = ">=2023.5.0"
 httpx = "*"
+llama-index-workflows = ">=0.2.1"
 nest-asyncio = ">=1.5.8,<2"
 networkx = ">=3.0"
 nltk = ">3.8.1"
@@ -2799,6 +2800,7 @@ pillow = ">=9.0.0"
 pydantic = ">=2.8.0"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
+setuptools = ">=80.9.0"
 sqlalchemy = {version = ">=1.4.49", extras = ["asyncio"]}
 tenacity = ">=8.2.0,<8.4.0 || >8.4.0,<10.0.0"
 tiktoken = ">=0.7.0"
@@ -2872,6 +2874,152 @@ files = [
 [package.dependencies]
 llama-index-core = ">=0.12.0,<0.13.0"
 ollama = ">=0.3.1"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-instrumentation"
+version = "0.2.0"
+description = "Add your description here"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_instrumentation-0.2.0-py3-none-any.whl", hash = "sha256:1055ae7a3d19666671a8f1a62d08c90472552d9fcec7e84e6919b2acc92af605"},
+    {file = "llama_index_instrumentation-0.2.0.tar.gz", hash = "sha256:ae8333522487e22a33732924a9a08dfb456f54993c5c97d8340db3c620b76f13"},
+]
+
+[package.dependencies]
+deprecated = ">=1.2.18"
+pydantic = ">=2.11.5"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-llms-deepseek"
+version = "0.1.2"
+description = "llama-index llms deepseek integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_llms_deepseek-0.1.2-py3-none-any.whl", hash = "sha256:4be26a8c640c15dd666861e0207ae61982d2e55cd7fa3e3c3ecd44a5f6b0d817"},
+    {file = "llama_index_llms_deepseek-0.1.2.tar.gz", hash = "sha256:8eb5cb6e992a2dcaae8e3a779c4c2f442b211de2f9f6d336acaac0391ebfdd2a"},
+]
+
+[package.dependencies]
+llama-index-llms-openai-like = ">=0.4.0,<0.5"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-llms-openai"
+version = "0.4.7"
+description = "llama-index llms openai integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_llms_openai-0.4.7-py3-none-any.whl", hash = "sha256:3b8d9d3c1bcadc2cff09724de70f074f43eafd5b7048a91247c9a41b7cd6216d"},
+    {file = "llama_index_llms_openai-0.4.7.tar.gz", hash = "sha256:564af8ab39fb3f3adfeae73a59c0dca46c099ab844a28e725eee0c551d4869f8"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.12.41,<0.13"
+openai = ">=1.81.0,<2"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-llms-openai-like"
+version = "0.4.0"
+description = "llama-index llms openai like integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_llms_openai_like-0.4.0-py3-none-any.whl", hash = "sha256:52a3cb5ce78049fde5c9926898b90e02bc04e3d23adbc991842e9ff574df9ea1"},
+    {file = "llama_index_llms_openai_like-0.4.0.tar.gz", hash = "sha256:15ae1c16b01ba0bfa822d53900f03e35c19ffe47b528958234bf1942a91f587c"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.12.0,<0.13"
+llama-index-llms-openai = ">=0.4.0,<0.5"
+transformers = ">=4.37.0,<5"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-llms-replicate"
+version = "0.4.0"
+description = "llama-index llms replicate integration"
+optional = false
+python-versions = ">=3.9,<4.0"
+groups = ["main"]
+files = [
+    {file = "llama_index_llms_replicate-0.4.0-py3-none-any.whl", hash = "sha256:07ba499b99a34dc830c0f2b26e88eb076ff53bfd177aa1e27cc062277a3c5869"},
+    {file = "llama_index_llms_replicate-0.4.0.tar.gz", hash = "sha256:46df7cb4e6c0a0543aef44cb88da81cc90a49619fb769257bf085b56fba88006"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.12.0,<0.13.0"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-vector-stores-milvus"
+version = "0.8.5"
+description = "llama-index vector_stores milvus integration"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_vector_stores_milvus-0.8.5-py3-none-any.whl", hash = "sha256:c6375a8c07e3c838974dde5184c192c162a0daac5c7b6615cb544109f525dd65"},
+    {file = "llama_index_vector_stores_milvus-0.8.5.tar.gz", hash = "sha256:6a14d18b78dfd3d49dc7df695414639bf7ada7858df0ef1c9516249f89680914"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.12.0,<0.13"
+pymilvus = ">=2.5.10,<3"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+reference = "tuna"
+
+[[package]]
+name = "llama-index-workflows"
+version = "0.2.2"
+description = "An event-driven, async-first, step-based way to control the execution flow of AI applications like Agents."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_workflows-0.2.2-py3-none-any.whl", hash = "sha256:2b7a47c631f02d3b25f03006d40ebaed67a959da1c6fc35d0a6057b2d944bfcd"},
+    {file = "llama_index_workflows-0.2.2.tar.gz", hash = "sha256:916ae77b22f2589b515a10b49f2fa519dd41c224d85710f99c54797d71b3c494"},
+]
+
+[package.dependencies]
+llama-index-instrumentation = ">=0.1.0"
+pydantic = ">=2.11.5"
 
 [package.source]
 type = "legacy"
@@ -7124,4 +7272,4 @@ reference = "tuna"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "0de7c5728bc8d33fe68f4875ccb139dcfd97034518b2712e745faf04bf0d6cd8"
+content-hash = "c6e11e960f8f29b320c58a1e30767cc805cee2e756bc0bb85b2b02c8c16541c7"

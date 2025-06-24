@@ -7,16 +7,18 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict
 
+from examples.conf.config import settings
+
 
 @dataclass
 class MilvusConfig:
     """Milvus向量数据库配置"""
 
-    host: str = "45.77.147.37"
-    port: int = 19530
+    host: str = settings.milvus.host
+    port: int = settings.milvus.port
     collection_name: str = "rag_tutorial_collection"
     dimension: int = 768  # nomic-embed-text的实际维度
-    metric_type: str = "IP"  # Inner Product
+    metric_type: str = "COSINE"  # Cosine Similarity
     index_type: str = "IVF_FLAT"
     nlist: int = 1024
     nprobe: int = 10
@@ -26,7 +28,7 @@ class MilvusConfig:
 class OllamaConfig:
     """Ollama嵌入模型配置"""
 
-    base_url: str = "http://45.77.147.37:11434"
+    base_url: str = settings.ollama.base_url
     model_name: str = "nomic-embed-text"  # 推荐的嵌入模型
     timeout: int = 30
     max_retries: int = 3
@@ -51,7 +53,7 @@ class RetrievalConfig:
     """检索配置"""
 
     top_k: int = 5
-    similarity_threshold: float = 0.7
+    similarity_threshold: float = 0.3
     rerank_top_k: int = 10
     enable_rerank: bool = True
 

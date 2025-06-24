@@ -201,15 +201,26 @@ class MilvusVectorClient:
             logger.debug(f"搜索相似向量，top_k: {top_k}")
             start_time = time.time()
 
-            results = self.client.search(
-                collection_name=self.config.collection_name,
-                data=[query_embedding],
-                anns_field="embedding",
-                search_params=search_params,
-                limit=top_k,
-                expr=filter_expr,
-                output_fields=["text", "metadata", "timestamp"],
-            )
+            # 根据是否有过滤条件选择不同的调用方式
+            if filter_expr is not None:
+                results = self.client.search(
+                    collection_name=self.config.collection_name,
+                    data=[query_embedding],
+                    anns_field="embedding",
+                    search_params=search_params,
+                    limit=top_k,
+                    expr=filter_expr,
+                    output_fields=["text", "metadata", "timestamp"],
+                )
+            else:
+                results = self.client.search(
+                    collection_name=self.config.collection_name,
+                    data=[query_embedding],
+                    anns_field="embedding",
+                    search_params=search_params,
+                    limit=top_k,
+                    output_fields=["text", "metadata", "timestamp"],
+                )
 
             search_time = time.time() - start_time
             logger.debug(f"搜索完成，耗时: {search_time:.3f}s")
@@ -217,18 +228,24 @@ class MilvusVectorClient:
             # 处理结果
             formatted_results = []
             for hit in results[0]:
+                # 调试信息：输出原始结果结构
+                logger.debug(f"原始搜索结果: {hit}")
+
+                # 计算相似度分数
+                distance = hit.get("distance", 0)
+                # 对于余弦相似度，distance是余弦距离，相似度 = 1 - distance
+                similarity_score = (
+                    1.0 - float(distance) if distance is not None else 0.0
+                )
+
                 formatted_results.append(
                     {
                         "id": hit.get("id"),
                         "text": hit.get("entity", {}).get("text"),
                         "metadata": hit.get("entity", {}).get("metadata", {}),
                         "timestamp": hit.get("entity", {}).get("timestamp"),
-                        "similarity_score": float(hit.get("score", 0)),
-                        "distance": (
-                            float(hit.get("distance", 0))
-                            if hit.get("distance") is not None
-                            else None
-                        ),
+                        "similarity_score": similarity_score,
+                        "distance": float(distance) if distance is not None else None,
                     }
                 )
 

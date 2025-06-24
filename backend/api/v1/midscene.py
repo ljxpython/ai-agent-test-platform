@@ -14,6 +14,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from backend.services.ui_testing.midscene_service import midscene_service
+from backend.services.ui_testing.ui_service import ui_testing_service
 
 # 创建路由器
 midscene_router = APIRouter()
@@ -249,18 +250,20 @@ async def start_midscene_analysis(
 async def get_midscene_stream(user_id: str):
     """
     获取 Midscene 分析的流式输出
+    使用基于AI核心框架重构的UI测试服务
 
     Args:
-        user_id: 用户ID
+        user_id: 用户ID（作为conversation_id使用）
 
     Returns:
         SSE 流式响应
     """
-    logger.info(f"📡 获取流式输出 - 用户ID: {user_id}")
+    logger.info(f"📡 [API-新框架] 获取流式输出 - 用户ID: {user_id}")
 
     try:
+        conversation_id = user_id  # 使用user_id作为conversation_id
         return StreamingResponse(
-            midscene_service.get_stream_response(user_id),
+            ui_testing_service.get_streaming_response(conversation_id),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -271,7 +274,7 @@ async def get_midscene_stream(user_id: str):
         )
 
     except Exception as e:
-        logger.error(f"❌ 获取流式输出失败: {e}")
+        logger.error(f"❌ [API-新框架] 获取流式输出失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取流式输出失败: {str(e)}")
 
 
@@ -279,18 +282,20 @@ async def get_midscene_stream(user_id: str):
 async def cleanup_midscene_session(user_id: str):
     """
     清理 Midscene 会话
+    使用基于AI核心框架重构的UI测试服务
 
     Args:
-        user_id: 用户ID
+        user_id: 用户ID（作为conversation_id使用）
 
     Returns:
         清理结果
     """
-    logger.info(f"🧹 清理会话 - 用户ID: {user_id}")
+    logger.info(f"🧹 [API-新框架] 清理会话 - 用户ID: {user_id}")
 
     try:
-        # 清理服务资源
-        midscene_service.cleanup_session(user_id)
+        # 使用新的UI测试服务清理资源
+        conversation_id = user_id  # 使用user_id作为conversation_id
+        await ui_testing_service.cleanup_conversation(conversation_id)
 
         # 清理上传的文件（可选）
         user_dir = UPLOAD_DIR / user_id
@@ -303,7 +308,7 @@ async def cleanup_midscene_session(user_id: str):
         return {"success": True, "message": "会话已清理"}
 
     except Exception as e:
-        logger.error(f"❌ 清理会话失败: {e}")
+        logger.error(f"❌ [API-新框架] 清理会话失败: {e}")
         raise HTTPException(status_code=500, detail=f"清理会话失败: {str(e)}")
 
 
@@ -315,16 +320,19 @@ async def upload_and_analyze(
 ):
     """
     上传多张图片并开始协作分析，返回流式响应
+    使用基于AI核心框架重构的UI测试服务
 
     Args:
         files: 上传的图片文件列表
-        user_id: 用户ID
+        user_id: 用户ID（作为conversation_id使用）
         user_requirement: 用户需求描述
 
     Returns:
         SSE 流式响应
     """
-    logger.info(f"📤 接收上传请求 - 用户: {user_id}, 文件数量: {len(files)}")
+    logger.info(
+        f"📤 [API-新框架] 接收上传请求 - 用户: {user_id}, 文件数量: {len(files)}"
+    )
     logger.info(f"📝 用户需求: {user_requirement[:100]}...")
 
     try:
@@ -344,14 +352,15 @@ async def upload_and_analyze(
 
         logger.info(f"✅ 保存了 {len(image_paths)} 个图片文件")
 
-        # 启动分析流程
-        result_user_id = await midscene_service.start_analysis(
-            user_id, image_paths, user_requirement
+        # 使用新的UI测试服务启动分析流程
+        conversation_id = user_id  # 使用user_id作为conversation_id
+        await ui_testing_service.start_streaming_analysis(
+            conversation_id, image_paths, user_requirement
         )
 
         # 返回流式响应
         return StreamingResponse(
-            midscene_service.get_stream_response(result_user_id),
+            ui_testing_service.get_streaming_response(conversation_id),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -364,7 +373,7 @@ async def upload_and_analyze(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ 上传分析失败: {e}")
+        logger.error(f"❌ [API-新框架] 上传分析失败: {e}")
         raise HTTPException(status_code=500, detail=f"上传分析失败: {str(e)}")
 
 
@@ -376,13 +385,27 @@ async def test_midscene_api():
     Returns:
         测试结果
     """
-    return {
-        "success": True,
-        "message": "Midscene API 正常运行",
-        "version": "1.0.0",
-        "upload_dir": str(UPLOAD_DIR),
-        "supported_formats": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"],
-    }
+    try:
+        # 获取新服务状态
+        service_status = ui_testing_service.get_service_status()
+
+        return {
+            "success": True,
+            "message": "Midscene API 正常运行",
+            "version": "2.0.0",
+            "framework": "AI核心框架重构版本",
+            "upload_dir": str(UPLOAD_DIR),
+            "supported_formats": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"],
+            "service_status": service_status,
+        }
+    except Exception as e:
+        logger.error(f"❌ API测试失败: {e}")
+        return {
+            "success": False,
+            "message": f"API测试失败: {str(e)}",
+            "version": "2.0.0",
+            "framework": "AI核心框架重构版本",
+        }
 
 
 # ==================== Admin API 端点 ====================

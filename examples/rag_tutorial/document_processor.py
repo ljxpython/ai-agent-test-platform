@@ -46,7 +46,8 @@ class DocumentProcessor:
     """文档处理器"""
 
     def __init__(self, config=None):
-        from .config import get_config
+        # from .config import get_config
+        from examples.rag_tutorial.config import get_config
 
         self.config = config or get_config().document
 

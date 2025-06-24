@@ -10,10 +10,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from .config import get_config
-from .document_processor import DocumentChunk, DocumentProcessor
-from .milvus_client import MilvusVectorClient
-from .ollama_embeddings import OllamaEmbeddingClient
+from examples.rag_tutorial.config import get_config
+from examples.rag_tutorial.document_processor import DocumentChunk, DocumentProcessor
+from examples.rag_tutorial.milvus_client import MilvusVectorClient
+from examples.rag_tutorial.ollama_embeddings import OllamaEmbeddingClient
 
 
 @dataclass
@@ -47,7 +47,7 @@ class RAGSystem:
         # 初始化组件
         self.embedding_client = None
         self.vector_client = None
-        self.document_processor = DocumentProcessor(self.config)
+        self.document_processor = DocumentProcessor(self.config.document)
 
         # 状态标记
         self._initialized = False
@@ -274,11 +274,19 @@ class RAGSystem:
             # 3. 转换结果格式
             retrieval_results = []
             for result in search_results:
+                # 调试信息：输出相似度分数
+                logger.info(
+                    f"搜索结果相似度分数: {result['similarity_score']:.4f}, 阈值: {self.config.retrieval.similarity_threshold}"
+                )
+
                 # 过滤低相似度结果
                 if (
                     result["similarity_score"]
                     < self.config.retrieval.similarity_threshold
                 ):
+                    logger.info(
+                        f"相似度分数 {result['similarity_score']:.4f} 低于阈值 {self.config.retrieval.similarity_threshold}，已过滤"
+                    )
                     continue
 
                 retrieval_result = RetrievalResult(
