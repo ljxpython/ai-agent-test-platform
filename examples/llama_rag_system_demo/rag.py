@@ -7,18 +7,13 @@ import asyncio
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from llama_index.core.schema import BaseNode
 from loguru import logger
 
 from examples.conf.rag_config import RAGConfig, get_rag_config
 
 # 设置项目路径
-from . import utils
-from .data_loader import DocumentLoader
-from .embedding_generator import EmbeddingGenerator
-from .llm_service import LLMService
-from .query_engine import QueryResult, RAGQueryEngine
-from .vector_store import MilvusVectorDB
+from examples.llama_rag_system_demo.data_loader import DocumentLoader
+from examples.llama_rag_system_demo.query_engine import QueryResult, RAGQueryEngine
 
 
 class RAGSystem:
