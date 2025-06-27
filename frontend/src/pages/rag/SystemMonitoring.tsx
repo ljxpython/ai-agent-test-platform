@@ -12,16 +12,16 @@ import {
   Typography,
   Alert,
   Tabs,
-  List,
+  // List, // 暂未使用
   Timeline,
   Select,
-  DatePicker,
+  // DatePicker, // 暂未使用
   Tooltip,
 } from 'antd';
 import {
   BarChartOutlined,
   ClockCircleOutlined,
-  DatabaseOutlined,
+  // DatabaseOutlined, // 暂未使用
   ThunderboltOutlined,
   WarningOutlined,
   CheckCircleOutlined,
@@ -36,7 +36,7 @@ import PageLayout from '@/components/PageLayout';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
-const { RangePicker } = DatePicker;
+// const { RangePicker } = DatePicker; // 暂未使用
 const { Option } = Select;
 
 interface SystemMetrics {

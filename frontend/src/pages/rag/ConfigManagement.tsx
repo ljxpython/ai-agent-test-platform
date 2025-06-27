@@ -37,7 +37,7 @@ import PageLayout from '@/components/PageLayout';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
-const { TextArea } = Input;
+// const { TextArea } = Input; // 暂未使用
 const { Option } = Select;
 const { Password } = Input;
 
@@ -86,7 +86,7 @@ interface APIKey {
 const ConfigManagement: React.FC = () => {
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [keyModalVisible, setKeyModalVisible] = useState(false);
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
@@ -329,7 +329,7 @@ const ConfigManagement: React.FC = () => {
                 form={form}
                 layout="vertical"
                 onFinish={handleSaveConfig}
-                initialValues={config}
+                initialValues={config || undefined}
               >
                 <Row gutter={[24, 0]}>
                   <Col span={12}>

@@ -104,7 +104,7 @@ class RequestManager {
           url: config.url,
           method: config.method,
           hasAuth: !!config.headers.Authorization,
-          authHeader: config.headers.Authorization ? `${config.headers.Authorization.substring(0, 20)}...` : 'none',
+          authHeader: config.headers.Authorization ? `${String(config.headers.Authorization).substring(0, 20)}...` : 'none',
           data: config.data,
         });
 

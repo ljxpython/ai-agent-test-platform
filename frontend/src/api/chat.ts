@@ -3,13 +3,13 @@
  */
 
 import { useState } from 'react';
-import { request } from '../utils/request';
+import { request, ApiResponse } from '../utils/request';
 import { useSSE } from '../hooks/useSSE';
 import {
   ChatRequest,
   ChatResponse,
   ChatMessage,
-  BaseResponse,
+  // BaseResponse, // 暂未使用
   API_ENDPOINTS,
 } from './types';
 
@@ -20,14 +20,14 @@ export class ChatAPI {
   /**
    * 发送聊天消息（普通请求）
    */
-  static async sendMessage(data: ChatRequest): Promise<BaseResponse<ChatResponse>> {
+  static async sendMessage(data: ChatRequest): Promise<ApiResponse<ChatResponse>> {
     return request.post<ChatResponse>(API_ENDPOINTS.CHAT.SEND, data);
   }
 
   /**
    * 发送聊天消息（流式请求）
    */
-  static async sendMessageStream(data: ChatRequest): Promise<BaseResponse<ChatResponse>> {
+  static async sendMessageStream(data: ChatRequest): Promise<ApiResponse<ChatResponse>> {
     return request.post<ChatResponse>(API_ENDPOINTS.CHAT.STREAM, data);
   }
 
@@ -38,7 +38,7 @@ export class ChatAPI {
     conversation_id?: string;
     page?: number;
     pageSize?: number;
-  }): Promise<BaseResponse<ChatMessage[]>> {
+  }): Promise<ApiResponse<ChatMessage[]>> {
     return request.get(API_ENDPOINTS.CHAT.HISTORY, { params });
   }
 
@@ -48,14 +48,14 @@ export class ChatAPI {
   static async getConversations(params: {
     page?: number;
     pageSize?: number;
-  }): Promise<BaseResponse<any[]>> {
+  }): Promise<ApiResponse<any[]>> {
     return request.get(API_ENDPOINTS.CHAT.CONVERSATIONS, { params });
   }
 
   /**
    * 删除对话
    */
-  static async deleteConversation(conversationId: string): Promise<BaseResponse<any>> {
+  static async deleteConversation(conversationId: string): Promise<ApiResponse<any>> {
     const url = API_ENDPOINTS.CHAT.DELETE_CONVERSATION.replace('{id}', conversationId);
     return request.delete(url);
   }

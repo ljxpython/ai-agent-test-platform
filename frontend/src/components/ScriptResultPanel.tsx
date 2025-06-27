@@ -5,8 +5,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
-const { Panel } = Collapse;
+// const { TabPane } = Tabs; // 暂未使用
+// const { Panel } = Collapse; // 暂未使用
 
 interface ScriptResult {
   yamlScript?: string;

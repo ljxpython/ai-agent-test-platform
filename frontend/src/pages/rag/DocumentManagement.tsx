@@ -19,7 +19,7 @@ import {
   Statistic,
   Popconfirm,
   Tooltip,
-  Divider,
+  // Divider, // 暂未使用
 } from 'antd';
 import {
   UploadOutlined,
@@ -71,7 +71,7 @@ const DocumentManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [textModalVisible, setTextModalVisible] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState<string>('');
+  // const [selectedCollection, setSelectedCollection] = useState<string>(''); // 暂未使用
   const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [form] = Form.useForm();

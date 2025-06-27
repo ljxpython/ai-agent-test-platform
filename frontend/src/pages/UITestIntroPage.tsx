@@ -16,7 +16,7 @@ import {
 
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
-const { Step } = Steps;
+// const { Step } = Steps; // 暂未使用
 
 const UITestIntroPage: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +152,7 @@ const UITestIntroPage: React.FC = () => {
               direction="vertical"
               size="small"
               current={-1}
-              items={steps.map((step, index) => ({
+              items={steps.map((step) => ({
                 title: step.title,
                 description: step.description,
                 icon: step.icon

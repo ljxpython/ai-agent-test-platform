@@ -4,13 +4,13 @@
  */
 
 import { useState } from 'react';
-import { request } from '../utils/request';
+import { request, ApiResponse } from '../utils/request';
 import { API_ENDPOINTS } from '../config/api';
 import type {
   TestCaseRequest,
   FeedbackRequest,
   StreamResponse,
-  BaseResponse,
+  // BaseResponse, // 暂未使用
 } from './types';
 
 /**
@@ -72,14 +72,14 @@ export class TestCaseAPI {
   /**
    * 获取对话历史
    */
-  static async getHistory(conversationId: string): Promise<BaseResponse<any>> {
+  static async getHistory(conversationId: string): Promise<ApiResponse<any>> {
     return request.get(`${API_ENDPOINTS.TESTCASE.HISTORY}/${conversationId}`);
   }
 
   /**
    * 测试服务状态
    */
-  static async test(): Promise<BaseResponse<any>> {
+  static async test(): Promise<ApiResponse<any>> {
     return request.get(API_ENDPOINTS.TESTCASE.TEST);
   }
 
@@ -89,7 +89,7 @@ export class TestCaseAPI {
   static async export(data: {
     conversation_id: string;
     format: 'excel' | 'pdf' | 'word';
-  }): Promise<BaseResponse<{ download_url: string }>> {
+  }): Promise<ApiResponse<{ download_url: string }>> {
     return request.post(API_ENDPOINTS.TESTCASE.EXPORT, data);
   }
 }

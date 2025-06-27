@@ -6,8 +6,12 @@
 // 基础响应接口
 export interface BaseResponse<T = any> {
   code: number;
-  message: string;
+  message?: string;
+  msg?: string;
   data: T;
+  total?: number;
+  page?: number;
+  page_size?: number;
   timestamp?: string;
 }
 

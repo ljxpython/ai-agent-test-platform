@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons';
 import { SystemAPI, Department, DepartmentCreateRequest, DepartmentUpdateRequest } from '@/api/system';
 
-const { Search } = Input;
+// const { Search } = Input; // 暂未使用
 const { TextArea } = Input;
 
 const DepartmentManagePage: React.FC = () => {
@@ -56,7 +56,7 @@ const DepartmentManagePage: React.FC = () => {
       setDepartments(response.data);
       setPagination(prev => ({
         ...prev,
-        total: response.total,
+        total: response.total || 0,
       }));
     } catch (error) {
       message.error('加载部门列表失败');
@@ -131,8 +131,8 @@ const DepartmentManagePage: React.FC = () => {
 
       setModalVisible(false);
       loadDepartments();
-    } catch (error) {
-      if (error.errorFields) {
+    } catch (error: any) {
+      if (error?.errorFields) {
         // 表单验证错误
         return;
       }

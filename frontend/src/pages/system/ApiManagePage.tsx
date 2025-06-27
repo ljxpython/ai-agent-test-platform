@@ -25,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import { SystemAPI, Api, ApiCreateRequest, ApiUpdateRequest } from '@/api/system';
 
-const { Search } = Input;
+// const { Search } = Input; // 暂未使用
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -64,7 +64,7 @@ const ApiManagePage: React.FC = () => {
       setApis(response.data);
       setPagination(prev => ({
         ...prev,
-        total: response.total,
+        total: response.total || 0,
       }));
     } catch (error) {
       message.error('加载API列表失败');
@@ -158,8 +158,8 @@ const ApiManagePage: React.FC = () => {
 
       setModalVisible(false);
       loadApis();
-    } catch (error) {
-      if (error.errorFields) {
+    } catch (error: any) {
+      if (error?.errorFields) {
         // 表单验证错误
         return;
       }
@@ -171,7 +171,7 @@ const ApiManagePage: React.FC = () => {
 
   // 获取方法标签颜色
   const getMethodColor = (method: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       GET: 'green',
       POST: 'blue',
       PUT: 'orange',

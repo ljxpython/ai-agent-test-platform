@@ -12,9 +12,9 @@ import {
   Row,
   Col,
   message,
-  Divider,
+  // Divider, // 暂未使用
   Tag,
-  Alert
+  // Alert // 暂未使用
 } from 'antd';
 import {
   UploadOutlined,
@@ -27,7 +27,7 @@ import {
   BulbOutlined,
   CodeOutlined,
   FileImageOutlined,
-  DeleteOutlined,
+  // DeleteOutlined, // 暂未使用
   EyeOutlined
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
@@ -153,11 +153,11 @@ const UITestExecutePage: React.FC = () => {
   };
 
   const handleStreamMessage = (data: StreamMessage) => {
-    const { type, agent, content, message, step } = data;
+    const { type, agent, content, message: msg, step } = data;
 
     switch (type) {
       case 'system_start':
-        addSystemLog(content || message || '', 'info');
+        addSystemLog(content || msg || '', 'info');
         break;
 
       case 'agent_start':
@@ -185,7 +185,7 @@ const UITestExecutePage: React.FC = () => {
           addSystemLog(`${agent} 完成工作`, 'success');
 
           // 更新进度
-          const agentProgress = {
+          const agentProgress: Record<string, number> = {
             'UI分析智能体': 25,
             '交互分析智能体': 50,
             'Midscene用例生成智能体': 75,
@@ -222,7 +222,7 @@ const UITestExecutePage: React.FC = () => {
         break;
 
       case 'system_error':
-        addSystemLog(`❌ 系统错误: ${content || message}`, 'error');
+        addSystemLog(`❌ 系统错误: ${content}`, 'error');
         message.error('分析过程中发生错误');
         resetAnalysis();
         break;

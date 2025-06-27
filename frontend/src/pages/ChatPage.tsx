@@ -25,10 +25,10 @@ import {
   HistoryOutlined,
   UploadOutlined,
   DatabaseOutlined,
-  RobotOutlined,
+  // RobotOutlined, // 暂未使用
   BookOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
+  // EyeOutlined, // 暂未使用
+  // EyeInvisibleOutlined, // 暂未使用
 
 } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
@@ -74,8 +74,8 @@ const ChatPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
 
   // RAG召回文档相关状态
-  const [retrievedDocuments, setRetrievedDocuments] = useState<any[]>([]);
-  const [showRetrievedDocs, setShowRetrievedDocs] = useState<boolean>(false);
+  const [, setRetrievedDocuments] = useState<any[]>([]);
+  const [, setShowRetrievedDocs] = useState<boolean>(false);
   const [retrievedDocsMessageId, setRetrievedDocsMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -401,7 +401,7 @@ const ChatPage: React.FC = () => {
 
       if (reader) {
         let buffer = '';
-        let ragInfo = '';
+        // let ragInfo = ''; // 暂未使用
 
         while (true) {
           const { done, value } = await reader.read();
@@ -698,7 +698,7 @@ const ChatPage: React.FC = () => {
     },
     {
       key: 'divider1',
-      type: 'divider'
+      type: 'divider' as const
     },
     {
       key: 'history',
@@ -715,7 +715,7 @@ const ChatPage: React.FC = () => {
     },
     {
       key: 'divider2',
-      type: 'divider'
+      type: 'divider' as const
     },
     {
       key: 'share',

@@ -98,6 +98,7 @@ export const API_ENDPOINTS = {
     UPLOAD: '/api/v1/testcase/upload',
     GENERATE_STREAMING: '/api/v1/testcase/generate/streaming',
     FEEDBACK: '/api/v1/testcase/feedback',
+    FEEDBACK_STREAMING: '/api/v1/testcase/feedback/streaming',
     HISTORY: '/api/v1/testcase/history/{id}',
     DELETE_CONVERSATION: '/api/v1/testcase/conversation/{id}',
     TEST: '/api/v1/testcase/test',

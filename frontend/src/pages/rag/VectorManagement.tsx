@@ -20,7 +20,7 @@ import {
   Slider,
   InputNumber,
   Alert,
-  Tooltip,
+  // Tooltip, // 暂未使用
   Divider,
 } from 'antd';
 import {
@@ -29,7 +29,7 @@ import {
   ThunderboltOutlined,
   DatabaseOutlined,
   RobotOutlined,
-  SearchOutlined,
+  // SearchOutlined, // 暂未使用
   ReloadOutlined,
   ExperimentOutlined,
   BarChartOutlined,
@@ -78,10 +78,10 @@ interface SearchConfig {
 const VectorManagement: React.FC = () => {
   const [embeddingModels, setEmbeddingModels] = useState<EmbeddingModel[]>([]);
   const [vectorDatabases, setVectorDatabases] = useState<VectorDatabase[]>([]);
-  const [searchConfigs, setSearchConfigs] = useState<SearchConfig[]>([]);
+  const [, setSearchConfigs] = useState<SearchConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [modelModalVisible, setModelModalVisible] = useState(false);
-  const [dbModalVisible, setDbModalVisible] = useState(false);
+  const [, setDbModalVisible] = useState(false);
   const [testModalVisible, setTestModalVisible] = useState(false);
   const [form] = Form.useForm();
 
@@ -310,7 +310,7 @@ const VectorManagement: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (record: VectorDatabase) => (
+      render: () => (
         <Space>
           <Button type="link" icon={<BarChartOutlined />}>
             监控

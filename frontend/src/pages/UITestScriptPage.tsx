@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Input, Typography, message } from 'antd';
-import {
-  UploadOutlined, PlayCircleOutlined, StopOutlined, ReloadOutlined,
-  DownloadOutlined, CopyOutlined, EyeOutlined, RobotOutlined,
-  BulbOutlined, CodeOutlined, FileImageOutlined, DeleteOutlined
-} from '@ant-design/icons';
+// import {
+//   UploadOutlined, PlayCircleOutlined, StopOutlined, ReloadOutlined,
+//   DownloadOutlined, CopyOutlined, EyeOutlined, RobotOutlined,
+//   BulbOutlined, CodeOutlined, FileImageOutlined, DeleteOutlined
+// } from '@ant-design/icons'; // 暂未使用
 import type { UploadFile, UploadProps } from 'antd';
 import AgentResultModal from '../components/AgentResultModal';
 
@@ -43,7 +43,7 @@ const UITestScriptPage: React.FC = () => {
   // 系统日志
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [analysisResults, setAnalysisResults] = useState<Record<string, string>>({});
-  const [currentUserId, setCurrentUserId] = useState('');
+  const [, setCurrentUserId] = useState('');
 
   // 智能体结果弹窗状态
   const [modalVisible, setModalVisible] = useState(false);
@@ -335,16 +335,16 @@ const UITestScriptPage: React.FC = () => {
     }
   };
 
-  // 获取状态颜色
-  const getStatusColor = (status: AgentStatus['status']) => {
-    switch (status) {
-      case 'waiting': return '#d9d9d9';
-      case 'working': return '#1890ff';
-      case 'complete': return '#52c41a';
-      case 'error': return '#ff4d4f';
-      default: return '#d9d9d9';
-    }
-  };
+  // 获取状态颜色 (暂未使用)
+  // const getStatusColor = (status: AgentStatus['status']) => {
+  //   switch (status) {
+  //     case 'waiting': return '#d9d9d9';
+  //     case 'working': return '#1890ff';
+  //     case 'complete': return '#52c41a';
+  //     case 'error': return '#ff4d4f';
+  //     default: return '#d9d9d9';
+  //   }
+  // };
 
   // 获取状态文本
   const getStatusText = (status: AgentStatus['status']) => {

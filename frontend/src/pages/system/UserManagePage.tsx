@@ -14,7 +14,7 @@ import {
   Card,
   Row,
   Col,
-  Divider,
+  // Divider, // 暂未使用
 } from 'antd';
 import {
   PlusOutlined,
@@ -26,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import { SystemAPI, User, UserCreateRequest, UserUpdateRequest, Role, Department } from '@/api/system';
 
-const { Search } = Input;
+// const { Search } = Input; // 暂未使用
 const { Option } = Select;
 
 const UserManagePage: React.FC = () => {
@@ -229,8 +229,8 @@ const UserManagePage: React.FC = () => {
 
       setModalVisible(false);
       loadUsers();
-    } catch (error) {
-      if (error.errorFields) {
+    } catch (error: any) {
+      if (error?.errorFields) {
         // 表单验证错误
         return;
       }

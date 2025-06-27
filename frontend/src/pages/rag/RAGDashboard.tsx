@@ -6,13 +6,13 @@ import {
   Col,
   Statistic,
   Progress,
-  Table,
+  // Table, // 暂未使用
   Tag,
   Space,
   Button,
   Typography,
-  Alert,
-  Tabs,
+  // Alert, // 暂未使用
+  // Tabs, // 暂未使用
   List,
   Avatar,
 } from 'antd';
@@ -29,7 +29,7 @@ import {
 import PageLayout from '@/components/PageLayout';
 
 const { Title, Text, Paragraph } = Typography;
-const { TabPane } = Tabs;
+// const { TabPane } = Tabs; // 暂未使用
 
 interface RAGStats {
   total_collections: number;
@@ -52,7 +52,7 @@ interface RecentActivity {
 const RAGDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<RAGStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
