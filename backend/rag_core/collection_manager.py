@@ -81,10 +81,8 @@ class CollectionManager:
         Returns:
             MilvusVectorDB: 向量数据库实例
         """
-        if not self._initialized:
-            logger.warning("Collection管理器未初始化")
-            return None
-
+        # 在按需初始化模式下，不需要检查_initialized状态
+        # 直接返回已初始化的collection
         return self.vector_dbs.get(collection_name)
 
     def get_business_collections(self, business_type: str) -> List[MilvusVectorDB]:
@@ -121,8 +119,13 @@ class CollectionManager:
             collection_name: collection名称
             overwrite: 是否覆盖现有collection
         """
-        if not self._initialized:
-            await self.initialize()
+        # 不要触发全量初始化，只确保指定的Collection存在
+        if collection_name not in self.vector_dbs:
+            # 如果Collection不存在，说明还没有初始化，这是一个错误
+            logger.error(
+                f"❌ Collection未初始化: {collection_name}，请先调用_ensure_collection_initialized"
+            )
+            return
 
         vector_db = self.get_collection(collection_name)
         if vector_db:
@@ -138,9 +141,7 @@ class CollectionManager:
         Args:
             collection_name: collection名称
         """
-        if not self._initialized:
-            await self.initialize()
-
+        # 不要触发全量初始化，只操作已存在的Collection
         vector_db = self.get_collection(collection_name)
         if vector_db:
             vector_db.delete_collection()
@@ -213,7 +214,7 @@ async def create_collection_manager(
         CollectionManager: 初始化后的Collection管理器
     """
     manager = CollectionManager(config)
-    await manager.initialize()
+    # await manager.initialize()
     return manager
 
 
@@ -223,6 +224,10 @@ if __name__ == "__main__":
 
     async def test_collection_manager():
         manager = await create_collection_manager()
+        # 实例化一个collection
+        await manager._initialize_collection(
+            "general", manager.config.milvus.collections["general"]
+        )
 
         # 列出所有collections
         collections = manager.list_collections()

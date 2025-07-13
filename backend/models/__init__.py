@@ -9,6 +9,7 @@ from .department import Department
 from .rag_file import RAGFileRecord
 from .role import Role, RoleApi
 from .testcase import TestCaseConversation, TestCaseFile, TestCaseMessage
+from .ui_task import UITask
 from .user import User, UserSession
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "Department",
     "Api",
     "RAGFileRecord",
+    "UITask",
 ]

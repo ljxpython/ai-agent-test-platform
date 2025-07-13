@@ -10,11 +10,13 @@ from .collections import ui_collections_router
 # 导入各个UI测试子模块
 from .image_analysis import ui_image_analysis_router
 from .rag_query import ui_rag_query_router
+from .upload import ui_upload_router
 
 # 创建UI测试主路由
 ui_test_router = APIRouter()
 
 # 注册子路由
+ui_test_router.include_router(ui_upload_router, tags=["UI图片上传"])
 ui_test_router.include_router(
     ui_image_analysis_router, prefix="/image-analysis", tags=["UI图片分析"]
 )

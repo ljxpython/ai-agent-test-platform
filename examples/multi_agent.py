@@ -1,3 +1,14 @@
+"""
+
+多智能体 RoundRobinGroupChat 使用范例:
+    RoundRobinGroupChat 可以简单的理解为A -> B -> C 智能体之间顺序执行消息
+
+多智能体协作参考: https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/teams.html
+
+
+
+"""
+
 import asyncio
 import re
 

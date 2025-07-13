@@ -46,5 +46,12 @@
         </library>
       </libraries>
     </data-source>
+    <data-source source="LOCAL" name="aitestlabonline" uuid="f2d3af0f-dada-42ad-8dcc-4d263f8e9767">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://101.126.90.71:3306</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

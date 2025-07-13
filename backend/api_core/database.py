@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from loguru import logger
@@ -8,10 +9,45 @@ from tortoise.contrib.fastapi import register_tortoise
 from backend.conf.config import settings
 from backend.conf.constants import backend_path
 
-# 数据库配置 - 使用constants.py中定义的路径
-data_dir = backend_path / "data"
-db_file = data_dir / "aitestlab.db"
-DATABASE_URL = f"sqlite://{db_file}"
+
+def get_database_url() -> str:
+    """根据配置动态生成数据库URL"""
+    db_config = getattr(settings, "database", {})
+    db_type = db_config.get("type", "sqlite")
+
+    if db_type == "sqlite":
+        sqlite_config = db_config.get("sqlite", {})
+        db_path = sqlite_config.get("path", "./data/aitestlab.db")
+
+        # 确保路径是绝对路径
+        if not Path(db_path).is_absolute():
+            db_path = backend_path / db_path.lstrip("./")
+
+        # 确保数据目录存在
+        data_dir = Path(db_path).parent
+        if not data_dir.exists():
+            data_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"创建数据目录: {data_dir}")
+
+        return f"sqlite://{db_path}"
+
+    elif db_type == "mysql":
+        mysql_config = db_config.get("mysql", {})
+        host = mysql_config.get("host", "localhost")
+        port = mysql_config.get("port", 3306)
+        user = mysql_config.get("user", "root")
+        password = mysql_config.get("password", "")
+        database = mysql_config.get("database", "aitestlab")
+        charset = mysql_config.get("charset", "utf8mb4")
+
+        return f"mysql://{user}:{password}@{host}:{port}/{database}?charset={charset}"
+
+    else:
+        raise ValueError(f"不支持的数据库类型: {db_type}")
+
+
+# 动态获取数据库URL
+DATABASE_URL = get_database_url()
 
 # Tortoise ORM 配置
 TORTOISE_ORM = {
@@ -29,6 +65,7 @@ TORTOISE_ORM = {
                 "backend.models.rag",
                 "backend.models.rag_file",
                 "backend.models.project",
+                "backend.models.ui_task",
                 "aerich.models",
             ],
             "default_connection": "default",
@@ -40,11 +77,12 @@ TORTOISE_ORM = {
 async def init_db():
     """初始化数据库"""
     try:
-        # 确保数据目录存在
-        logger.info(f"数据目录: {data_dir}")
-        if not data_dir.exists():
-            data_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"创建数据目录: {data_dir}")
+        # 获取数据库配置信息
+        db_config = getattr(settings, "database", {})
+        db_type = db_config.get("type", "sqlite")
+
+        logger.info(f"🗄️ 初始化数据库 - 类型: {db_type}")
+        logger.info(f"🔗 数据库连接: {DATABASE_URL}")
 
         # 初始化 Tortoise ORM
         await Tortoise.init(config=TORTOISE_ORM)
@@ -63,7 +101,7 @@ async def init_db():
         # 初始化默认RAG Collections
         await init_default_rag_collections()
 
-        logger.success("🚀 数据库初始化完成")
+        logger.success(f"🚀 数据库初始化完成 - {db_type.upper()}")
 
     except Exception as e:
         logger.error(f"数据库初始化失败: {e}")

@@ -1,16 +1,18 @@
 {
   "name": "uitest",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
+  },
   "devDependencies": {
-    "@midscene/web": "^0.19.1",
-    "@playwright/test": "^1.53.0",
-    "@types/node": "^24.0.3"
+    "@midscene/web": "latest",
+    "@playwright/test": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
   }
 }

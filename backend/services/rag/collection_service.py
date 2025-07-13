@@ -16,8 +16,14 @@ class RAGCollectionService:
     """RAG Collection管理服务"""
 
     async def initialize_default_collections(self):
-        """初始化默认的Collections"""
-        logger.info("🚀 初始化默认RAG Collections...")
+        """初始化默认的Collections（仅在数据库中创建记录，不连接向量数据库）"""
+        logger.info("🚀 初始化默认RAG Collections（仅数据库记录）...")
+
+        # 获取当前配置的维度
+        from backend.conf.rag_config import get_rag_config
+
+        rag_config = get_rag_config()
+        default_dimension = rag_config.milvus.dimension
 
         default_collections = [
             {
@@ -25,7 +31,7 @@ class RAGCollectionService:
                 "display_name": "通用知识库",
                 "description": "通用知识和常见问题解答",
                 "business_type": "general",
-                "dimension": 768,
+                "dimension": default_dimension,
                 "chunk_size": 1000,
                 "chunk_overlap": 200,
                 "top_k": 5,
@@ -36,7 +42,7 @@ class RAGCollectionService:
                 "display_name": "测试用例知识库",
                 "description": "测试用例生成和测试方法相关知识",
                 "business_type": "testcase",
-                "dimension": 768,
+                "dimension": default_dimension,
                 "chunk_size": 1000,
                 "chunk_overlap": 200,
                 "top_k": 5,
@@ -47,7 +53,7 @@ class RAGCollectionService:
                 "display_name": "UI测试知识库",
                 "description": "UI自动化测试和脚本生成相关知识",
                 "business_type": "ui_testing",
-                "dimension": 768,
+                "dimension": default_dimension,
                 "chunk_size": 1000,
                 "chunk_overlap": 200,
                 "top_k": 5,
@@ -58,7 +64,7 @@ class RAGCollectionService:
                 "display_name": "AI对话知识库",
                 "description": "AI对话和智能助手相关知识",
                 "business_type": "ai_chat",
-                "dimension": 768,
+                "dimension": default_dimension,
                 "chunk_size": 1000,
                 "chunk_overlap": 200,
                 "top_k": 5,
@@ -75,18 +81,99 @@ class RAGCollectionService:
                     logger.info(f"Collection已存在: {collection_data['name']}")
                     continue
 
-                # 创建新的Collection
-                collection = await RAGCollection.create(**collection_data)
+                # 仅在数据库中创建记录，不连接向量数据库
+                # 过滤掉RAGCollection模型不支持的字段
+                valid_fields = {
+                    "name",
+                    "display_name",
+                    "description",
+                    "business_type",
+                    "dimension",
+                    "chunk_size",
+                    "chunk_overlap",
+                    "top_k",
+                    "similarity_threshold",
+                    "is_active",
+                    "metadata",
+                }
+
+                filtered_data = {
+                    k: v for k, v in collection_data.items() if k in valid_fields
+                }
+                collection = await RAGCollection.create(**filtered_data)
                 logger.success(
-                    f"✅ 创建Collection: {collection.name} - {collection.display_name}"
+                    f"✅ 创建Collection记录: {collection.name} - {collection.display_name}"
                 )
                 created_count += 1
 
             except Exception as e:
                 logger.error(f"❌ 创建Collection失败 {collection_data['name']}: {e}")
 
-        logger.success(f"🎉 默认Collections初始化完成，新创建 {created_count} 个")
+        logger.success(
+            f"🎉 默认Collections初始化完成，新创建 {created_count} 个数据库记录"
+        )
+        logger.info("💡 向量数据库Collection将在首次使用时自动创建")
         return created_count
+
+    async def ensure_collection_connected(self, collection_name: str) -> Dict:
+        """确保Collection在向量数据库中存在，如果不存在则创建连接"""
+        try:
+            logger.info(f"🔍 检查Collection向量数据库连接: {collection_name}")
+
+            # 1. 检查数据库记录是否存在
+            collection = await RAGCollection.get_or_none(name=collection_name)
+            if not collection:
+                return {
+                    "success": False,
+                    "message": f"数据库中不存在Collection '{collection_name}'",
+                }
+
+            # 2. 检查向量数据库中是否存在
+            from backend.rag_core.collection_manager import create_collection_manager
+
+            rag_config = get_rag_config()
+            manager = await create_collection_manager(rag_config)
+
+            # 检查collection是否存在
+            try:
+                collection_exists = await manager.collection_exists(collection_name)
+                if collection_exists:
+                    logger.info(f"✅ Collection已在向量数据库中存在: {collection_name}")
+                    return {
+                        "success": True,
+                        "message": "Collection已连接",
+                        "action": "already_exists",
+                    }
+            except Exception as check_error:
+                logger.warning(f"⚠️ 检查Collection存在性失败，尝试创建: {check_error}")
+
+            # 3. 如果不存在，创建向量数据库连接
+            try:
+                await self._create_vector_collection(collection)
+                logger.success(
+                    f"✅ Collection向量数据库连接创建成功: {collection_name}"
+                )
+
+                return {
+                    "success": True,
+                    "message": "Collection向量数据库连接创建成功",
+                    "action": "created",
+                }
+            except Exception as create_error:
+                logger.error(f"❌ 创建Collection向量数据库连接失败: {create_error}")
+                return {
+                    "success": False,
+                    "message": f"创建向量数据库连接失败: {str(create_error)}",
+                }
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            logger.error(f"❌ 确保Collection连接失败 {collection_name}: {e}")
+            return {
+                "success": False,
+                "message": f"连接检查失败: {str(e)}",
+            }
 
     async def get_all_collections(self) -> List[Dict]:
         """获取所有Collections"""
@@ -180,7 +267,25 @@ class RAGCollectionService:
                 }
 
             # 1. 先在数据库中创建记录
-            collection = await RAGCollection.create(**collection_data)
+            # 过滤掉RAGCollection模型不支持的字段
+            valid_fields = {
+                "name",
+                "display_name",
+                "description",
+                "business_type",
+                "dimension",
+                "chunk_size",
+                "chunk_overlap",
+                "top_k",
+                "similarity_threshold",
+                "is_active",
+                "metadata",
+            }
+
+            filtered_data = {
+                k: v for k, v in collection_data.items() if k in valid_fields
+            }
+            collection = await RAGCollection.create(**filtered_data)
             logger.success(f"✅ 数据库Collection记录创建成功: {collection.name}")
 
             # 2. 在向量数据库中创建实际的collection

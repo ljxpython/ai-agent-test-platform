@@ -1,0 +1,15 @@
+midsceneVersion: 0.21.0
+cacheId: bbs.spec.ts(在论坛上发帖)
+caches:
+  - type: locate
+    prompt: 密码输入框
+    xpaths:
+      - /html/body/table[1]/tbody[1]/tr[1]/td[2]/form[1]/p[4]/input[1]
+  - type: locate
+    prompt: 提交
+    xpaths:
+      - /html/body/table[1]/tbody[1]/tr[1]/td[2]/form[1]/p[9]/input[1]
+  - type: locate
+    prompt: 用户名输入框
+    xpaths:
+      - /html/body/table[1]/tbody[1]/tr[1]/td[2]/form[1]/p[2]/input[1]

@@ -20,13 +20,13 @@ class RAGCollection(Model):
         max_length=50, default="general", description="业务类型"
     )
 
-    # 项目关联
-    project = fields.ForeignKeyField(
-        "models.Project",
-        related_name="rag_collections",
-        null=True,
-        description="所属项目",
-    )
+    # 项目关联 - 暂时注释掉，避免project_id字段问题
+    # project = fields.ForeignKeyField(
+    #     "models.Project",
+    #     related_name="rag_collections",
+    #     null=True,
+    #     description="所属项目",
+    # )
 
     # 配置信息
     dimension = fields.IntField(default=768, description="向量维度")
@@ -50,7 +50,7 @@ class RAGCollection(Model):
     class Meta:
         table = "rag_collections"
         table_description = "RAG知识库Collections"
-        unique_together = (("name", "project"),)
+        unique_together = (("name",),)
 
     def __str__(self):
         return f"RAGCollection({self.name})"

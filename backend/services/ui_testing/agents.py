@@ -31,9 +31,14 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 # 使用AI核心框架
+# AI核心框架
 from backend.ai_core.factory import create_assistant_agent
 from backend.ai_core.memory import save_to_memory
 from backend.ai_core.message_queue import put_message_to_queue
+from backend.ai_core.multimodal import create_multimodal_message
+
+# 数据库模型
+from backend.models.ui_task import TaskStatus, TaskType, UITask
 
 # 使用RAG核心框架
 from backend.rag_core.rag_system import RAGSystem
@@ -42,10 +47,20 @@ from backend.services.rag.rag_service import RAGService, get_rag_service
 # ==================== 消息模型定义 ====================
 
 
+class UIImageUploadMessage(BaseModel):
+    """UI图片上传消息"""
+
+    conversation_id: str = Field(..., description="对话ID")
+    project_name: str = Field(..., description="项目名称")
+    image_files: List[Dict[str, Any]] = Field(..., description="图片文件列表")
+    user_requirement: str = Field(default="", description="用户需求描述")
+
+
 class UIAnalysisMessage(BaseModel):
     """UI分析消息"""
 
     conversation_id: str = Field(..., description="对话ID")
+    task_id: str = Field(default="", description="任务ID（可选）")
     image_path: str = Field(..., description="图片路径")
     user_requirement: str = Field(..., description="用户需求描述")
 
@@ -54,6 +69,7 @@ class InteractionAnalysisMessage(BaseModel):
     """交互分析消息"""
 
     conversation_id: str = Field(..., description="对话ID")
+    task_id: str = Field(..., description="任务ID")
     ui_elements: str = Field(..., description="UI元素分析结果")
     user_requirement: str = Field(..., description="用户需求描述")
 
@@ -62,6 +78,7 @@ class MidsceneGenerationMessage(BaseModel):
     """Midscene生成消息"""
 
     conversation_id: str = Field(..., description="对话ID")
+    task_id: str = Field(..., description="任务ID")
     ui_analysis: str = Field(..., description="UI分析结果")
     interaction_analysis: str = Field(..., description="交互分析结果")
     user_requirement: str = Field(..., description="用户需求描述")
@@ -71,41 +88,19 @@ class ScriptGenerationMessage(BaseModel):
     """脚本生成消息"""
 
     conversation_id: str = Field(..., description="对话ID")
+    task_id: str = Field(..., description="任务ID")
     midscene_json: str = Field(..., description="Midscene JSON结果")
     user_requirement: str = Field(..., description="用户需求描述")
 
 
 # ==================== 图片处理工具 ====================
+# 图片处理功能已移至 backend.ai_core.multimodal 模块
+# 使用 from backend.ai_core.multimodal import create_multimodal_message, load_image_from_file
 
 
-def load_image_from_file(file_path: Union[str, Path]) -> Image:
-    """从本地文件加载图片"""
-    try:
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"图片文件不存在: {file_path}")
-
-        pil_image = PIL.Image.open(file_path)
-        return Image(pil_image)
-    except Exception as e:
-        raise ValueError(f"无法从文件加载图片: {e}")
-
-
-def create_multimodal_message(
-    text: str, images: List[Union[str, Path, Image]], source: str = "user"
-) -> MultiModalMessage:
-    """创建多模态消息"""
-    content = [text]
-
-    for img in images:
-        if isinstance(img, Image):
-            content.append(img)
-        elif isinstance(img, str):
-            content.append(load_image_from_file(img))
-        else:
-            content.append(load_image_from_file(img))
-
-    return MultiModalMessage(content=content, source=source)
+# ==================== 图片上传处理已移至ui_service.py ====================
+# UIImageUploadAgent的功能已移至backend/services/ui_testing/ui_service.py
+# 作为业务前置处理，不再使用智能体模式
 
 
 # ==================== UI分析智能体 ====================
@@ -190,11 +185,24 @@ class UIAnalysisAgent(RoutedAgent):
         """处理UI分析请求"""
         start_time = time.time()
         conversation_id = message.conversation_id
-        logger.info(f"🔍 [UI分析智能体] 开始分析 | 对话ID: {conversation_id}")
+        task_id = message.task_id
+        logger.info(
+            f"🔍 [UI分析智能体] 开始分析 | 对话ID: {conversation_id} | 任务ID: {task_id}"
+        )
         logger.info(f"📷 分析图片: {message.image_path}")
         logger.info(f"📝 用户需求: {message.user_requirement[:100]}...")
 
         try:
+            # 获取任务并更新状态（如果有task_id）
+            task = None
+            if task_id:
+                task = await UITask.get_by_task_id(task_id)
+                if task:
+                    await task.update_status(
+                        TaskStatus.ANALYZING,
+                        progress=60,
+                        current_step="正在进行UI元素分析",
+                    )
             # 验证图片文件
             image_path = Path(message.image_path)
             if not image_path.exists():
@@ -202,19 +210,13 @@ class UIAnalysisAgent(RoutedAgent):
 
             logger.info(f"✅ 图片文件验证通过: {image_path.name}")
 
-            # 发送开始分析消息
-            start_message = {
-                "type": "agent_start",
-                "source": "UI分析智能体",
-                "content": "正在分析界面截图中的UI元素...",
-                "step": "开始分析UI元素",
-                "conversation_id": conversation_id,
-                "timestamp": datetime.now().isoformat(),
-            }
-            await put_message_to_queue(
-                conversation_id,
-                json.dumps(start_message, ensure_ascii=False),
-            )
+            # 更新任务状态：开始分析
+            if task:
+                await task.update_status(
+                    TaskStatus.ANALYZING,
+                    progress=70,
+                    current_step="正在分析界面截图中的UI元素",
+                )
 
             # 构建分析问题
             question = f"""请分析这张界面截图中的UI元素。用户需求：{message.user_requirement}
@@ -237,39 +239,26 @@ class UIAnalysisAgent(RoutedAgent):
                 auto_context=True,
             )
 
-            # 流式分析处理
-            logger.info("🚀 开始流式分析处理...")
+            # 直接分析处理（不使用流式输出）
+            logger.info("🚀 开始UI分析处理...")
+
+            # 更新任务进度
+            if task:
+                await task.update_status(
+                    TaskStatus.ANALYZING,
+                    progress=80,
+                    current_step="AI模型正在分析UI元素",
+                )
+
+            # 使用run方法而不是run_stream
+            result = await ui_agent.run(task=multimodal_message)
+
+            # 获取分析结果
             ui_analysis_result = ""
-            chunk_count = 0
+            if result.messages:
+                ui_analysis_result = result.messages[-1].content
 
-            async for item in ui_agent.run_stream(task=multimodal_message):
-                if isinstance(item, ModelClientStreamingChunkEvent):
-                    chunk_content = item.content
-                    ui_analysis_result += chunk_content
-                    chunk_count += 1
-
-                    # 构建队列消息
-                    queue_message = {
-                        "type": "streaming_chunk",
-                        "source": "UI分析智能体",
-                        "content": chunk_content,
-                        "message_type": "streaming",
-                        "conversation_id": conversation_id,
-                        "timestamp": datetime.now().isoformat(),
-                    }
-                    await put_message_to_queue(
-                        conversation_id,
-                        json.dumps(queue_message, ensure_ascii=False),
-                    )
-
-                elif isinstance(item, TextMessage):
-                    ui_analysis_result = item.content
-
-                elif isinstance(item, TaskResult):
-                    if item.messages:
-                        ui_analysis_result = item.messages[-1].content
-
-            logger.success(f"✅ UI分析完成 - 总块数: {chunk_count}")
+            logger.success(f"✅ UI分析完成")
 
             # 保存到内存
             await save_to_memory(
@@ -282,6 +271,14 @@ class UIAnalysisAgent(RoutedAgent):
                 },
             )
 
+            # 更新任务进度：保存到RAG
+            if task:
+                await task.update_status(
+                    TaskStatus.ANALYZING,
+                    progress=90,
+                    current_step="正在保存分析结果到知识库",
+                )
+
             # 将UI分析结果存入RAG知识库
             await self._save_ui_analysis_to_rag(
                 ui_analysis_result,
@@ -290,23 +287,19 @@ class UIAnalysisAgent(RoutedAgent):
                 conversation_id,
             )
 
-            # 发送完成消息
-            complete_message = {
-                "type": "agent_complete",
-                "source": "UI分析智能体",
-                "content": ui_analysis_result,
-                "step": "UI元素分析完成并存入知识库",
-                "conversation_id": conversation_id,
-                "timestamp": datetime.now().isoformat(),
-            }
-            await put_message_to_queue(
-                conversation_id,
-                json.dumps(complete_message, ensure_ascii=False),
-            )
+            # 更新任务状态为完成
+            if task:
+                await task.update_status(
+                    TaskStatus.COMPLETED,
+                    progress=100,
+                    current_step="UI元素分析完成",
+                    result_data={"ui_analysis": ui_analysis_result},
+                )
 
             # 直接发送给Midscene生成智能体，跳过交互分析
             midscene_message = MidsceneGenerationMessage(
                 conversation_id=conversation_id,
+                task_id=task_id,
                 ui_analysis=ui_analysis_result,
                 interaction_analysis="",  # 将通过RAG查询获取
                 user_requirement=message.user_requirement,
@@ -319,36 +312,20 @@ class UIAnalysisAgent(RoutedAgent):
 
             processing_time = time.time() - start_time
             logger.success(
-                f"🎉 UI分析完成 | 对话ID: {conversation_id} | 耗时: {processing_time:.2f}秒"
+                f"🎉 UI分析完成 | 对话ID: {conversation_id} | 任务ID: {task_id} | 耗时: {processing_time:.2f}秒"
             )
-
-            # 发送关闭信号
-            await put_message_to_queue(conversation_id, "CLOSE")
 
         except Exception as e:
             processing_time = time.time() - start_time
             logger.error(
-                f"❌ UI分析失败 | 对话ID: {conversation_id} | 耗时: {processing_time:.2f}秒"
+                f"❌ UI分析失败 | 对话ID: {conversation_id} | 任务ID: {task_id} | 耗时: {processing_time:.2f}秒"
             )
             logger.error(f"🔥 错误详情: {str(e)}")
             logger.error(f"📍 错误堆栈: {traceback.format_exc()}")
 
-            # 发送错误消息
-            error_message = {
-                "type": "agent_error",
-                "source": "UI分析智能体",
-                "content": f"分析失败: {str(e)}",
-                "step": "UI元素分析失败",
-                "conversation_id": conversation_id,
-                "timestamp": datetime.now().isoformat(),
-            }
-            await put_message_to_queue(
-                conversation_id,
-                json.dumps(error_message, ensure_ascii=False),
-            )
-
-            # 发送关闭信号
-            await put_message_to_queue(conversation_id, "CLOSE")
+            # 更新任务状态为失败
+            if task:
+                await task.update_status(TaskStatus.FAILED, error_message=str(e))
 
     async def _save_ui_analysis_to_rag(
         self,

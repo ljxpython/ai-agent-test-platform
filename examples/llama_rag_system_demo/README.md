@@ -1,4 +1,4 @@
-# LlamaIndex RAG系统
+# LlamaIndex RAG系统   代码如下,不过我已经将自己封装的比较好的代码放在了backend/rag_core中,所以这里就不重复了
 
 基于LlamaIndex框架的RAG（检索增强生成）系统，使用Milvus向量数据库和DeepSeek大模型。
 

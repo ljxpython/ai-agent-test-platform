@@ -1,3 +1,11 @@
+"""
+
+Autogen 消息机制 + 运行时的使用案例   运行时广播消息,给所有订阅消息的智能体范例
+
+
+
+"""
+
 import asyncio
 from dataclasses import dataclass
 

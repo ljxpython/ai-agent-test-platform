@@ -26,6 +26,17 @@ help:
 	@echo "  make makemigrations  - 创建新的迁移文件"
 	@echo "  make reset-db        - 重置数据库"
 	@echo ""
+	@echo "🔄 数据库切换:"
+	@echo "  make switch-to-sqlite     - 切换到SQLite数据库"
+	@echo "  make switch-to-mysql      - 切换到MySQL数据库"
+	@echo "  make db-status            - 查看当前数据库配置"
+	@echo "  make test-db              - 测试数据库连接"
+	@echo ""
+	@echo "🛠️ MySQL管理:"
+	@echo "  make setup-mysql          - 设置MySQL数据库"
+	@echo "  make check-mysql          - 检查MySQL连接"
+	@echo "  make migrate-sqlite-to-mysql - 从SQLite迁移到MySQL"
+	@echo ""
 	@echo "🔧 其他:"
 	@echo "  make status          - 查看服务状态"
 	@echo "  make logs            - 查看后端日志"
@@ -445,6 +456,41 @@ reset-db:
 	else \
 		echo "❌ 操作已取消"; \
 	fi
+
+# 数据库切换命令
+switch-to-sqlite:
+	@echo "🔄 切换到SQLite数据库..."
+	@poetry run python scripts/switch_database.py sqlite
+	@echo "💡 请重启应用以使配置生效"
+
+switch-to-mysql:
+	@echo "🔄 切换到MySQL数据库..."
+	@poetry run python scripts/switch_database.py mysql
+	@echo "💡 请重启应用以使配置生效"
+
+db-status:
+	@echo "📊 查看当前数据库配置..."
+	@poetry run python scripts/switch_database.py status
+
+test-db:
+	@echo "🔍 测试数据库连接..."
+	@poetry run python scripts/switch_database.py test
+
+# 数据库迁移命令
+migrate-sqlite-to-mysql:
+	@echo "🚀 从SQLite迁移到MySQL..."
+	@poetry run python scripts/migrate_database.py sqlite_to_mysql
+	@echo "✅ 数据库迁移完成"
+
+# MySQL设置命令
+setup-mysql:
+	@echo "🛠️ 设置MySQL数据库..."
+	@poetry run python scripts/setup_mysql.py setup
+	@echo "✅ MySQL数据库设置完成"
+
+check-mysql:
+	@echo "🔍 检查MySQL连接..."
+	@poetry run python scripts/setup_mysql.py check
 
 # 测试命令
 test:

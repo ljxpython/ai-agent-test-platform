@@ -41,6 +41,7 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from backend.ai_core.llm import get_default_client as get_model_client
+from backend.ai_core.multimodal import create_multimodal_message
 from backend.conf.config import settings
 from backend.models.midscene import (
     MidsceneAgentLog,
@@ -179,34 +180,9 @@ async def message_generator(user_id: str):
 # ==================== 图片处理工具 ====================
 
 
-def load_image_from_file(file_path: Union[str, Path]) -> Image:
-    """从本地文件加载图片"""
-    try:
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"图片文件不存在: {file_path}")
-
-        pil_image = PIL.Image.open(file_path)
-        return Image(pil_image)
-    except Exception as e:
-        raise ValueError(f"无法从文件加载图片: {e}")
-
-
-def create_multimodal_message(
-    text: str, images: List[Union[str, Path, Image]], source: str = "user"
-) -> MultiModalMessage:
-    """创建多模态消息"""
-    content = [text]
-
-    for img in images:
-        if isinstance(img, Image):
-            content.append(img)
-        elif isinstance(img, str):
-            content.append(load_image_from_file(img))
-        else:
-            content.append(load_image_from_file(img))
-
-    return MultiModalMessage(content=content, source=source)
+# ==================== 多模态消息处理 ====================
+# 多模态消息处理功能已移至 backend.ai_core.multimodal 模块
+# 使用 from backend.ai_core.multimodal import create_multimodal_message, load_image_from_file
 
 
 # ==================== UI分析智能体 ====================

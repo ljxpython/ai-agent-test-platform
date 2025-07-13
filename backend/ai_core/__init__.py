@@ -37,6 +37,16 @@ from .llm import (
 # 内存管理
 from .memory import ConversationMemory, MemoryManager, get_memory_manager
 
+# 多模态消息处理
+from .multimodal import (
+    MultiModalProcessor,
+    create_multimodal_message,
+    create_text_message,
+    load_image_from_base64,
+    load_image_from_bytes,
+    load_image_from_file,
+)
+
 # 运行时管理
 from .runtime import BaseRuntime, MessageQueue, RuntimeState
 
@@ -65,4 +75,11 @@ __all__ = [
     "ConversationMemory",
     "MemoryManager",
     "get_memory_manager",
+    # 多模态消息处理
+    "MultiModalProcessor",
+    "create_multimodal_message",
+    "create_text_message",
+    "load_image_from_file",
+    "load_image_from_bytes",
+    "load_image_from_base64",
 ]

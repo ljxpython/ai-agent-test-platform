@@ -1,3 +1,13 @@
+"""
+
+这是以前做的一个需求AI分析助手的案例,里面的知识点 websocket + Autogen + 运行时  + RoundRobinGroupChat 多智能体协作  + 用户反馈
+
+该代码只做功能保存范例
+
+
+
+"""
+
 import json
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Optional

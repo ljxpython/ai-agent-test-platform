@@ -1,3 +1,11 @@
+"""
+
+RoundRobinGroupChat 多智能体协作的又一范例
+
+多智能体协作参考: https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/teams.html
+
+"""
+
 import asyncio
 
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent

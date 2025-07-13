@@ -1,3 +1,9 @@
+"""
+
+Autogen  运行时 广播  消息机制的又一范例
+
+"""
+
 import asyncio
 from dataclasses import dataclass
 from typing import Any, Optional

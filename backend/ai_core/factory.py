@@ -154,17 +154,37 @@ class AgentFactory:
                 "model_client_stream": True,
             }
 
-            if auto_memory and conversation_id:
-                logger.info(f"⚠ [智能体工厂] 同时提供了memory和conversation_id")
-                user_memory = await get_agent_memory(conversation_id)
-                # logger.info(f"   🧠 自动获取内存成功:{user_memory.content}")
+            # 处理内存参数
+            if memory is not None:
+                logger.debug(f"   🧠 使用提供的内存")
+                agent_params["memory"] = memory
+            elif auto_memory and conversation_id:
+                logger.debug(f"   🧠 自动获取对话内存 | 对话ID: {conversation_id}")
+                try:
+                    user_memory = await get_agent_memory(conversation_id)
+                    if user_memory is not None:
+                        agent_params["memory"] = [user_memory]
+                        logger.debug(f"   ✅ 自动获取内存成功")
+                    else:
+                        logger.warning(f"   ⚠️ 获取到的内存为None，跳过内存设置")
+                        # 不设置memory，让AssistantAgent使用默认值
+                except Exception as e:
+                    logger.warning(f"   ⚠️ 自动获取内存失败: {e}")
+                    # 不设置memory，让AssistantAgent使用默认值
 
-            if auto_context and conversation_id:
-                logger.debug(f"⚠ [智能体工厂] 同时提供了model_context和conversation_id")
-                buffered_context = create_buffered_context(buffer_size=4000)
-
-            agent_params["memory"] = [user_memory]
-            agent_params["model_context"] = buffered_context
+            # 处理模型上下文参数
+            if model_context is not None:
+                logger.debug(f"   🔄 使用提供的模型上下文")
+                agent_params["model_context"] = model_context
+            elif auto_context:
+                logger.debug(f"   🔄 自动创建模型上下文")
+                try:
+                    buffered_context = create_buffered_context(buffer_size=4000)
+                    agent_params["model_context"] = buffered_context
+                    logger.debug(f"   ✅ 自动创建上下文成功")
+                except Exception as e:
+                    logger.warning(f"   ⚠️ 自动创建上下文失败: {e}")
+                    # 不设置model_context，让AssistantAgent使用默认值
 
             # 合并其他kwargs参数
             agent_params.update(kwargs)

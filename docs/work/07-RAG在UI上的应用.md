@@ -1,4 +1,42 @@
-UI的分析加入RAG知识库
+## 本期内容
+
+利用周末我想继续优化UI测试相关的功能开发,主要想完成以下功能的开发
+
+
+
+功能:
+
+- 可以实现对不同项目的ui元素及文本管理,RAG召回,测试用例生成,测试脚本执行及维护
+
+- 图片批量解析且展示
+- 支持对上传的图片生成测试用例: backend/app/api/v1/endpoints/web/image_description_generation.py
+- 支持将图片+RAG知识库结合生成测试脚本
+- playwright执行且展示
+- 前端富文本markdown展示测试用例且可以展示编辑
+
+
+
+- 图片元素 ,文档可选, 用户需求(可选) ->RAG -> 生成测试用例 -> 用户编辑后 -> 生成脚本-> 执行 -> 展示结果
+- 用例支持重新生成
+
+
+
+- 生成测试用例一栏,支持选中已经解析的图片->之后图片生成测试用例 -> 用户编辑 -> 生成测试脚本
+- 测试脚本可视化-> 可编辑,可执行
+
+
+
+
+
+- 用户上传图片,不使用sse流式输出
+- 生成测试用例,使用sse流式输出,支持选择多个页面元素生成测试用例及RAG文本知识库
+-
+
+
+
+
+
+## UI的分析加入RAG知识库
 
 
 
@@ -87,6 +125,18 @@ v1目录下建立一个ui-test的目录,UI测试相关图标放到该内容下
 
 
 
+## 数据库迁移支持动态切换
+
+```
+数据库的配置参数在backend/conf/settings.yaml中,backend/conf/config.py中使用python的Dynaconf进行管理,我现在想将数据库由sqlite迁移为MySQL,数据库的管理使用Tortoise和aerich,数据库的初始化文件在backend/api_core/database.py中,未来可以支持动态切换数据库,可以支持sqlite,MySQL等,使用backend/conf/settings.yaml可以进行动态切换和迁移,完成上述功能
+```
+
+
+
+
+
+
+
 
 
 ## RAG系统优化
@@ -129,7 +179,7 @@ v1目录下建立一个ui-test的目录,UI测试相关图标放到该内容下
 
 {project}_document
 
-
+和AI对话如下:
 
 1. 接口功能实现: sse流式输出 + 实时更新更新状态+返回解析的结果+ 嵌入向量数据库的的结果
 
@@ -225,10 +275,6 @@ return StreamingResponse(
 
 
 
-
-
-
-
 7. 要有详细的log输出
 
 8. 尽量复用各个core中写好的功能,避免重复造轮子
@@ -236,6 +282,90 @@ return StreamingResponse(
 
 
 上传参数 project 文件
+
+
+
+上述内容完成后,AI处理
+
+```
+✅ 核心功能实现
+SSE流式输出: 实时返回处理状态和智能体分析结果
+实时状态更新: 每个处理步骤都有详细的状态反馈
+返回解析结果: 智能体分析结果通过消息队列实时输出
+嵌入向量数据库: 分析结果自动存储到RAG知识库
+✅ 接口参数支持
+project: 项目名称（必填）
+图片文件: 支持多种图片格式
+conversation_id: 对话ID（可选，自动生成）
+✅ 完整上传逻辑
+项目检查: 自动创建不存在的项目
+Collection检查: 自动创建 {project}_ui_element 和 {project}_document
+图片格式验证: 严格验证支持的图片格式
+MD5重复检测: 基于MD5+Collection的精确重复检测
+智能体解析: 集成完整的UIAnalysisAgent四智能体协作分析
+RAG存储: 分析结果自动存储到对应的RAG知识库
+📁 创建的文件
+backend/api/v1/ui_test/upload.py - API接口层
+backend/services/ui_testing/upload_service.py - 服务层
+backend/schemas/ui_test.py - Schema定义
+test_ui_upload_api.py - 完整API测试脚本
+demo_ui_upload.py - 功能演示脚本
+UI_IMAGE_UPLOAD_IMPLEMENTATION.md - 详细实现文档
+IMPLEMENTATION_SUMMARY.md - 总结文档
+```
+
+
+
+
+
+接下来优化
+
+1. 支持多个图片同时上传
+2. 也支持后台运行
+
+继续和AI进行对话
+
+```
+1. 请按照AI智能体系统的开发规范来进行开发,相关资料阅读backend/ai_core文件夹,具体修改,services层分agents,runtime和业务service分别为backend/services/ui_testing/agents.py backend/services/ui_testing/ui_runtime.py backend/services/ui_testing/ui_service.py 在如上三个文件内进行开发,将backend/services/ui_testing/upload_service.py代码移植到对应的代码中
+2. 上传文件支持多个图片同时上传,去除上传图片中格式格式不符合(格式检查),已经上传的图片(md5检查)
+3. 后台任务:支持后台查询每一个图片的解析进程,使用数据库来维护,每个图片处理的都是一个子任务,后端把实时的结果不断更新到该数据库,用户这样就可以在前端调用接口来查询后台解析的进展了,设计适合的数据库
+```
+
+
+
+```
+在frontend/src/pages中创建一个ui-test的目录,设计你认为适合的美观大气的前端,完成图片上传解析,任务查询这两个需求
+```
+
+
+
+```
+1. ui-test内存放ui测试相关的功能模块,去除之前的midscene智能机,ui测试脚本生成,UI界面分析,ui测试智能助手页面
+2. 刚才生成的文件frontend/src/pages/ui-test/components frontend/src/pages/ui-test/types frontend/src/pages/ui-test/utils 都整合到frontend/src目录下,将刚才的页面放到一级目录UI测试目录下展示
+```
+
+
+
+```
+1. backend/api/v1/ui_test/upload.py中接口进行修改,ui_upload_router.post("/upload/images/streaming")修改接口名,上传图片的功能不使用流式输出,而是直接将状态存储到数据库中,将相关的代码中,使用队列消息的地方去掉
+2. backend/services/ui_testing/agents.py中UIImageUploadAgent做的事情,我认为不属于智能体做的事情,应该放到ui_service.py,当做业务前置处理
+```
+
+
+
+```
+1.不需要消息队列的方式吧内容流式输出,需要吧每个图片的处理流程记录到数据库中,有相应的接口查询所有任务的状态可以放在前端展示,比如 backend/services/ui_testing/agents.py中handle_ui_analysi 中put_message_to_queue 就应该替换成存储到数据库中
+2. backend/api/v1/ui_test/upload.py查看是否有查询所有图片处理状态的接口,如果没有则添加,支持根据项目和图片和任务id查询
+3. python中所有方法和类的导入不要在函数内部导入,直接放在代码的开头导入
+```
+
+
+
+```
+对图片的分析需要使用多模态,代码参考官网:https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/messages.html 该功能比较常用,看下可否将该功能封装的更加通用一些放入backend/ai_core/llm.py或者backend/ai_core/factory.py中,让业务使用的更加方便
+业务层只需要导入就可以使用,不需要上层再次封装
+增加健壮性和容错机制,且每一步都有日志记录,之后检查可能受到影响的业务代码,将其修正
+```
 
 
 

@@ -250,6 +250,7 @@ def create_document_loader(
 
 
 if __name__ == "__main__":
+    logger.info("*******************🔄 文档加载器测试 🔄*******************")
     # 测试代码
     from backend.conf.rag_config import get_rag_config
 

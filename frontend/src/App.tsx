@@ -5,11 +5,15 @@ import HomePage from '@/pages/HomePage';
 import ChatPage from '@/pages/ChatPage';
 
 import TestCasePage from '@/pages/TestCasePage';
-import MidscenePage from '@/pages/MidscenePage';
-import UITestScriptPage from '@/pages/UITestScriptPage';
-import UIImageUploadPage from '@/pages/UIImageUploadPage';
-import UITestingRAGPage from '@/pages/UITestingRAGPage';
 import ScrollTestPage from '@/pages/ScrollTestPage';
+
+// UI测试页面
+import {
+  OverviewPage,
+  ImageUploadPage,
+  TaskManagePage,
+  ResultViewPage,
+} from '@/pages/ui-test';
 import LoginPage from '@/pages/LoginPage';
 import UserProfilePage from '@/pages/UserProfilePage';
 import UserManagePage from '@/pages/system/UserManagePage';
@@ -67,10 +71,14 @@ const AppContent: React.FC = () => {
           <Route path="/chat" element={<ChatPage />} />
 
           <Route path="/testcase" element={<TestCasePage />} />
-          <Route path="/midscene" element={<MidscenePage />} />
-          <Route path="/ui-test-script" element={<UITestScriptPage />} />
-          <Route path="/ui-image-upload" element={<UIImageUploadPage />} />
-          <Route path="/ui-testing-rag" element={<UITestingRAGPage />} />
+
+          {/* UI测试路由 */}
+          <Route path="/ui-test" element={<OverviewPage />} />
+          <Route path="/ui-test/overview" element={<OverviewPage />} />
+          <Route path="/ui-test/upload" element={<ImageUploadPage />} />
+          <Route path="/ui-test/tasks" element={<TaskManagePage />} />
+          <Route path="/ui-test/results" element={<ResultViewPage />} />
+
           <Route path="/scroll-test" element={<ScrollTestPage />} />
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/system/users" element={<UserManagePage />} />

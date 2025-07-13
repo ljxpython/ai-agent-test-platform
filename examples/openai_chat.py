@@ -1,5 +1,13 @@
 # Please install OpenAI SDK first: `pip3 install openai`
 
+"""
+
+最原始用openai sdk调用接口的范例 ,一般直接不使用
+
+
+"""
+
+
 from openai import OpenAI
 
 from examples.conf.config import settings

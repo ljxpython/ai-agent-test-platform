@@ -210,6 +210,10 @@ async def create_embedding_generator(config: RAGConfig) -> EmbeddingGenerator:
 
 
 if __name__ == "__main__":
+    print(
+        "*********************************EmbeddingGenerator模块测试**********************************"
+    )
+
     # 测试代码
     async def test_embedding_generator():
         from backend.conf.rag_config import get_rag_config

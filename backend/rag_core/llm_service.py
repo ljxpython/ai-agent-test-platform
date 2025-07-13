@@ -295,6 +295,7 @@ def create_llm_service(config: RAGConfig) -> LLMService:
 
 
 if __name__ == "__main__":
+    print("************************* LLM服务测试 *************************")
     # 测试代码
     from backend.conf.rag_config import get_rag_config
 

@@ -37,45 +37,98 @@ class RAGSystem:
         await self.cleanup()
 
     async def initialize(self):
-        """初始化RAG系统"""
+        """初始化RAG系统基础组件（不初始化所有Collection）"""
         if self._initialized:
             return
 
-        logger.info("🔧 正在初始化RAG系统...")
+        logger.info("🔧 正在初始化RAG系统基础组件...")
 
         try:
-            # 初始化Collection管理器
+            # 仅初始化Collection管理器，不自动初始化所有collections
             self.collection_manager = CollectionManager(self.config)
-            await self.collection_manager.initialize()
-
-            # 初始化查询引擎
-            for (
-                collection_name,
-                collection_config,
-            ) in self.config.milvus.collections.items():
-                query_engine = RAGQueryEngine(self.config, collection_config)
-                await query_engine.initialize()
-                self.query_engines[collection_name] = query_engine
+            # 注意：这里不调用 await self.collection_manager.initialize()
+            # 因为那会初始化所有配置的collections
 
             self._initialized = True
-            logger.success(
-                f"✅ RAG系统初始化完成，共 {len(self.query_engines)} 个查询引擎"
-            )
+            logger.success("✅ RAG系统基础组件初始化完成（按需初始化模式）")
 
         except Exception as e:
             logger.error(f"❌ RAG系统初始化失败: {e}")
             raise
+
+    async def _ensure_collection_initialized(self, collection_name: str):
+        """确保指定的Collection已初始化"""
+        if collection_name not in self.query_engines:
+            collection_config = self.config.get_collection_config(collection_name)
+            if not collection_config:
+                raise ValueError(f"Collection配置不存在: {collection_name}")
+
+            logger.info(f"🔧 按需初始化Collection: {collection_name}")
+
+            # 只初始化指定的Collection，不初始化所有Collection
+            # 如果Collection管理器还没有这个Collection，就初始化它
+            if collection_name not in self.collection_manager.vector_dbs:
+                await self.collection_manager._initialize_collection(
+                    collection_name, collection_config
+                )
+
+            # 初始化查询引擎
+            query_engine = RAGQueryEngine(self.config, collection_config)
+            await query_engine.initialize()
+            self.query_engines[collection_name] = query_engine
+
+            logger.success(f"✅ Collection初始化完成: {collection_name}")
+
+    async def _check_collection_exists(self, collection_name: str) -> bool:
+        """检查Collection在Milvus中是否存在（不初始化Collection）"""
+        try:
+            collection_config = self.config.get_collection_config(collection_name)
+            if not collection_config:
+                return False
+
+            # 直接使用pymilvus检查，不通过LlamaIndex
+            from pymilvus import connections, utility
+
+            # 建立临时连接
+            conn_alias = f"temp_check_{collection_name}"
+            connections.connect(
+                alias=conn_alias,
+                host=self.config.milvus.host,
+                port=self.config.milvus.port,
+            )
+
+            # 检查集合是否存在
+            exists = utility.has_collection(collection_config.name, using=conn_alias)
+
+            # 断开临时连接
+            connections.disconnect(conn_alias)
+
+            logger.info(
+                f"🔍 Collection存在性检查 - {collection_name}: {'存在' if exists else '不存在'}"
+            )
+            return exists
+
+        except Exception as e:
+            logger.error(f"❌ 检查Collection存在性失败 {collection_name}: {e}")
+            return False
 
     async def setup_collection(self, collection_name: str, overwrite: bool = False):
         """设置向量集合"""
         if not self._initialized:
             await self.initialize()
 
+        # 确保Collection已初始化
+        await self._ensure_collection_initialized(collection_name)
+
         logger.info(f"📦 设置向量集合: {collection_name}")
-        await self.collection_manager.create_collection(
-            collection_name, overwrite=overwrite
-        )
-        logger.success(f"✅ 向量集合设置完成: {collection_name}")
+
+        # 直接调用向量数据库的create_collection方法
+        vector_db = self.collection_manager.get_collection(collection_name)
+        if vector_db:
+            vector_db.create_collection(overwrite=overwrite)
+            logger.success(f"✅ 向量集合设置完成: {collection_name}")
+        else:
+            logger.error(f"❌ Collection不存在: {collection_name}")
 
     async def setup_all_collections(self, overwrite: bool = False):
         """设置所有向量集合"""
@@ -97,9 +150,17 @@ class RAGSystem:
         if not self._initialized:
             await self.initialize()
 
+        # 检查Collection是否存在
+        collection_exists = await self._check_collection_exists(collection_name)
+        if not collection_exists:
+            raise ValueError(
+                f"Collection '{collection_name}' 不存在于Milvus中。"
+                f"请先调用 setup_collection('{collection_name}') 创建Collection。"
+            )
+
         collection_config = self.config.get_collection_config(collection_name)
         if not collection_config:
-            raise ValueError(f"Collection不存在: {collection_name}")
+            raise ValueError(f"Collection配置不存在: {collection_name}")
 
         logger.info(f"📝 添加文本到 {collection_name} - 长度: {len(text)}")
 
@@ -185,11 +246,64 @@ class RAGSystem:
         if not self._initialized:
             await self.initialize()
 
-        if collection_name not in self.query_engines:
-            raise ValueError(f"Collection不存在: {collection_name}")
+        # 检查Collection是否存在
+        collection_exists = await self._check_collection_exists(collection_name)
+        if not collection_exists:
+            raise ValueError(
+                f"Collection '{collection_name}' 不存在于Milvus中。"
+                f"请先调用 setup_collection('{collection_name}') 创建Collection，"
+                f"或添加一些文档到该Collection。"
+            )
+
+        # 确保Collection已初始化（连接到现有的Collection）
+        await self._ensure_collection_initialized(collection_name)
 
         query_engine = self.query_engines[collection_name]
         return await query_engine.query(question, **kwargs)
+
+    async def query_with_filters(
+        self,
+        question: str,
+        collection_name: str = "general",
+        metadata_filters: Optional[Dict[str, Any]] = None,
+        filters: Optional[Dict[str, Any]] = None,
+        top_k: Optional[int] = None,
+        **kwargs,
+    ) -> QueryResult:
+        """
+        执行带过滤条件的RAG查询
+
+        Args:
+            question: 查询问题
+            collection_name: Collection名称
+            metadata_filters: 元数据过滤条件，如 {"category": "technology", "source": "doc1"}
+            filters: 原始Milvus过滤表达式
+            top_k: 检索数量
+            **kwargs: 其他参数
+
+        Returns:
+            QueryResult: 查询结果
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        # 检查Collection是否存在
+        collection_exists = await self._check_collection_exists(collection_name)
+        if not collection_exists:
+            raise ValueError(
+                f"Collection '{collection_name}' 不存在于Milvus中。"
+                f"请先调用 setup_collection('{collection_name}') 创建Collection，"
+                f"或添加一些文档到该Collection。"
+            )
+
+        query_engine = self.query_engines[collection_name]
+        return await query_engine.query(
+            question,
+            filters=filters,
+            metadata_filters=metadata_filters,
+            top_k=top_k,
+            **kwargs,
+        )
 
     async def query_multiple_collections(
         self, question: str, collection_names: List[str], **kwargs
@@ -307,25 +421,36 @@ async def create_rag_system(config: Optional[RAGConfig] = None) -> RAGSystem:
 
 
 if __name__ == "__main__":
+    logger.info("*******************🔄 RAG系统测试 🔄*******************")
+
     # 简单测试
-    async def test():
+    async def rag_test():
         async with RAGSystem() as rag:
-            # 设置所有collections
-            await rag.setup_all_collections(overwrite=True)
+            # 创建一个新的Collection
+            await rag.setup_collection(collection_name="my_docs", overwrite=True)
 
-            # 添加测试文本到不同collections
-            await rag.add_text("人工智能是计算机科学的一个分支。", "general")
-            await rag.add_text("测试用例设计需要考虑边界条件。", "testcase")
+            # # 设置所有collections
+            # # await rag.setup_all_collections(overwrite=True)
+            # await rag.setup_collection(collection_name="general")
+            # await rag.setup_collection(collection_name="testcase")
+            #
+            # # 添加测试文本到不同collections
+            # await rag.add_text("人工智能是计算机科学的一个分支。", "general")
+            # await rag.add_text("测试用例设计需要考虑边界条件。", "testcase")
+            #
+            # # 测试查询
+            # result = await rag.query_with_filters("什么是人工智能？", "general",filters={"topic": "AI"})
+            # print(f"通用知识库查询结果: {result.answer}")
+            #
+            #
+            # general_answer = await rag.chat("什么是人工智能？", "general")
+            # print(f"通用知识库回答: {general_answer}")
+            #
+            # testcase_answer = await rag.chat("如何设计测试用例？", "testcase")
+            # print(f"测试用例知识库回答: {testcase_answer}")
+            #
+            # # 获取统计信息
+            # stats = rag.get_stats()
+            # print(f"系统统计: {stats}")
 
-            # 测试查询
-            general_answer = await rag.chat("什么是人工智能？", "general")
-            print(f"通用知识库回答: {general_answer}")
-
-            testcase_answer = await rag.chat("如何设计测试用例？", "testcase")
-            print(f"测试用例知识库回答: {testcase_answer}")
-
-            # 获取统计信息
-            stats = rag.get_stats()
-            print(f"系统统计: {stats}")
-
-    asyncio.run(test())
+    asyncio.run(rag_test())

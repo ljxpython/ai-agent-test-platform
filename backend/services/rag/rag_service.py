@@ -85,33 +85,33 @@ class RAGService:
                 "collection_name": collection_name,
             }
 
-    async def setup_all_collections(self, overwrite: bool = False) -> Dict[str, Any]:
-        """
-        设置所有collections
-
-        Args:
-            overwrite: 是否覆盖现有collections
-
-        Returns:
-            Dict[str, Any]: 操作结果
-        """
-        await self.ensure_initialized()
-
-        try:
-            await self.rag_system.setup_all_collections(overwrite)
-
-            return {
-                "success": True,
-                "message": "所有Collections设置成功",
-                "collections": self.list_collections(),
-            }
-
-        except Exception as e:
-            logger.error(f"❌ 所有Collections设置失败: {e}")
-            return {
-                "success": False,
-                "message": f"所有Collections设置失败: {str(e)}",
-            }
+    # async def setup_all_collections(self, overwrite: bool = False) -> Dict[str, Any]:
+    #     """
+    #     设置所有collections
+    #
+    #     Args:
+    #         overwrite: 是否覆盖现有collections
+    #
+    #     Returns:
+    #         Dict[str, Any]: 操作结果
+    #     """
+    #     await self.ensure_initialized()
+    #
+    #     try:
+    #         await self.rag_system.setup_all_collections(overwrite)
+    #
+    #         return {
+    #             "success": True,
+    #             "message": "所有Collections设置成功",
+    #             "collections": self.list_collections(),
+    #         }
+    #
+    #     except Exception as e:
+    #         logger.error(f"❌ 所有Collections设置失败: {e}")
+    #         return {
+    #             "success": False,
+    #             "message": f"所有Collections设置失败: {str(e)}",
+    #         }
 
     def list_collections(self) -> List[str]:
         """列出所有collections"""

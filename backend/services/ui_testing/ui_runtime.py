@@ -18,6 +18,7 @@ from backend.services.ui_testing.agents import (
     ScriptGenerationMessage,
     UIAnalysisAgent,
     UIAnalysisMessage,
+    UIImageUploadMessage,
 )
 
 
@@ -27,6 +28,7 @@ class UITestingRuntime(BaseRuntime):
     def __init__(self):
         super().__init__()
         self.topic_types = {
+            "ui_image_upload": "ui_image_upload",
             "ui_analysis": "ui_analysis",
             "interaction_analysis": "interaction_analysis",
             "midscene_generation": "midscene_generation",
@@ -48,6 +50,7 @@ class UITestingRuntime(BaseRuntime):
         logger.info(f"🤖 [UI测试运行时] 注册智能体 | 对话ID: {conversation_id}")
 
         try:
+
             # 注册UI分析智能体
             await UIAnalysisAgent.register(
                 runtime,
@@ -90,8 +93,60 @@ class UITestingRuntime(BaseRuntime):
             )
             raise
 
+    async def start_image_upload(
+        self,
+        conversation_id: str,
+        project: str,
+        image_files: list,
+        user_requirement: str,
+    ) -> None:
+        """
+        启动图片上传处理
+
+        Args:
+            conversation_id: 对话ID
+            project: 项目名称
+            image_files: 图片文件数据列表
+            user_requirement: 用户需求
+        """
+        logger.info(f"📷 [UI测试运行时] 启动图片上传 | 对话ID: {conversation_id}")
+        logger.info(f"🏗️ 项目: {project}")
+        logger.info(f"📷 图片数量: {len(image_files)}")
+
+        try:
+            runtime = self.get_runtime(conversation_id)
+            if not runtime:
+                raise RuntimeError(f"运行时不存在: {conversation_id}")
+
+            # 创建图片上传消息
+            upload_msg = UIImageUploadMessage(
+                conversation_id=conversation_id,
+                project_name=project,
+                image_files=image_files,
+                user_requirement=user_requirement,
+            )
+
+            await runtime.publish_message(
+                upload_msg,
+                topic_id=DefaultTopicId(type=self.topic_types["ui_image_upload"]),
+            )
+
+            logger.success(
+                f"✅ [UI测试运行时] 图片上传启动完成 | 对话ID: {conversation_id}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"❌ [UI测试运行时] 图片上传启动失败 | 对话ID: {conversation_id} | 错误: {e}"
+            )
+            raise
+
     async def start_ui_analysis(
-        self, conversation_id: str, image_paths: list, user_requirement: str
+        self,
+        conversation_id: str,
+        image_paths: list,
+        user_requirement: str,
+        task_ids: list = None,
     ) -> None:
         """
         启动UI分析
@@ -100,6 +155,7 @@ class UITestingRuntime(BaseRuntime):
             conversation_id: 对话ID
             image_paths: 图片路径列表
             user_requirement: 用户需求
+            task_ids: 任务ID列表（可选，与image_paths一一对应）
         """
         logger.info(f"🔍 [UI测试运行时] 启动UI分析 | 对话ID: {conversation_id}")
         logger.info(f"📷 图片数量: {len(image_paths)}")
@@ -113,9 +169,15 @@ class UITestingRuntime(BaseRuntime):
             for i, image_path in enumerate(image_paths):
                 logger.info(f"📷 处理图片 {i+1}/{len(image_paths)}: {image_path}")
 
+                # 获取对应的task_id（如果提供）
+                task_id = ""
+                if task_ids and i < len(task_ids):
+                    task_id = task_ids[i]
+
                 # 创建UI分析消息
                 ui_msg = UIAnalysisMessage(
                     conversation_id=conversation_id,
+                    task_id=task_id,
                     image_path=image_path,
                     user_requirement=user_requirement,
                 )

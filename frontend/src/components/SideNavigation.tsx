@@ -10,15 +10,14 @@ import {
   BugOutlined,
   ApiOutlined,
   DashboardOutlined,
-  CodeOutlined,
   UserOutlined,
   TeamOutlined,
   ApartmentOutlined,
   DatabaseOutlined,
   CloudOutlined,
   BarChartOutlined,
-  CameraOutlined,
-  SearchOutlined,
+  CloudUploadOutlined,
+  EyeOutlined,
   ProjectOutlined,
 } from '@ant-design/icons';
 import TopNavigation from './TopNavigation';
@@ -45,10 +44,14 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ children }) => {
     if (path === '/chat') return 'chat';
 
     if (path === '/testcase') return 'testcase';
-    if (path === '/midscene') return 'midscene';
-    if (path === '/ui-test-script') return 'ui-test-script';
-    if (path === '/ui-image-upload') return 'ui-image-upload';
-    if (path === '/ui-testing-rag') return 'ui-testing-rag';
+
+    // UI测试路由
+    if (path.startsWith('/ui-test')) {
+      if (path === '/ui-test' || path === '/ui-test/overview') return 'ui-test-overview';
+      if (path === '/ui-test/upload') return 'ui-test-upload';
+      if (path === '/ui-test/tasks') return 'ui-test-tasks';
+      if (path === '/ui-test/results') return 'ui-test-results';
+    }
     if (path === '/api-testing') return 'api-testing';
     if (path === '/performance-testing') return 'performance-testing';
     // RAG管理路由
@@ -139,24 +142,24 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ children }) => {
       label: collapsed ? null : 'UI测试',
       children: [
         {
-          key: 'midscene',
-          icon: <RobotOutlined />,
-          label: 'Midscene智能系统介绍',
+          key: 'ui-test-overview',
+          icon: <DashboardOutlined />,
+          label: '概览',
         },
         {
-          key: 'ui-test-script',
-          icon: <CodeOutlined />,
-          label: 'UI测试脚本生成',
+          key: 'ui-test-upload',
+          icon: <CloudUploadOutlined />,
+          label: '图片上传',
         },
         {
-          key: 'ui-image-upload',
-          icon: <CameraOutlined />,
-          label: 'UI界面分析',
+          key: 'ui-test-tasks',
+          icon: <BarChartOutlined />,
+          label: '任务管理',
         },
         {
-          key: 'ui-testing-rag',
-          icon: <SearchOutlined />,
-          label: 'UI测试智能助手',
+          key: 'ui-test-results',
+          icon: <EyeOutlined />,
+          label: '结果查看',
         },
       ],
     },
@@ -222,17 +225,19 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ children }) => {
       case 'testcase':
         navigate('/testcase');
         break;
-      case 'midscene':
-        navigate('/midscene');
+
+      // UI测试导航
+      case 'ui-test-overview':
+        navigate('/ui-test/overview');
         break;
-      case 'ui-test-script':
-        navigate('/ui-test-script');
+      case 'ui-test-upload':
+        navigate('/ui-test/upload');
         break;
-      case 'ui-image-upload':
-        navigate('/ui-image-upload');
+      case 'ui-test-tasks':
+        navigate('/ui-test/tasks');
         break;
-      case 'ui-testing-rag':
-        navigate('/ui-testing-rag');
+      case 'ui-test-results':
+        navigate('/ui-test/results');
         break;
       case 'api-testing':
         // 未来功能，暂时不跳转

@@ -1,3 +1,10 @@
+"""
+Autogen model 直接调用范例
+
+
+
+"""
+
 import asyncio
 
 from autogen_core.models import ModelFamily, SystemMessage, UserMessage

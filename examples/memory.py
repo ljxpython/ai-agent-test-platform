@@ -1,3 +1,10 @@
+"""
+
+
+Autogen memory 使用范例,未来使用范例,应该直接参考backend/ai_core/memory.py的代码
+
+"""
+
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.ui import Console
 from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType

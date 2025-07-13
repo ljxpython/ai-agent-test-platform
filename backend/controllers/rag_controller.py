@@ -72,7 +72,24 @@ class RAGCollectionController:
             )
 
         # 创建Collection
-        collection = await RAGCollection.create(**collection_data.model_dump())
+        # 过滤掉RAGCollection模型不支持的字段
+        valid_fields = {
+            "name",
+            "display_name",
+            "description",
+            "business_type",
+            "dimension",
+            "chunk_size",
+            "chunk_overlap",
+            "top_k",
+            "similarity_threshold",
+            "is_active",
+            "metadata",
+        }
+
+        collection_dict = collection_data.model_dump()
+        filtered_data = {k: v for k, v in collection_dict.items() if k in valid_fields}
+        collection = await RAGCollection.create(**filtered_data)
         logger.success(f"创建Collection成功: {collection.name}")
 
         collection_data = {

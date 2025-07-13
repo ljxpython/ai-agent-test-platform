@@ -98,12 +98,22 @@ class RAGQueryEngine:
             )
             raise
 
-    async def query(self, query_text: str, **kwargs) -> QueryResult:
+    async def query(
+        self,
+        query_text: str,
+        filters: Optional[Dict[str, Any]] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
+        top_k: Optional[int] = None,
+        **kwargs,
+    ) -> QueryResult:
         """
         执行RAG查询
 
         Args:
             query_text: 查询文本
+            filters: 原始过滤条件（Milvus表达式格式）
+            metadata_filters: 元数据过滤条件（简化格式）
+            top_k: 检索数量
             **kwargs: 其他参数
 
         Returns:
@@ -112,15 +122,24 @@ class RAGQueryEngine:
         if not self._initialized:
             await self.initialize()
 
+        filter_info = ""
+        if filters or metadata_filters:
+            filter_info = f", 过滤条件: {filters or metadata_filters}"
+
         logger.info(
-            f"🔍 执行RAG查询 - Collection: {self.collection_config.name}, 查询: {query_text}"
+            f"🔍 执行RAG查询 - Collection: {self.collection_config.name}, 查询: {query_text}{filter_info}"
         )
         start_time = time.time()
 
         try:
             # 手动实现RAG流程
-            # 1. 检索相关文档
-            retrieved_nodes = await self.retrieve_only(query_text)
+            # 1. 检索相关文档（支持过滤）
+            retrieved_nodes = await self.retrieve_only(
+                query_text,
+                top_k=top_k,
+                filters=filters,
+                metadata_filters=metadata_filters,
+            )
 
             # 2. 生成回答
             if retrieved_nodes:
@@ -141,9 +160,11 @@ class RAGQueryEngine:
                 business_type=self.collection_config.business_type,
                 metadata={
                     "num_retrieved": len(retrieved_nodes),
-                    "top_k": self.collection_config.top_k,
+                    "top_k": top_k or self.collection_config.top_k,
                     "similarity_threshold": self.collection_config.similarity_threshold,
                     "chunk_size": self.collection_config.chunk_size,
+                    "filters": filters,
+                    "metadata_filters": metadata_filters,
                 },
             )
 
@@ -159,7 +180,11 @@ class RAGQueryEngine:
             raise
 
     async def retrieve_only(
-        self, query_text: str, top_k: Optional[int] = None
+        self,
+        query_text: str,
+        top_k: Optional[int] = None,
+        filters: Optional[Dict[str, Any]] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
     ) -> List[NodeWithScore]:
         """
         仅执行检索，不生成回答
@@ -167,6 +192,8 @@ class RAGQueryEngine:
         Args:
             query_text: 查询文本
             top_k: 检索数量
+            filters: 原始过滤条件（Milvus表达式格式）
+            metadata_filters: 元数据过滤条件（简化格式）
 
         Returns:
             List[NodeWithScore]: 检索到的节点
@@ -175,24 +202,45 @@ class RAGQueryEngine:
             await self.initialize()
 
         top_k = top_k or self.collection_config.top_k
+
+        filter_info = ""
+        if filters or metadata_filters:
+            filter_info = f", 过滤条件: {filters or metadata_filters}"
+
         logger.info(
-            f"🔍 执行检索 - Collection: {self.collection_config.name}, top_k={top_k}"
+            f"🔍 执行检索 - Collection: {self.collection_config.name}, top_k={top_k}{filter_info}"
         )
 
         try:
-            # 创建查询包
-            query_bundle = QueryBundle(query_str=query_text)
+            # 生成查询嵌入向量
+            query_embedding = await self.embedding_generator.embed_query(query_text)
 
-            # 执行检索
-            retrieved_nodes = self.retriever.retrieve(query_bundle)
+            # 执行向量检索
+            if metadata_filters:
+                # 使用元数据过滤
+                result = self.vector_db.query_with_metadata_filter(
+                    query_embedding, metadata_filters, top_k
+                )
+            else:
+                # 使用原始过滤或无过滤
+                result = self.vector_db.query(query_embedding, top_k, filters)
+
+            # 转换为NodeWithScore格式
+            retrieved_nodes = result.nodes
 
             # 过滤低相似度结果
             filtered_nodes = []
             for node in retrieved_nodes:
-                if node.score >= self.collection_config.similarity_threshold:
+                # 检查是否有 score 属性
+                if hasattr(node, "score"):
+                    score = node.score
+                else:
+                    score = getattr(node, "similarity", 0.0)
+
+                if score >= self.collection_config.similarity_threshold:
                     filtered_nodes.append(node)
                 else:
-                    logger.debug(f"过滤低相似度节点: {node.score:.3f}")
+                    logger.debug(f"过滤低相似度节点: {score:.3f}")
 
             logger.success(
                 f"✅ 检索完成 - Collection: {self.collection_config.name}: {len(filtered_nodes)}/{len(retrieved_nodes)} 个节点"
