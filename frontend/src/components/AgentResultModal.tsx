@@ -2,7 +2,9 @@ import React from 'react';
 import { Modal, Typography, Button, Space, message } from 'antd';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// @ts-ignore
+import SyntaxHighlighter from 'react-syntax-highlighter';
+// @ts-ignore
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const { Title, Text } = Typography;

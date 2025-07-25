@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Tabs, Button, Space, Typography, message, Collapse } from 'antd';
 import { CopyOutlined, DownloadOutlined, FileTextOutlined, CodeOutlined } from '@ant-design/icons';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// @ts-ignore
+import SyntaxHighlighter from 'react-syntax-highlighter';
+// @ts-ignore
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const { Title, Text } = Typography;
