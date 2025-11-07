@@ -25,6 +25,9 @@
 <img src="docs/work/assets/image-20250531212549739.png" alt="Description" width="300"/>
 
 ---
+## 日记及后续安排
+
+后续会使用langgraph框架来更新这个项目,想想当初随性而写的一个项目,零零散散到了现在,不会放弃,会慢慢更新,做成一个真正的可以简单二开就能在企业使用的智能化测试平台,在AI开发的过程中,本人也有了很多新的感悟,后续会慢慢添加到该项目中的
 
 工作上的事情算是告一段落, terminal agent + MCP在软件测试赋能已经开始落地,效果不错,后面开始修复一些bug,在增加新的功能即可,效果大家可以看:https://www.yuque.com/lijiaxin-woaqo/gs9ge5/vriqtnc7lmly94ae?singleDoc# 《Terminal Agents + MCP AI测试代码生成项目搭建及效果展示》
 
