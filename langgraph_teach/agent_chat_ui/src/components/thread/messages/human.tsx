@@ -78,7 +78,7 @@ export function HumanMessage({
   return (
     <div
       className={cn(
-        "group ml-auto flex items-center gap-2",
+        "group flex items-center gap-2",
         isEditing && "w-full max-w-xl",
       )}
     >
@@ -93,7 +93,7 @@ export function HumanMessage({
           <div className="flex flex-col gap-2">
             {/* Render images and files if no text */}
             {Array.isArray(message.content) && message.content.length > 0 && (
-              <div className="flex flex-wrap items-end justify-end gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 {message.content.reduce<React.ReactNode[]>(
                   (acc, block, idx) => {
                     if (isOptimizedContentBlock(block) || isBase64ContentBlock(block)) {
@@ -113,7 +113,7 @@ export function HumanMessage({
             )}
             {/* Render text if present, otherwise fallback to file/image name */}
             {contentString ? (
-              <p className="bg-muted ml-auto w-fit rounded-3xl px-4 py-2 text-right whitespace-pre-wrap text-base leading-relaxed">
+              <p className="bg-muted w-fit rounded-3xl px-4 py-2 whitespace-pre-wrap text-base leading-relaxed">
                 {contentString}
               </p>
             ) : null}
@@ -122,7 +122,7 @@ export function HumanMessage({
 
         <div
           className={cn(
-            "ml-auto flex items-center gap-2 transition-opacity",
+            "flex items-center gap-2 transition-opacity",
             "opacity-100 md:opacity-100",
             isEditing && "opacity-100",
           )}
