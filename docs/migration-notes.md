@@ -5,10 +5,12 @@
 - 已创建 `main` 备份分支
 - 已创建新的整合工作分支
 - 已创建 `apps/*` 目录骨架
-- 已将旧版 `AITestLab` 代码归档到 `archive/legacy-aitestlab/root/`
+- 旧版 `AITestLab` 代码已从当前工作分支移除，并由远端备份分支保存
 - 已将四部分代码迁入 `apps/*`
 - 已验证 `runtime-service` 在新目录下可启动
 - 已验证 `platform-api` 在新目录下可启动，并可联调 `runtime-service`
+- 已验证 `platform-web` 可构建
+- 已验证 `runtime-web` 可构建
 
 ## 2. 当前阶段未做的事
 
@@ -35,14 +37,9 @@
 
 ### 3.2 当前阻塞项
 
-- `apps/platform-web`
-  - `pnpm build` 失败
-  - 原因：`next/font` 拉取 `IBM Plex Sans` 时外网超时
-- `apps/runtime-web`
-  - `pnpm build` 失败
-  - 原因：`next/font` 拉取 `Inter` 时外网超时
-
-这两项属于外部字体资源下载问题，不是当前仓库结构迁移导致的代码错误。
+- 当前阶段未发现新的结构性阻塞项
+- `platform-web` / `runtime-web` 已移除对 Google Fonts 构建时出网依赖
+- 当前仍可能存在少量 lint warning，但不影响构建与运行验证结论
 
 ## 4. 已知后续事项
 
