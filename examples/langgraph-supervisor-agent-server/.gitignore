@@ -1,8 +1,0 @@
-.env
-.env.test
-
-**/.env
-
-logs/
-
-**/logs/*

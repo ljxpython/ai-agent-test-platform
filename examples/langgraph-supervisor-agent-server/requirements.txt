@@ -1,4 +1,0 @@
-langgraph
-langgraph-supervisor
-langchain[openai]
-langchain-deepseek
