@@ -16,7 +16,7 @@
 - 未统一 Node 依赖
 - 未改业务代码路径
 - 未改现有服务的核心运行逻辑
-- 未统一根级 `.pre-commit-config.yaml`
+- 根级 `.pre-commit-config.yaml` 当前已临时禁用，后续再按 `uv + Python 3.13` 统一启用
 
 ## 3. 当前验证结论
 
@@ -49,6 +49,7 @@
 - 补根级统一脚本
 - 逐步清理根级 README 历史内容
 - 统一工具链到 `uv + Python 3.13`
+- 重新设计并启用根级 `.pre-commit-config.yaml`
 - 评估是否需要共享包/公共类型层
 
 ## 5. 当前建议
