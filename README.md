@@ -35,13 +35,13 @@ flowchart LR
     User[User]
 
     subgraph Platform[Platform Layer]
-        PW[platform-web\nNext.js]
-        PA[platform-api\nFastAPI + PostgreSQL]
+        PW[platform-web<br/>Next.js]
+        PA[platform-api<br/>FastAPI API]
     end
 
     subgraph Runtime[Runtime Layer]
-        RW[runtime-web\nNext.js Debug UI]
-        RS[runtime-service\nLangGraph Runtime]
+        RW[runtime-web<br/>Next.js Debug UI]
+        RS[runtime-service<br/>LangGraph Runtime]
     end
 
     DB[(PostgreSQL)]
