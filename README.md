@@ -241,7 +241,41 @@ scripts/dev-down.sh
 
 这一组文档不是单纯给人阅读的说明书，而是给 AI 助手、开发者代理或自动化协作流程使用的操作指令。后续如果继续增加新的 AI 助手说明，也统一放在这里，方便用户和开发者快速找到与项目配套的 AI 能力入口。
 
-- `docs/ai-deployment-assistant-instruction.md`：给 AI 助手使用的问答式部署引导指令
+- `docs/ai-deployment-assistant-instruction.md`：给 AI 助手使用的最小本地部署执行指令
+
+### 如何把这份文档交给 AI
+
+如果你希望 AI 直接帮你完成本地环境部署，最简单的做法就是：
+
+1. 先让它阅读 `docs/ai-deployment-assistant-instruction.md`
+2. 要求它严格按文档执行
+3. 如果你已经有 model 配置材料，就一次性贴给它
+
+### 推荐对话范例
+
+保留这一条就够用，适合“先把本地环境都配起来，但当前还差真实 model 配置”的场景。
+
+```text
+请先阅读 `docs/ai-deployment-assistant-instruction.md`，然后严格按这份文档帮我完成当前项目的本地最小部署。
+
+要求：
+1. 你必须始终以姐姐的身份自称
+2. 默认直接执行，不要把流程拆成很多轮确认
+3. 先帮我安装和确认 Python 3.13、uv、Node 22、pnpm 10.5.1、PostgreSQL 和前后端依赖
+4. 直接帮我写 platform-api、platform-web、runtime-web 的最小本地配置
+5. runtime-service 也先把模板和配置骨架准备好
+6. model 配置这一块先不要编造，如果我还没给真实的 model_provider、model、base_url、api_key，你要明确告诉我现在缺什么
+7. 其他能完成的步骤继续完成，包括启动和验证不依赖真实 model 的部分
+8. 最后告诉我：你做了哪些事、哪些服务已经成功、哪些还卡在 model 配置、访问地址是什么、登录账号密码是什么
+```
+
+### 使用这份文档时的几个提醒
+
+- `docs/ai-deployment-assistant-instruction.md` 现在面向的是“AI 直接执行最小部署”，不是旧的逐步确认模式
+- 模型配置仍然必须使用你自己的真实信息，AI 不能替你编造
+- `platform-api` 的本地配置以 `apps/platform-api/.env` 为准
+- `runtime-web` 本地最小联调应直连 `http://localhost:8123`
+- 默认本地 bootstrap 账号是 `admin / admin123456`，仅适合临时本地环境
 
 ## 支持与交流
 
