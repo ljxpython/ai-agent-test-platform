@@ -352,14 +352,14 @@ NEXT_PUBLIC_ASSISTANT_ID=assistant
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8123
-NEXT_PUBLIC_ASSISTANT_ID=assistant_entrypoint
+NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```
 
 这里你必须明确说明：
 
 - 当前仓库本地 runtime 调试前端应直连 `runtime-service:8123`
 - 不要沿用 `apps/runtime-web/.env.example` 里默认的 `http://localhost:2024`
-- 当前本地推荐入口 ID 是 `assistant_entrypoint`
+- 当前本地推荐入口 ID 是 `assistant`
 
 ### 7.6 `runtime-service` 的两份关键配置
 

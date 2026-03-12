@@ -124,7 +124,7 @@ http://127.0.0.1:3001
 
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:8124
-NEXT_PUBLIC_ASSISTANT_ID=assistant_entrypoint
+NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```
 
 注意：

@@ -485,7 +485,7 @@ pnpm start
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8123
-NEXT_PUBLIC_ASSISTANT_ID=assistant_entrypoint
+NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```
 
 ### 启动前准备
@@ -599,7 +599,7 @@ pnpm install
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8123
-NEXT_PUBLIC_ASSISTANT_ID=assistant_entrypoint
+NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```
 
 ## 7. 推荐启动顺序
