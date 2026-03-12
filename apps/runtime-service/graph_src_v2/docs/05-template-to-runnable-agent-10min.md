@@ -1,6 +1,6 @@
-# 从模板到可运行 Agent（10 分钟实操）
+# 10 分钟新增一个可运行 graph
 
-目标：基于 `create_agent` 模板，10 分钟内新增一个可运行的 `hello_demo`。
+目标：基于当前推荐范式，10 分钟内新增一个最小可运行 graph。
 
 ## 1) 新建目录与文件
 
@@ -38,10 +38,12 @@ from __future__ import annotations
 from typing import Any
 
 from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain_core.runnables import RunnableConfig
 from langgraph_sdk.runtime import ServerRuntime
 
 from graph_src_v2.agents.hello_demo_agent.tools import hello_tool
+from graph_src_v2.middlewares.multimodal import MultimodalAgentState, MultimodalMiddleware
 from graph_src_v2.runtime.modeling import apply_model_runtime_params, resolve_model
 from graph_src_v2.runtime.options import build_runtime_config, merge_trusted_auth_context
 from graph_src_v2.tools.registry import build_tools
@@ -59,7 +61,9 @@ async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
     return create_agent(
         model=model,
         tools=tools,
+        middleware=[HumanInTheLoopMiddleware(interrupt_on={}), MultimodalMiddleware()],
         system_prompt=options.system_prompt,
+        state_schema=MultimodalAgentState,
         name="hello_demo",
     )
 
@@ -114,8 +118,8 @@ uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-brows
 
 期望：能触发工具调用并返回 `hello, team`。
 
-## 6) 进阶（可选）
+## 6) 下一步怎么选范式
 
-- 需要人工审批：在 `create_agent(...)` 增加 `HumanInTheLoopMiddleware`。
-- 需要复杂编排：迁移到 `StateGraph` 模板。
-- 需要强任务分解：迁移到 `deepagent` 模板。
+- 若功能继续往默认 assistant 方向演进，直接对照 `graph_src_v2/agents/assistant_agent/graph.py`
+- 若需要任务分解，迁移到 `graph_src_v2/agents/deepagent_agent/graph.py`
+- 若需要显式步骤流，迁移到 `graph_src_v2/agents/customer_support_agent/graph.py`

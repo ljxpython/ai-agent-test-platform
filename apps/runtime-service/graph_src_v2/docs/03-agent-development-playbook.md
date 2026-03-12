@@ -4,14 +4,14 @@
 
 - 代码简单可维护
 - 运行时能力可配置
-- 按业务场景选择合适模式
+- 在同一套运行时契约下选择合适模式
 
 ## 1. 总原则
 
 - `config-first`：优先使用运行时配置驱动行为，不写死环境分支。
-- `factory-by-exception`：只有确实需要工厂期上下文时才用复杂工厂逻辑。
+- `factory-light`：工厂函数只负责装配，不做重初始化。
 - `dynamic + required tools`：平台工具动态加载，业务必备工具显式追加。
-- 不强行统一一种框架：`create_agent` / `StateGraph` / `deepagent` 按场景选。
+- 不强行统一成一种实现：`create_agent` / `LangGraph graph` / `deepagent` 按场景选。
 
 ## 2. 模式选型规则
 
@@ -21,21 +21,42 @@
 
 - 单智能体为主
 - 线性对话流程
-- 无复杂路由/子图编排需求
+- 需要工具调用
+- 需要 HITL、多模态、subagent 等增强能力，但不需要显式图编排
 
 推荐方式：
 
 - 用工厂函数 `make_graph(...)` 返回 `create_agent(...)`
-- 通过 `RunnableConfig` 解析模型与工具配置
+- 通过 `build_runtime_config(...)` 统一解析模型与工具配置
+- 通过 middleware 注入 HITL、多模态等横切能力
 
-### 2.2 什么时候用 StateGraph
+当前范例：
+
+- `graph_src_v2/agents/assistant_agent/graph.py`
+
+### 2.2 什么时候用 LangGraph graph
 
 适用：
 
-- 多节点路由
-- 子图组合
-- 显式状态机与条件分支
-- 需要更强可视化流程控制
+- 需要显式状态流
+- 需要步骤切换、handoff、条件推进
+- 需要把流程结构本身当成主要设计对象
+
+推荐方式：
+
+- 仍然沿用相同的运行时工厂入口：`make_graph(config, runtime)`
+- 外层 graph 负责流程编排
+- 具体状态推进可放在工具、middleware 或节点内部
+
+当前范例：
+
+- `graph_src_v2/agents/customer_support_agent/graph.py`
+- `graph_src_v2/agents/customer_support_agent/tools.py`
+
+说明：
+
+- 当前这个范例在外层仍复用了 `create_agent(...)`，但它体现的是“显式流程/图式编排”这类开发思路。
+- 团队后续若真要写更重的 `StateGraph`，也应沿用同一套 runtime config 解析方式，而不是脱离现有契约另起一套。
 
 ### 2.3 什么时候用 deepagent
 
@@ -44,13 +65,52 @@
 - 复杂多步任务
 - 强任务分解/规划能力
 - 工具链较长，执行路径不固定
+- 需要 skills / subagents / 文件系统产物
 
-## 3. 工厂函数规范
+推荐方式：
+
+- 用工厂函数 `make_graph(...)` 返回 `create_deep_agent(...)`
+- 运行时只解析模型、工具和必要上下文
+- `skills` / `subagents` 保持静态注册，降低复杂度
+
+当前范例：
+
+- `graph_src_v2/agents/deepagent_agent/graph.py`
+
+## 3. 三种模式的共同基线
+
+无论最终落到哪一种模式，统一基线都应保持一致：
+
+1. 使用工厂函数签名
+
+```python
+async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
+    ...
+```
+
+2. 优先沿用统一运行时解析链路
+
+```python
+runtime_context = merge_trusted_auth_context(config, {})
+options = build_runtime_config(config, runtime_context)
+model = apply_model_runtime_params(resolve_model(options.model_spec), options)
+tools = await build_tools(options)
+```
+
+3. 把模式差异放在“最终返回什么”这一层：
+
+- `create_agent(...)`
+- graph / 流程式 agent
+- `create_deep_agent(...)`
+
+也就是说，这三种模式不是完全割裂的三套体系，而是同一套 runtime contract 下的三种落地形式。
+
+## 4. 工厂函数规范
 
 推荐签名：
 
 ```python
-async def make_graph(config: RunnableConfig, runtime: ServerRuntime):
+async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
     ...
 ```
 
@@ -58,10 +118,10 @@ async def make_graph(config: RunnableConfig, runtime: ServerRuntime):
 
 - 工厂函数负责装配，不做不必要重初始化。
 - `RunnableConfig` 用于本次运行参数（模型、开关、工具等）。
-- `ServerRuntime` 用于服务端上下文（user/store/access），按需使用。
-- 若当前场景不需要 `user/store`，可暂不使用 runtime 里的用户逻辑。
+- `ServerRuntime` 作为统一签名保留；当前大多数场景不直接使用它。
+- 若当前场景不需要 `user/store`，可以 `del runtime`，但不要另起一套不兼容签名。
 
-## 4. 工具装配规范（重点）
+## 5. 工具装配规范（重点）
 
 统一采用“两段式装配”：
 
@@ -84,34 +144,42 @@ tools.append(...)
 - 本地必备部分保证关键业务能力稳定可用。
 - 不再增加无意义中间封装层。
 
-## 5. HITL（人机审核）规范
+## 6. HITL（人机审核）规范
 
-- 优先用官方 `HumanInTheLoopMiddleware`。
-- 不重复封装自定义审批协议。
-- 在 `langgraph dev`/托管持久化环境，不在图内手动注入本地 checkpointer。
+- 默认优先官方 `HumanInTheLoopMiddleware`。
+- 不重复封装新的审批协议。
+- 在 `langgraph dev` / 托管持久化环境，不在图内手动注入本地 checkpointer。
+- 若未来使用更重的图编排模式，再单独评估是否用节点级 `interrupt(...)`。
 
-## 6. assistant_entrypoint 样板说明
+## 7. assistant 历史实现说明
 
-`graph_src_v2/agents/assistant_agent/graph_entrypoint.py` 作为当前推荐样板：
+当前推荐样板：
 
-- 使用官方工厂函数签名
-- 直接 `create_agent`（不额外包 `StateGraph`）
-- 采用动态工具 + 本地必备工具装配
-- 使用官方 HITL middleware
+- `graph_src_v2/agents/assistant_agent/graph.py`
 
-## 7. 开发流程（执行清单）
+历史实现：
 
-1. 明确业务场景，先做模式选型（create_agent / StateGraph / deepagent）
-2. 落地工厂函数与运行时配置解析
+- `graph_src_v2/agents/assistant_agent/graph_legacy.py`
+
+要求：
+
+- 新功能默认落在 `graph.py`
+- `graph_legacy.py` 只保留兼容和参考价值
+
+## 8. 开发流程（执行清单）
+
+1. 明确业务场景，先做模式选型（`create_agent` / `LangGraph graph` / `deepagent`）
+2. 落地工厂函数与统一运行时配置解析
 3. 按“两段式装配”接入工具
-4. 接入 HITL（若有高风险工具）
+4. 接入 HITL / 多模态等横切能力（若需要）
 5. 验证：
-   - 相关文件 `lsp_diagnostics` 无错误
+   - 相关文件无语法错误
    - `compileall` 通过
    - 最小冒烟测试通过
 
-## 8. 禁止事项
+## 9. 禁止事项
 
-- 为了“看起来统一”强行把所有 agent 套同一模式
-- 为简单场景引入复杂图编排
-- 在生产路径保留临时 demo 开关和无意义 wrapper
+- 为了“看起来统一”强行让所有智能体都写成一种模式
+- 为简单场景引入过重图编排
+- 绕开 `build_runtime_config(...)` 自己重新发明一套配置解析
+- 把历史实现 `graph_legacy.py` 继续当作默认新范式

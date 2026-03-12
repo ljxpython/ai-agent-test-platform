@@ -1,10 +1,12 @@
 # graph_src_v2 智能体脚手架模板（可直接复制）
 
-本文提供三种最常用模板：
+本文提供三种当前可直接复用的脚手架模板：
 
-- 模板 A：`create_agent`（单智能体，推荐默认）
-- 模板 B：`StateGraph`（多节点编排）
-- 模板 C：`deepagent`（复杂任务分解）
+- 模板 A：`create_agent`
+- 模板 B：`LangGraph graph`
+- 模板 C：`deepagent`
+
+三种模板都应建立在同一套 runtime contract 上，而不是各自维护一套配置解析逻辑。
 
 ## 0. 新增 agent 的最小目录
 
@@ -24,7 +26,16 @@ from graph_src_v2.agents.<your_agent>.graph import graph
 
 ## 1) 模板 A：create_agent（推荐默认）
 
-适合：单智能体、线性流程、快速上线。
+适合：
+
+- 单智能体
+- 工具调用
+- HITL
+- 多模态输入
+
+当前参考范例：
+
+- `graph_src_v2/agents/assistant_agent/graph.py`
 
 ```python
 from __future__ import annotations
@@ -32,6 +43,57 @@ from __future__ import annotations
 from typing import Any
 
 from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain_core.runnables import RunnableConfig
+from langgraph_sdk.runtime import ServerRuntime
+
+from graph_src_v2.middlewares.multimodal import MultimodalAgentState, MultimodalMiddleware
+from graph_src_v2.runtime.modeling import apply_model_runtime_params, resolve_model
+from graph_src_v2.runtime.options import build_runtime_config, merge_trusted_auth_context
+from graph_src_v2.tools.registry import build_tools
+
+
+async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
+    del runtime
+    runtime_context = merge_trusted_auth_context(config, {})
+    options = build_runtime_config(config, runtime_context)
+    model = apply_model_runtime_params(resolve_model(options.model_spec), options)
+
+    tools = await build_tools(options)
+    # 本地必备工具按需追加
+    # tools.extend([...])
+
+    return create_agent(
+        model=model,
+        tools=tools,
+        middleware=[HumanInTheLoopMiddleware(interrupt_on={}), MultimodalMiddleware()],
+        system_prompt=options.system_prompt,
+        state_schema=MultimodalAgentState,
+        name="<your_agent_name>",
+    )
+
+
+graph = make_graph
+```
+
+## 2) 模板 B：LangGraph graph（流程/状态流）
+
+适合：
+
+- 显式状态流
+- step / handoff / 条件推进
+- 需要让流程结构成为主要设计对象
+
+当前参考范例：
+
+- `graph_src_v2/agents/customer_support_agent/graph.py`
+- `graph_src_v2/agents/customer_support_agent/tools.py`
+
+```python
+from __future__ import annotations
+
+from typing import Any
+
 from langchain_core.runnables import RunnableConfig
 from langgraph_sdk.runtime import ServerRuntime
 
@@ -44,110 +106,90 @@ async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
     del runtime
     runtime_context = merge_trusted_auth_context(config, {})
     options = build_runtime_config(config, runtime_context)
+    model = apply_model_runtime_params(resolve_model(options.model_spec), options)
+    base_tools = await build_tools(options)
 
+    # 返回你自己的流程式 graph / agent builder
+    return build_your_graph_agent(model, base_tools)
+
+
+graph = make_graph
+```
+
+说明：
+
+- 这里的关键不是 API 名字，而是“流程结构由 graph 侧主导”。
+- 即使内部仍然复用 `create_agent(...)`，也应保持统一的 runtime 配置解析链路。
+
+## 3) 模板 C：deepagent（复杂任务分解）
+
+适合：
+
+- 复杂任务分解
+- skills / subagents
+- 文件系统产物输出
+
+当前参考范例：
+
+- `graph_src_v2/agents/deepagent_agent/graph.py`
+
+```python
+from __future__ import annotations
+
+from typing import Any
+
+from deepagents import create_deep_agent
+from langchain_core.runnables import RunnableConfig
+from langgraph_sdk.runtime import ServerRuntime
+
+from graph_src_v2.runtime.context import RuntimeContext
+from graph_src_v2.runtime.modeling import apply_model_runtime_params, resolve_model
+from graph_src_v2.runtime.options import build_runtime_config, merge_trusted_auth_context
+from graph_src_v2.tools.registry import build_tools
+
+
+async def make_graph(config: RunnableConfig, runtime: ServerRuntime) -> Any:
+    del runtime
+    runtime_context = merge_trusted_auth_context(config, {})
+    options = build_runtime_config(config, runtime_context)
+    tools = await build_tools(options)
     model = apply_model_runtime_params(resolve_model(options.model_spec), options)
 
-    # 动态工具（平台）
-    tools = await build_tools(options)
-    # 本地必备工具（按需追加）
-    # tools.extend([tool_a, tool_b])
-
-    return create_agent(
+    return create_deep_agent(
+        name="<your_deepagent_name>",
         model=model,
         tools=tools,
         system_prompt=options.system_prompt,
-        name="<your_agent_name>",
+        context_schema=RuntimeContext,
+        skills=[],
+        subagents=[],
     )
 
 
 graph = make_graph
 ```
 
-## 2) 模板 B：StateGraph（多节点编排）
+## 4) 三种模板的共同要求
 
-适合：路由、子图、显式状态机。
+无论使用哪种模板，都应满足：
 
-```python
-from __future__ import annotations
+1. 使用统一工厂函数签名
+2. 复用 `build_runtime_config(...)`
+3. 平台工具优先走 `build_tools(options)`
+4. graph 注册写入 `graph_src_v2/langgraph.json`
+5. 若需要鉴权模式，再确认 `langgraph_auth.json`
 
-from langchain_core.runnables import RunnableConfig
-from langgraph.config import get_config
-from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.runtime import Runtime
+## 5) 新 agent 落地清单
 
-from graph_src_v2.runtime.context import RuntimeContext
-from graph_src_v2.runtime.options import build_runtime_config, context_to_mapping, merge_trusted_auth_context
+1. 先选最接近的模板
+2. 复制后只改业务必要部分
+3. 注册 graph id 和 `description`
+4. 跑 `uv run python -m compileall graph_src_v2`
+5. 补最小 pytest 或注册检查测试
 
+## 6) 不推荐的做法
 
-async def run_main(state: MessagesState, *, runtime: Runtime[RuntimeContext]) -> MessagesState:
-    config: RunnableConfig = get_config()
-    runtime_context = merge_trusted_auth_context(config, context_to_mapping(runtime.context))
-    options = build_runtime_config(config, runtime_context)
-    del options
-    return {"messages": state.get("messages", [])}
-
-
-_builder = StateGraph(MessagesState, context_schema=RuntimeContext)
-_builder.add_node("run_main", run_main)
-_builder.add_edge(START, "run_main")
-_builder.add_edge("run_main", END)
-
-graph = _builder.compile(name="<your_graph_id>")
-```
-
-## 3) 模板 C：deepagent（复杂多步任务）
-
-适合：任务分解、多工具链、长流程探索。
-
-```python
-from __future__ import annotations
-
-from langchain_core.runnables import RunnableConfig
-from langgraph.config import get_config
-from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.runtime import Runtime
-
-from deepagents import create_deep_agent
-
-from graph_src_v2.runtime.context import RuntimeContext
-from graph_src_v2.runtime.modeling import apply_model_runtime_params, resolve_model
-from graph_src_v2.runtime.options import build_runtime_config, context_to_mapping, merge_trusted_auth_context
-from graph_src_v2.tools.registry import build_tools
-
-
-async def run_deep(state: MessagesState, *, runtime: Runtime[RuntimeContext]) -> MessagesState:
-    config: RunnableConfig = get_config()
-    runtime_context = merge_trusted_auth_context(config, context_to_mapping(runtime.context))
-    options = build_runtime_config(config, runtime_context)
-
-    tools = await build_tools(options)
-    model = apply_model_runtime_params(resolve_model(options.model_spec), options)
-
-    agent = create_deep_agent(
-        name="<your_deepagent_name>",
-        model=model,
-        tools=tools,
-        system_prompt=options.system_prompt,
-    )
-    result = await agent.ainvoke({"messages": state.get("messages", [])})
-    return {"messages": result.get("messages", [])}
-
-
-_builder = StateGraph(MessagesState, context_schema=RuntimeContext)
-_builder.add_node("run_deep", run_deep)
-_builder.add_edge(START, "run_deep")
-_builder.add_edge("run_deep", END)
-
-graph = _builder.compile(name="<your_graph_id>")
-```
-
-## 4) 新 agent 落地清单
-
-1. 在 `graph_src_v2/langgraph.json` 注册 graph id
-2. 优先接入动态工具：`build_tools(options)`
-3. 本地必备工具用 `tools.extend(...)` / `tools.append(...)`
-4. 需要人工审核时，优先 `HumanInTheLoopMiddleware`
-5. 验证：
-   - `lsp_diagnostics` 无错误
-   - `uv run python -m compileall <changed_files>`
-   - 最小冒烟测试通过
+- 先写一层新的抽象模板，再套业务
+- 为了形式统一强行把所有场景写成一种模板
+- 绕开 `build_runtime_config(...)` 自己重新拼配置
+- 把 `graph_legacy.py` 当作默认新模板
