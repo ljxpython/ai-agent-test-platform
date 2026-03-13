@@ -89,6 +89,8 @@ graph_src_v2/services/<service_name>/
 
 - 公共工具池（`tools/registry.py`）只放“跨服务通用”的工具
 - 服务私有工具放在 `services/<service>/tools.py`，由该服务的 graph 装配
+- 服务内 MCP 默认也视为“服务私有工具”，优先在 graph 中显式 `tools.extend(...)` / `tools.append(...)` 接入
+- 只有在用户或架构明确要求“做成跨服务共享能力”时，才进入公共 `mcp/` 模块与公共 catalog
 
 ## 4. 运行时配置与服务配置
 
