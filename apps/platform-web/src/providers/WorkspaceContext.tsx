@@ -8,13 +8,10 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 
 type WorkspaceContextValue = {
-  tenantId: string;
-  setTenantId: (value: string) => void;
   projectId: string;
   setProjectId: (value: string) => void;
   assistantId: string;
   setAssistantId: (value: string) => void;
-  tenants: { id: string; name: string }[];
   projects: ManagementProject[];
   loading: boolean;
 };
@@ -24,7 +21,6 @@ const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefi
 
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [tenantId] = useQueryState("tenantId", { defaultValue: "" });
   const [projectId, setProjectId] = useQueryState("projectId", { defaultValue: "" });
   const [assistantId, setAssistantId] = useQueryState("assistantId", { defaultValue: "" });
   const [, setThreadId] = useQueryState("threadId", { defaultValue: "" });
@@ -76,8 +72,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<WorkspaceContextValue>(
     () => ({
-      tenantId: tenantId ?? "",
-      setTenantId: () => {},
       projectId: projectId ?? "",
       setProjectId: (value: string) => {
         setProjectId(value);
@@ -86,11 +80,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       },
       assistantId: assistantId ?? "",
       setAssistantId,
-      tenants: [],
       projects,
       loading,
     }),
-    [assistantId, loading, projectId, projects, setAssistantId, setProjectId, setThreadId, tenantId],
+    [assistantId, loading, projectId, projects, setAssistantId, setProjectId, setThreadId],
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
