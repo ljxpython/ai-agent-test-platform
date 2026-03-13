@@ -1,11 +1,5 @@
 {
-  "name": "agent-chat-ui",
-  "readme": "https://github.com/langchain-ai/agent-chat-ui/blob/main/README.md",
-  "homepage": "https://agentchat.vercel.app",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/langchain-ai/agent-chat-ui.git"
-  },
+  "name": "platform-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
