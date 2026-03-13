@@ -1,23 +1,24 @@
 "use client";
 
-import { ArtifactProvider } from "@/components/thread/artifact";
-import { Thread } from "@/components/thread";
-import { Toaster } from "@/components/ui/sonner";
-import { StreamProvider } from "@/providers/Stream";
-import { ThreadProvider } from "@/providers/Thread";
-import React from "react";
+import { BaseChatTemplate } from "@/components/chat-template/base-chat-template";
 
-export default function WorkspaceChatPage(): React.ReactNode {
+export default function WorkspaceChatPage() {
   return (
-    <React.Suspense fallback={<div>Loading chat...</div>}>
-      <Toaster />
-      <ThreadProvider>
-        <StreamProvider>
-          <ArtifactProvider>
-            <Thread />
-          </ArtifactProvider>
-        </StreamProvider>
-      </ThreadProvider>
-    </React.Suspense>
+    <BaseChatTemplate
+      target={{ targetType: "assistant" }}
+      display={{
+        title: "Agent Chat",
+        description:
+          "Welcome to Agent Chat! Before you get started, you need to enter the URL of the deployment and the assistant / graph ID.",
+      }}
+      features={{
+        allowAssistantSwitch: true,
+        allowApiUrlEdit: true,
+        allowRunOptions: true,
+        showHistory: true,
+        showArtifacts: true,
+        showContextBar: true,
+      }}
+    />
   );
 }
