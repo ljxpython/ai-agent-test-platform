@@ -2,7 +2,7 @@
 
 ## 1. 目标
 
-- 为 `workspace/assistants` 提供完整管理能力：列表展示、编辑、创建、删除。
+- 为 `apps/platform-web` 中的 `workspace/assistants` 提供完整管理能力：列表展示、编辑、创建、删除。
 - Assistant 创建时必须绑定项目与创建者，并支持动态参数（对齐 graph entrypoint 的运行参数能力）。
 - 前端只调用平台后端，后端负责项目隔离、审计、参数校验与 LangGraph 对接。
 

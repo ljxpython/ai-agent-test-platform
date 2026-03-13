@@ -536,7 +536,7 @@ Graph 现在有两个潜在来源：
 
 ### Phase 7：前端接入
 
-- `agent-chat-ui/src/lib/management-api/runtime.ts`
+- `apps/platform-web/src/lib/management-api/runtime.ts`
   - 改成读 catalog 接口
   - 增加 refresh 调用
 - Runtime 页面
