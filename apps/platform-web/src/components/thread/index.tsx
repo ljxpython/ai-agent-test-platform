@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import type { Checkpoint, Message } from "@langchain/langgraph-sdk";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { v4 as uuidv4 } from "uuid";
@@ -126,7 +126,40 @@ function OpenGitHubRepo() {
   );
 }
 
-export function Thread() {
+type ThreadFeatures = {
+  allowRunOptions?: boolean;
+  showHistory?: boolean;
+  showArtifacts?: boolean;
+  showContextBar?: boolean;
+};
+
+type ThreadSlots = {
+  headerSlot?: ReactNode;
+  emptyStateSlot?: ReactNode;
+  rightPanelSlot?: ReactNode;
+};
+
+export function Thread({
+  title = "Agent Chat",
+  description,
+  emptyTitle,
+  emptyDescription,
+  initialAssistantId = "",
+  initialGraphId = "",
+  initialTargetType = "assistant",
+  features,
+  slots,
+}: {
+  title?: string;
+  description?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  initialAssistantId?: string;
+  initialGraphId?: string;
+  initialTargetType?: "assistant" | "graph";
+  features?: ThreadFeatures;
+  slots?: ThreadSlots;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const [artifactContext, setArtifactContext] = useArtifactContext();
   const [artifactOpen, closeArtifact] = useArtifactOpen();
@@ -135,9 +168,9 @@ export function Thread() {
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false),
   );
-  const [chatAssistantId] = useQueryState("assistantId", { defaultValue: "" });
-  const [targetType] = useQueryState("targetType", { defaultValue: "assistant" });
-  const [chatGraphId] = useQueryState("graphId", { defaultValue: "" });
+  const [chatAssistantId] = useQueryState("assistantId", { defaultValue: initialAssistantId });
+  const [targetType] = useQueryState("targetType", { defaultValue: initialTargetType });
+  const [chatGraphId] = useQueryState("graphId", { defaultValue: initialGraphId });
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false),
@@ -178,6 +211,10 @@ export function Thread() {
   const messages = stream.messages;
   const isLoading = stream.isLoading;
   const lastError = useRef<string | undefined>(undefined);
+  const allowRunOptions = features?.allowRunOptions ?? true;
+  const showHistory = features?.showHistory ?? true;
+  const showArtifacts = features?.showArtifacts ?? true;
+  const allowContextBar = features?.showContextBar ?? true;
 
   const setThreadId = (id: string | null) => {
     _setThreadId(id);
@@ -186,6 +223,13 @@ export function Thread() {
   };
 
   useEffect(() => {
+    if (!allowRunOptions) {
+      setRuntimeModels([]);
+      setRuntimeTools([]);
+      setRuntimeLoading(false);
+      setRuntimeError(null);
+      return;
+    }
     let cancelled = false;
     async function loadRuntimeCapabilities() {
       setRuntimeLoading(true);
@@ -226,7 +270,7 @@ export function Thread() {
     return () => {
       cancelled = true;
     };
-  }, [appliedRunOptions.modelId]);
+  }, [allowRunOptions, appliedRunOptions.modelId]);
 
   useEffect(() => {
     if (!advancedOptionsOpen) {
@@ -417,18 +461,24 @@ export function Thread() {
     ? { duration: 0 }
     : { type: "spring" as const, stiffness: 300, damping: 30 };
   const normalizedTargetType = targetType === "graph" ? "graph" : "assistant";
-  const activeGraphId = normalizedTargetType === "graph" ? chatAssistantId : chatGraphId;
+  const activeGraphId = normalizedTargetType === "graph" ? chatGraphId || chatAssistantId : chatGraphId;
   const activeAssistantId = normalizedTargetType === "assistant" ? chatAssistantId : "";
   const sourceLabel = threadId
     ? "From Thread"
     : normalizedTargetType === "graph"
     ? "From Graph"
       : "From Assistant";
-  const showContextBar = Boolean(projectId || activeGraphId || activeAssistantId || threadId);
+  const showContextBar = allowContextBar && Boolean(projectId || activeGraphId || activeAssistantId || threadId);
+  const artifactColumnVisible = useMemo(
+    () => (showArtifacts && artifactOpen) || Boolean(slots?.rightPanelSlot),
+    [artifactOpen, showArtifacts, slots?.rightPanelSlot],
+  );
+  const effectiveEmptyTitle = emptyTitle || title;
+  const effectiveEmptyDescription = emptyDescription || description;
 
   return (
     <div className="flex min-h-0 w-full flex-1 overflow-hidden">
-      <div className="relative hidden lg:flex">
+      {showHistory ? <div className="relative hidden lg:flex">
         <motion.div
           className="absolute z-20 h-full overflow-hidden border-r border-border/80 bg-card/90 backdrop-blur"
           style={{ width: 300 }}
@@ -445,12 +495,12 @@ export function Thread() {
             <ThreadHistory />
           </div>
         </motion.div>
-      </div>
+      </div> : null}
 
       <div
         className={cn(
           "grid w-full grid-cols-[1fr_0fr] transition-all motion-standard",
-          artifactOpen && "grid-cols-[3fr_2fr]",
+          artifactColumnVisible && "grid-cols-[3fr_2fr]",
         )}
       >
         <motion.div
@@ -460,8 +510,8 @@ export function Thread() {
           )}
           layout={isLargeScreen && !prefersReducedMotion}
           animate={{
-            marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-            width: chatHistoryOpen
+            marginLeft: showHistory && chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
+            width: showHistory && chatHistoryOpen
               ? isLargeScreen
                 ? "calc(100% - 300px)"
                 : "100%"
@@ -469,10 +519,10 @@ export function Thread() {
           }}
           transition={shellSpringTransition}
         >
-          {!chatStarted && (
-            <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
-              <div>
-                {(!chatHistoryOpen || !isLargeScreen) && (
+            {!chatStarted && (
+              <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
+                <div>
+                {showHistory && (!chatHistoryOpen || !isLargeScreen) && (
                   <Button
                     className="hover:bg-accent hover:text-accent-foreground"
                     variant="ghost"
@@ -489,6 +539,11 @@ export function Thread() {
               <div className="absolute top-2 right-4 flex items-center">
                 <OpenGitHubRepo />
               </div>
+              {slots?.headerSlot ? (
+                <div className="absolute top-2 left-16 right-20 z-10 flex justify-center px-4">
+                  {slots.headerSlot}
+                </div>
+              ) : null}
               {showContextBar ? (
                 <div className="absolute top-14 left-4 max-w-[calc(100%-2rem)]">
                   <ChatContextPanel
@@ -507,7 +562,7 @@ export function Thread() {
             <div className="relative z-10 flex items-start justify-between gap-3 p-2">
               <div className="relative flex min-w-0 flex-1 items-start justify-start gap-2">
                 <div className="absolute left-0 z-10">
-                  {(!chatHistoryOpen || !isLargeScreen) && (
+                  {showHistory && (!chatHistoryOpen || !isLargeScreen) && (
                     <Button
                       className="hover:bg-accent hover:text-accent-foreground"
                       variant="ghost"
@@ -534,9 +589,10 @@ export function Thread() {
                   >
                     <LangGraphLogoSVG width={32} height={32} />
                     <span className="text-xl font-semibold tracking-tight">
-                      Agent Chat
+                      {title}
                     </span>
                   </motion.button>
+                  {slots?.headerSlot ? <div className="max-w-full">{slots.headerSlot}</div> : null}
                   {showContextBar ? <ChatContextPanel
                     sourceLabel={sourceLabel}
                     graphId={activeGraphId}
@@ -613,11 +669,22 @@ export function Thread() {
                   {!chatStarted && (
                     <div className="flex items-center gap-3">
                       <LangGraphLogoSVG className="h-8 flex-shrink-0" />
-                      <h1 className="text-2xl font-semibold tracking-tight">
-                        Agent Chat
-                      </h1>
+                      <div className="flex flex-col gap-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                          {effectiveEmptyTitle}
+                        </h1>
+                        {effectiveEmptyDescription ? (
+                          <p className="text-muted-foreground max-w-2xl text-sm">
+                            {effectiveEmptyDescription}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   )}
+
+                  {!chatStarted && slots?.emptyStateSlot ? (
+                    <div className="w-full max-w-3xl px-1 pb-2">{slots.emptyStateSlot}</div>
+                  ) : null}
 
                   <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
 
@@ -630,7 +697,7 @@ export function Thread() {
                         : "border border-solid",
                     )}
                   >
-                    <Sheet open={advancedOptionsOpen} onOpenChange={setAdvancedOptionsOpen}>
+                    {allowRunOptions ? <Sheet open={advancedOptionsOpen} onOpenChange={setAdvancedOptionsOpen}>
                       <SheetContent side={isLargeScreen ? "right" : "bottom"} className="overflow-y-auto sm:max-w-xl">
                         <SheetHeader>
                           <SheetTitle>Run options</SheetTitle>
@@ -763,7 +830,7 @@ export function Thread() {
                           </Button>
                         </SheetFooter>
                       </SheetContent>
-                    </Sheet>
+                    </Sheet> : null}
                     <form
                       onSubmit={handleSubmit}
                       className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2"
@@ -772,7 +839,7 @@ export function Thread() {
                         blocks={contentBlocks}
                         onRemove={removeBlock}
                       />
-                      <div className="px-3 pt-3">
+                      {allowRunOptions ? <div className="px-3 pt-3">
                         <button
                           type="button"
                           className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -787,7 +854,7 @@ export function Thread() {
                           ) : null}
                           {advancedOptionsOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                         </button>
-                      </div>
+                      </div> : null}
                       <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -870,21 +937,31 @@ export function Thread() {
             />
           </StickToBottom>
         </motion.div>
-        <div className={cn("relative flex flex-col", artifactOpen && "border-l")}>
-          <div className="absolute inset-0 flex min-w-[30vw] flex-col">
-            <div className="grid grid-cols-[1fr_auto] border-b p-4">
-              <ArtifactTitle className="truncate overflow-hidden" />
-              <button
-                type="button"
-                onClick={closeArtifact}
-                className="cursor-pointer"
-              >
-                <XIcon className="size-5" />
-              </button>
+        {artifactColumnVisible ? (
+          <div className={cn("relative flex flex-col", (showArtifacts && artifactOpen) || slots?.rightPanelSlot ? "border-l" : "") }>
+            <div className="absolute inset-0 flex min-w-[30vw] flex-col">
+              {showArtifacts && artifactOpen ? (
+                <>
+                  <div className="grid grid-cols-[1fr_auto] border-b p-4">
+                    <ArtifactTitle className="truncate overflow-hidden" />
+                    <button
+                      type="button"
+                      onClick={closeArtifact}
+                      className="cursor-pointer"
+                    >
+                      <XIcon className="size-5" />
+                    </button>
+                  </div>
+                  <ArtifactContent className="relative flex-grow" />
+                </>
+              ) : slots?.rightPanelSlot ? (
+                <div className="flex h-full flex-col overflow-y-auto bg-card/40 p-4">
+                  {slots.rightPanelSlot}
+                </div>
+              ) : null}
             </div>
-            <ArtifactContent className="relative flex-grow" />
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );
@@ -968,16 +1045,14 @@ function ChatContextPanel({
               <BadgeInfo className="size-4" />
             </Button>
           </div>
-          <>
-            {graphId ? <ContextRow label="graph" value={graphId} /> : null}
-            {assistantId ? <ContextRow label="assistant" value={assistantId} /> : null}
-            {threadId ? (
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/80">thread</span>
-                <ThreadContextChip threadId={threadId} />
-              </div>
-            ) : null}
-          </>
+          {graphId ? <ContextRow label="graph" value={graphId} /> : null}
+          {assistantId ? <ContextRow label="assistant" value={assistantId} /> : null}
+          {threadId ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/80">thread</span>
+              <ThreadContextChip threadId={threadId} />
+            </div>
+          ) : null}
         </div>
       )}
     </div>

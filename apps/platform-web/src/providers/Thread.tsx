@@ -70,15 +70,36 @@ function getThreadSearchMetadata(
   return { assistant_id: targetId };
 }
 
-export function ThreadProvider({ children }: { children: ReactNode }) {
+export function ThreadProvider({
+  children,
+  initialApiUrl,
+  initialAssistantId,
+  initialGraphId,
+  initialTargetType,
+}: {
+  children: ReactNode;
+  initialApiUrl?: string;
+  initialAssistantId?: string;
+  initialGraphId?: string;
+  initialTargetType?: "assistant" | "graph";
+}) {
   const { projectId } = useWorkspaceContext();
   const autoTokenEnabled = process.env.NEXT_PUBLIC_AUTO_ACCESS_TOKEN === "true";
   const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
   const envAssistantId: string | undefined = process.env.NEXT_PUBLIC_ASSISTANT_ID;
 
-  const [apiUrl] = useQueryState("apiUrl");
-  const [assistantId] = useQueryState("assistantId");
-  const [targetType] = useQueryState("targetType", { defaultValue: "assistant" });
+  const [apiUrl] = useQueryState("apiUrl", {
+    defaultValue: initialApiUrl || "",
+  });
+  const [assistantId] = useQueryState("assistantId", {
+    defaultValue: initialAssistantId || "",
+  });
+  const [graphId] = useQueryState("graphId", {
+    defaultValue: initialGraphId || "",
+  });
+  const [targetType] = useQueryState("targetType", {
+    defaultValue: initialTargetType || "assistant",
+  });
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
 
@@ -86,8 +107,9 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     const finalApiUrl = appendLangGraphApiPrefix(
       normalizeApiUrl(apiUrl || envApiUrl || "", envApiUrl),
     );
-    const finalAssistantId = assistantId || envAssistantId;
-    if (!finalApiUrl || !finalAssistantId) return [];
+    const finalTargetId =
+      (targetType === "graph" ? graphId || assistantId : assistantId || envAssistantId) || "";
+    if (!finalApiUrl || !finalTargetId) return [];
 
     const rawApiKey = getApiKey();
     const clientApiKey =
@@ -100,10 +122,10 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     });
 
     try {
-      const threads = await client.threads.search({
-        metadata: {
-          ...getThreadSearchMetadata(targetType || "assistant", finalAssistantId),
-        },
+        const threads = await client.threads.search({
+          metadata: {
+            ...getThreadSearchMetadata(targetType || "assistant", finalTargetId),
+          },
         limit: 100,
         select: ["thread_id", "created_at", "updated_at", "metadata", "status"],
       });
@@ -113,7 +135,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
         event: "thread_list_loaded",
         message: "Loaded threads list",
         context: {
-          assistantId: finalAssistantId,
+          assistantId: finalTargetId,
           count: threads.length,
         },
       });
@@ -125,7 +147,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
         event: "thread_list_load_error",
         message: "Failed to load threads list",
         context: {
-          assistantId: finalAssistantId,
+          assistantId: finalTargetId,
           apiUrl: finalApiUrl,
           error: String(error),
         },
@@ -136,6 +158,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
   }, [
     apiUrl,
     assistantId,
+    graphId,
     envApiUrl,
     envAssistantId,
     projectId,

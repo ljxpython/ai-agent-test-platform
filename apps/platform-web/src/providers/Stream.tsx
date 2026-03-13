@@ -341,8 +341,26 @@ function appendLangGraphApiPrefix(apiUrl: string): string {
   return `${normalizedBase}/api/langgraph`;
 }
 
-export const StreamProvider: FC<{ children: ReactNode }> = ({
+export const StreamProvider: FC<{
+  children: ReactNode;
+  initialApiUrl?: string;
+  initialAssistantId?: string;
+  initialGraphId?: string;
+  initialTargetType?: "assistant" | "graph";
+  title?: string;
+  description?: string;
+  allowAssistantSwitch?: boolean;
+  allowApiUrlEdit?: boolean;
+}> = ({
   children,
+  initialApiUrl,
+  initialAssistantId,
+  initialGraphId,
+  initialTargetType,
+  title,
+  description,
+  allowAssistantSwitch = true,
+  allowApiUrlEdit = true,
 }) => {
   const { projectId } = useWorkspaceContext();
   const autoTokenEnabled = false;
@@ -354,13 +372,16 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
 
   // Use URL params with env var fallbacks
   const [apiUrl, setApiUrl] = useQueryState("apiUrl", {
-    defaultValue: envApiUrl || "",
+    defaultValue: initialApiUrl || envApiUrl || "",
   });
   const [assistantId, setAssistantId] = useQueryState("assistantId", {
-    defaultValue: envAssistantId || "",
+    defaultValue: initialAssistantId || envAssistantId || "",
+  });
+  const [graphId, setGraphId] = useQueryState("graphId", {
+    defaultValue: initialGraphId || "",
   });
   const [targetType, setTargetType] = useQueryState("targetType", {
-    defaultValue: "assistant",
+    defaultValue: initialTargetType || "assistant",
   });
   const normalizedTargetType = targetType === "graph" ? "graph" : "assistant";
   const [assistantOptions, setAssistantOptions] = useState<AssistantOption[]>([]);
@@ -383,13 +404,14 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!envAssistantId && assistantId === "agent") {
       setAssistantId(DEFAULT_ASSISTANT_ID);
+      setGraphId("");
       logClient({
         level: "warn",
         event: "stream_assistant_id_migrated",
         message: "Migrated legacy assistantId 'agent' to 'assistant'",
       });
     }
-  }, [assistantId, envAssistantId, setAssistantId]);
+  }, [assistantId, envAssistantId, setAssistantId, setGraphId]);
 
   useEffect(() => {
     if (!apiUrl) {
@@ -420,7 +442,10 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
   // Determine final values to use, prioritizing URL params then env vars
   const normalizedApiUrl = normalizeApiUrl(apiUrl || envApiUrl || "", envApiUrl);
   const finalApiUrl = appendLangGraphApiPrefix(normalizedApiUrl);
-  const finalAssistantId = assistantId || envAssistantId;
+  const finalAssistantId =
+    normalizedTargetType === "graph"
+      ? graphId || assistantId
+      : assistantId || envAssistantId;
 
   const formStatusHeaders = useMemo<Record<string, string>>(() => {
     const headers: Record<string, string> = {};
@@ -465,17 +490,17 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
       <div className="flex min-h-screen w-full items-center justify-center p-4">
         <div className="animate-in fade-in-0 zoom-in-95 bg-background flex max-w-3xl flex-col rounded-lg border shadow-lg">
           <div className="mt-14 flex flex-col gap-2 border-b p-6">
-            <div className="flex flex-col items-start gap-2">
-              <LangGraphLogoSVG className="h-7" />
-              <h1 className="text-xl font-semibold tracking-tight">
-                Agent Chat
-              </h1>
+              <div className="flex flex-col items-start gap-2">
+                <LangGraphLogoSVG className="h-7" />
+                <h1 className="text-xl font-semibold tracking-tight">
+                  {title || "Agent Chat"}
+                </h1>
+              </div>
+              <p className="text-muted-foreground">
+                {description ||
+                  "Welcome to Agent Chat! Before you get started, you need to enter the URL of the deployment and the assistant / graph ID."}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              Welcome to Agent Chat! Before you get started, you need to enter
-              the URL of the deployment and the assistant / graph ID.
-            </p>
-          </div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -506,53 +531,65 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
 
               setApiUrl(apiUrl);
               setApiKey(apiKey);
-              setTargetType(typeInput);
-              setAssistantId(resolvedAssistantId);
+                setTargetType(typeInput);
+                if (typeInput === "graph") {
+                  setGraphId(resolvedAssistantId);
+                  setAssistantId("");
+                } else {
+                  setAssistantId(resolvedAssistantId);
+                  setGraphId("");
+                }
 
-              form.reset();
-            }}
+                form.reset();
+              }}
             className="bg-muted/50 flex flex-col gap-6 p-6"
           >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="apiUrl">
-                Deployment URL<span className="text-rose-500">*</span>
-              </Label>
-              <p className="text-muted-foreground text-sm">
-                This is the URL of your LangGraph deployment. Can be a local, or
-                production deployment.
-              </p>
-              <Input
-                id="apiUrl"
-                name="apiUrl"
-                className="bg-background"
-                defaultValue={apiUrl || DEFAULT_API_URL}
-                required
-              />
-            </div>
+            {allowApiUrlEdit ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="apiUrl">
+                  Deployment URL<span className="text-rose-500">*</span>
+                </Label>
+                <p className="text-muted-foreground text-sm">
+                  This is the URL of your LangGraph deployment. Can be a local, or
+                  production deployment.
+                </p>
+                <Input
+                  id="apiUrl"
+                  name="apiUrl"
+                  className="bg-background"
+                  defaultValue={apiUrl || DEFAULT_API_URL}
+                  required
+                />
+              </div>
+            ) : (
+              <input type="hidden" name="apiUrl" value={apiUrl || DEFAULT_API_URL} />
+            )}
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="targetType">
-                Target Type<span className="text-rose-500">*</span>
-              </Label>
-              <p className="text-muted-foreground text-sm">
-                Select exactly one target type for chat runs.
-              </p>
-              <select
-                id="targetType"
-                name="targetType"
-                className="bg-background border-input ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                value={normalizedTargetType}
-                onChange={(event) => {
-                  const nextType = event.target.value === "graph" ? "graph" : "assistant";
-                  setTargetType(nextType);
-                }}
-              >
-                <option value="assistant">Assistant</option>
-                <option value="graph">Graph</option>
-              </select>
-            </div>
+            {allowAssistantSwitch ? (
+              <>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="targetType">
+                    Target Type<span className="text-rose-500">*</span>
+                  </Label>
+                  <p className="text-muted-foreground text-sm">
+                    Select exactly one target type for chat runs.
+                  </p>
+                  <select
+                    id="targetType"
+                    name="targetType"
+                    className="bg-background border-input ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    value={normalizedTargetType}
+                    onChange={(event) => {
+                      const nextType = event.target.value === "graph" ? "graph" : "assistant";
+                      setTargetType(nextType);
+                    }}
+                  >
+                    <option value="assistant">Assistant</option>
+                    <option value="graph">Graph</option>
+                  </select>
+                </div>
 
-            {normalizedTargetType === "assistant" ? (
+                {normalizedTargetType === "assistant" ? (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="selectedAssistantId">Assistant List</Label>
                 <p className="text-muted-foreground text-sm">
@@ -587,7 +624,7 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
                   ))}
                 </select>
               </div>
-            ) : (
+                ) : (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="selectedGraphId">Graph List</Label>
                 <p className="text-muted-foreground text-sm">
@@ -620,6 +657,17 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
                   ))}
                 </select>
               </div>
+                )}
+              </>
+            ) : (
+              <>
+                <input type="hidden" name="targetType" value={normalizedTargetType} />
+                {normalizedTargetType === "graph" ? (
+                  <input type="hidden" name="selectedGraphId" value={graphId || initialGraphId || assistantId || initialAssistantId || ""} />
+                ) : (
+                  <input type="hidden" name="selectedAssistantId" value={assistantId || initialAssistantId || ""} />
+                )}
+              </>
             )}
 
             <div className="flex flex-col gap-2">
