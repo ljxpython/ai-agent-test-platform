@@ -24,6 +24,10 @@
     "skills_sql_assistant_demo": {
       "path": "./graph_src_v2/agents/skills_sql_assistant_agent/graph.py:graph",
       "description": "SQL 技能助手演示：middleware 注入技能目录，按需 load_skill 加载 schema 与业务规则。"
+    },
+    "sql_agent": {
+      "path": "./graph_src_v2/services/sql_agent/graph.py:graph",
+      "description": "SQL 问答服务：基于内置 Chinook SQLite 示例库的只读查询 Agent，自动完成表发现、schema 检查、SQL 生成、自检与执行。"
     }
   },
   "http": {
