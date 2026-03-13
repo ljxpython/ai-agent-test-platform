@@ -107,7 +107,7 @@ function OpenGitHubRepo() {
       <Tooltip>
         <TooltipTrigger asChild>
           <a
-            href="https://github.com/langchain-ai/agent-chat-ui"
+            href="https://github.com/ljxpython/ai-agent-test-platform"
             target="_blank"
             rel="noreferrer noopener"
             className="flex items-center justify-center"

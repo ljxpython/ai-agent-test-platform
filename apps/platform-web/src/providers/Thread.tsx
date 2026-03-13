@@ -72,7 +72,7 @@ function getThreadSearchMetadata(
 
 export function ThreadProvider({ children }: { children: ReactNode }) {
   const { projectId } = useWorkspaceContext();
-  const autoTokenEnabled = process.env.NEXT_PUBLIC_AUTO_KEYCLOAK_TOKEN === "true";
+  const autoTokenEnabled = process.env.NEXT_PUBLIC_AUTO_ACCESS_TOKEN === "true";
   const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
   const envAssistantId: string | undefined = process.env.NEXT_PUBLIC_ASSISTANT_ID;
 

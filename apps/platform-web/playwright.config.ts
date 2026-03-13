@@ -14,7 +14,7 @@ export default defineConfig({
     timeout: 120_000,
     reuseExistingServer: true,
     env: {
-      NEXT_PUBLIC_AUTO_KEYCLOAK_TOKEN: "false",
+      NEXT_PUBLIC_AUTO_ACCESS_TOKEN: "false",
       NEXT_PUBLIC_API_URL: "http://127.0.0.1:3010",
     },
   },

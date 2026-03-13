@@ -632,8 +632,8 @@ export const StreamProvider: FC<{ children: ReactNode }> = ({
               </p>
               {autoTokenEnabled ? (
                 <p className="text-xs text-emerald-700">
-                  Auto token mode is enabled. Keycloak token is fetched from
-                  <code> /api/keycloak-token</code> automatically.
+                  Auto token mode is enabled. The access token is filled
+                  automatically by the current runtime configuration.
                 </p>
               ) : null}
               <PasswordInput
