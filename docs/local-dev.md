@@ -103,7 +103,13 @@ scripts/check-health.sh
 scripts/dev-down.sh
 ```
 
-首次排错更推荐手工逐个启动；脚本适合在口径已经确认无误后做快速联调。
+推荐把它们理解成固定的操作者入口：
+
+- 启动：`scripts/dev-up.sh`
+- 健康检查：`scripts/check-health.sh`
+- 停止：`scripts/dev-down.sh`
+
+首次排错更推荐手工逐个启动；脚本适合在口径已经确认无误后做快速联调和日常重启/停止。
 
 ## 7. 当前约定
 

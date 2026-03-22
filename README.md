@@ -214,6 +214,14 @@ scripts/check-health.sh
 scripts/dev-down.sh
 ```
 
+建议这样理解这三条脚本：
+
+- 启动：`scripts/dev-up.sh`
+- 健康检查：`scripts/check-health.sh`
+- 停止：`scripts/dev-down.sh`
+
+首次排错优先按 `docs/local-dev.md` 手工逐个服务启动；确认口径无误后，再切回脚本做日常启动/停止。
+
 默认本地部署与联调的唯一事实源：
 
 - `docs/local-deployment-contract.yaml`
@@ -272,6 +280,8 @@ scripts/dev-down.sh
 
 这句话就够了。代理应该自动继续读取 contract；如果缺少必须由你提供的材料，它应该一次性明确告诉你缺什么，而不是要求你重写一大段 prompt。
 
+如果缺的是 `runtime-service` 的模型配置，代理不应只向你索要 AK/SK、API Key、`base_url` 这类零散字段；它应该直接按这个仓库的实际配置形状，向你索要 `apps/runtime-service/graph_src_v2/.env` 中的 `MODEL_ID` 和 `apps/runtime-service/graph_src_v2/conf/settings.yaml` 中对应的模型配置块。
+
 ### 面向 LLM 代理
 
 如果你在编写或调试一个代理来执行这个仓库的本地部署任务，`docs/ai-deployment-assistant-instruction.md` 应该就是单入口；代理读到它之后，应自行继续读取 `docs/local-deployment-contract.yaml`，而不是要求用户再补第二段提示词。它们应该共同解决的是：
@@ -280,6 +290,17 @@ scripts/dev-down.sh
 - 配置文件应该写到哪里，哪些旧说法不能再用
 - 启动、健康检查和结果汇报应该怎么做
 - 模型配置缺失时应该如何收尾，而不是伪造配置
+
+### 继续学习 / 开发时推荐阅读
+
+如果你后续要继续开发或理解这个仓库，建议按这个顺序看：
+
+1. `docs/local-deployment-contract.yaml`：先建立默认四服务启动集的统一口径
+2. `docs/local-dev.md`：看日常本地联调与脚本入口
+3. `docs/deployment-guide.md`：看从零准备环境、PostgreSQL、runtime 模型配置等完整说明
+4. `docs/env-matrix.md`：查每个服务的配置文件和关键变量
+5. `docs/development-guidelines.md`：理解服务职责边界和接口/落库约定
+6. `docs/project-story.md`：了解项目起点、演进和设计取舍
 
 ### 使用这份文档时的几个提醒
 
