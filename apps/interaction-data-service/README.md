@@ -1,6 +1,6 @@
 # Interaction Data Service
 
-`apps/interaction-data-service` 是规划中的交互结果服务。
+`apps/interaction-data-service` 是用于承接交互结果的独立服务。
 
 它的目标不是接管平台现有主数据，也不是做通用数据库代理，而是专门承接：
 
@@ -27,7 +27,14 @@
 
 ## 当前状态
 
-当前目录还处于设计准备阶段，代码尚未开始实现。
+当前目录已经有代码与设计文档，但整体仍处于持续收敛阶段。
+
+当前更准确的理解是：
+
+- 已经存在可供排查和继续演进的真实代码
+- README 主要说明服务边界、目标接口和与其他应用的关系
+- `docs/README.md` 与专题设计文档更适合用来查当前表、接口和后续收敛方向
+- 它目前不属于根级 `README.md` 中默认联调的四个应用集合
 
 已经明确的设计结论：
 
@@ -46,6 +53,8 @@
 - `DELETE /api/records/{record_id}`
 
 服务内部仍以 `record_type` 做 schema 校验、handler 分发和业务表路由。
+
+这里说的 `/api/records*` 是目标收敛方向；如果你当前是在排查已经存在的实现与数据流，请优先参考 `docs/README.md` 中记录的 `/api/usecase-generation/*` 现状接口。
 
 ## 推荐阅读顺序
 

@@ -237,6 +237,8 @@ limit 20;
 
 所以你应该使用下面这些真实路径。
 
+这里的 `<interaction-data-service-base-url>` 故意不写死端口：这个服务目前不在根级默认四应用联调集合里，排查时应以你实际启动的地址为准。
+
 #### 6.1 查 parsed documents
 
 - `GET /api/usecase-generation/workflows/documents`
@@ -245,11 +247,11 @@ limit 20;
 示例：
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/workflows/documents?project_id=<project_id>&limit=20"
+curl "<interaction-data-service-base-url>/api/usecase-generation/workflows/documents?project_id=<project_id>&limit=20"
 ```
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/workflows/documents/<document_id>"
+curl "<interaction-data-service-base-url>/api/usecase-generation/workflows/documents/<document_id>"
 ```
 
 返回体里就会直接包含这些解析字段：
@@ -270,11 +272,11 @@ curl "http://localhost:8000/api/usecase-generation/workflows/documents/<document
 示例：
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/workflows?project_id=<project_id>&limit=20"
+curl "<interaction-data-service-base-url>/api/usecase-generation/workflows?project_id=<project_id>&limit=20"
 ```
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/workflows/<workflow_id>/snapshots"
+curl "<interaction-data-service-base-url>/api/usecase-generation/workflows/<workflow_id>/snapshots"
 ```
 
 #### 6.3 查最终 use cases
@@ -285,11 +287,11 @@ curl "http://localhost:8000/api/usecase-generation/workflows/<workflow_id>/snaps
 示例：
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/use-cases?project_id=<project_id>&limit=20"
+curl "<interaction-data-service-base-url>/api/usecase-generation/use-cases?project_id=<project_id>&limit=20"
 ```
 
 ```bash
-curl "http://localhost:8000/api/usecase-generation/use-cases/<use_case_id>"
+curl "<interaction-data-service-base-url>/api/usecase-generation/use-cases/<use_case_id>"
 ```
 
 ### 7. 一个最快的排查顺序
