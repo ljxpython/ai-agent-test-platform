@@ -267,21 +267,14 @@ scripts/dev-down.sh
 如果你希望 AI 直接帮你处理当前仓库的本地环境，可以把下面这段话直接贴给它：
 
 ```text
-请先阅读 `docs/local-deployment-contract.yaml` 和 `docs/ai-deployment-assistant-instruction.md`，然后严格按当前仓库的 contract 帮我完成本地最小部署与验证。
-
-要求：
-1. 默认本地启动集按四服务 profile 处理：`runtime-service:8123`、`platform-api:2024`、`platform-web:3000`、`runtime-web:3001`
-2. `interaction-data-service` 是仓库内按需服务；如果我没有明确提出，不要把它当作默认本地部署前置条件
-3. 只使用各应用自己的本地配置文件，不要假设存在根目录统一 `.env`
-4. `runtime-web` 本地调试默认直连 `http://localhost:8123`
-5. 不要编造模型配置；如果缺少真实 `model_provider`、`model`、`base_url`、`api_key`，请明确指出缺失项
-6. 能直接完成的步骤直接完成，包括依赖检查、配置整理、启动、健康检查和结果汇总
-7. 最后告诉我：你改了哪些文件、用了哪些配置文件、哪些服务成功、哪些步骤仍受真实模型配置限制、访问地址是什么、默认登录方式是什么
+阅读 `docs/ai-deployment-assistant-instruction.md` 帮我部署环境。
 ```
+
+这句话就够了。代理应该自动继续读取 contract；如果缺少必须由你提供的材料，它应该一次性明确告诉你缺什么，而不是要求你重写一大段 prompt。
 
 ### 面向 LLM 代理
 
-如果你在编写或调试一个代理来执行这个仓库的本地部署任务，优先读取 `docs/local-deployment-contract.yaml`，再用 `docs/ai-deployment-assistant-instruction.md` 约束代理行为。它们应该共同解决的是：
+如果你在编写或调试一个代理来执行这个仓库的本地部署任务，`docs/ai-deployment-assistant-instruction.md` 应该就是单入口；代理读到它之后，应自行继续读取 `docs/local-deployment-contract.yaml`，而不是要求用户再补第二段提示词。它们应该共同解决的是：
 
 - 当前本地部署的唯一有效口径是什么
 - 配置文件应该写到哪里，哪些旧说法不能再用
