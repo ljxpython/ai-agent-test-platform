@@ -21,6 +21,28 @@ document_precedence:
     If any supporting document conflicts with this contract on default local deployment,
     this contract wins.
 
+agent_entrypoint:
+  one_line_user_prompt: 阅读 docs/ai-deployment-assistant-instruction.md 帮我部署环境
+  normal_first_read_path:
+    - docs/ai-deployment-assistant-instruction.md
+    - docs/local-deployment-contract.yaml
+  supporting_docs_are_not_default_prerequisites: true
+  behavior:
+    - Treat the one-line user prompt as sufficient start signal
+    - Do not ask the user to rewrite the prompt into a longer template
+    - Read the guide and this contract before consulting any other supporting doc
+    - Ask the user for missing required materials only when blocked steps truly depend on them
+
+preflight:
+  first_actions:
+    - Read docs/ai-deployment-assistant-instruction.md
+    - Read docs/local-deployment-contract.yaml
+    - Inspect whether required local config files and user-supplied deployment materials already exist
+  ask_if_missing_user_materials:
+    - If any real deployment prerequisite is missing, ask once for the complete missing material package
+    - The request must consolidate all missing required items instead of asking scattered follow-up questions
+    - After asking, pause only the blocked deployment steps and continue safe checks where possible
+
 profiles:
   default-local:
     description: Minimal local deployment and integration profile
@@ -92,11 +114,16 @@ services:
         - User-provided base_url
         - User-provided inference model details
         - User-provided multimodal model details
+      missing_material_request:
+        - credential material
+        - base_url
+        - inference model details
+        - multimodal model details
       required_fields:
         - model_provider
         - model
         - base_url
-        - api_key
+        - provider_credentials
     start:
       workdir: apps/runtime-service
       command: uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-browser
@@ -189,6 +216,7 @@ services:
 failure_handling:
   model_config_missing:
     - Real deployment cannot complete before the user provides credential material, base_url, inference model details, and multimodal model details
+    - Ask the user once for the complete missing material package before retrying blocked runtime steps
     - Continue non-model setup and verification where possible
     - Report exact missing fields
     - Mark runtime-service as blocked
