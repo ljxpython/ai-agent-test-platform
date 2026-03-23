@@ -31,6 +31,8 @@ agent_entrypoint:
     - Treat the one-line user prompt as sufficient start signal
     - Do not ask the user to rewrite the prompt into a longer template
     - Read the guide and this contract before consulting any other supporting doc
+    - Continue into relevant root supporting docs on your own when dependency prep, env locations, startup details, or troubleshooting details are needed
+    - Do not ask the user which root doc to read next
     - Ask the user for missing required materials only when blocked steps truly depend on them
 
 preflight:
@@ -38,10 +40,19 @@ preflight:
     - Read docs/ai-deployment-assistant-instruction.md
     - Read docs/local-deployment-contract.yaml
     - Inspect whether required local config files and user-supplied deployment materials already exist
+  supporting_doc_autoread:
+    - If more root context is needed, continue reading README.md, docs/local-dev.md, docs/deployment-guide.md, or docs/env-matrix.md without asking the user to name them
+    - Stop expanding only when the next concrete deployment step is clear or a real blocker remains
+  startup_strategy:
+    - For normal minimal-input deployment, validate required config first and then prefer root helper scripts for the first standard bring-up
+    - If helper scripts fail, service state is ambiguous, or diagnosis needs isolation, fall back to per-service startup and debugging
   ask_if_missing_user_materials:
     - If any real deployment prerequisite is missing, ask once for the complete repo-shaped config package
     - The request must consolidate all missing required items instead of asking scattered follow-up questions
     - After asking, pause only the blocked deployment steps and continue safe checks where possible
+  ask_if_blocked:
+    - Ask the user only after reading the relevant root docs and checking local files still cannot unblock the next concrete step
+    - Each blocker round must consolidate all currently knowable missing user-owned materials or decisions into one question
 
 profiles:
   default-local:
@@ -89,7 +100,7 @@ global:
     - scripts/dev-up.sh
     - scripts/check-health.sh
     - scripts/dev-down.sh
-  helper_script_rule: Scripts are shortcuts, not config generators.
+  helper_script_rule: Scripts are shortcuts for standard bring-up, not config generators.
 
 services:
   runtime-service:
@@ -237,6 +248,9 @@ failure_handling:
     - Do not claim full deployment success
   helper_script_failure:
     - Return to per-service startup and debugging
+  general_blocker_rule:
+    - Do not ask the user for a better prompt or for the next document to read
+    - Ask once only when the next concrete step is still blocked after root-doc reading and local verification
 
 final_report:
   required_items:
