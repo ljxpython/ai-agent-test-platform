@@ -1,6 +1,6 @@
 # 部署准备与环境说明
 
-本文是默认本地部署的补充说明，重点保留系统依赖、PostgreSQL、环境准备和常见排错信息。
+本文是默认本地部署的补充说明，重点保留系统依赖、PostgreSQL、环境准备和常见排错信息。代理在读取 contract 后，如果需要更细的环境准备或启动上下文，应自行继续读取本文。
 
 默认本地部署的唯一事实源是 `docs/local-deployment-contract.yaml`；代理执行规则见 `docs/ai-deployment-assistant-instruction.md`。
 
@@ -9,6 +9,8 @@
 1. 拉取代码后，需要先准备哪些系统依赖？
 2. 默认四服务启动集分别依赖什么、各自怎么配置？
 3. `platform-api` 的 PostgreSQL、`.env`、`uv`、`pnpm` 应该怎么准备？
+
+它不是额外提示词负担：用户不需要在请求里单独点名本文，代理应在需要这些细节时自行读取。
 
 当前仓库结构：
 
@@ -180,6 +182,8 @@ pnpm -v
 - 安装 `pnpm 10.5.1`
 - 准备一个可连通的 PostgreSQL 16+ 实例
 - 准备至少一个可用模型 API（OpenAI-compatible / DeepSeek / Moonshot 等）
+
+如果继续读取 root docs 和检查本地文件后，发现这里仍缺少必须由用户提供的材料或决策，再一次性把当前已知缺失项问全，不要让用户重复描述任务。
 
 ## 4. PostgreSQL 怎么准备（platform-api）
 
@@ -499,7 +503,7 @@ cp .env.example .env
 pnpm install
 ```
 
-然后手动把 `.env` 改成上面的值。
+然后确认 `.env` 里的值与上面的本地联调口径一致；如果你已经直接从当前模板复制，默认应当就是 `http://localhost:8123` + `assistant`。
 
 ### 启动命令
 
@@ -508,17 +512,15 @@ cd apps/runtime-web
 PORT=3001 pnpm dev
 ```
 
-### 重要说明：`runtime-web` 现有模板与当前仓库联调口径不一致
+### 重要说明：`runtime-web` 应保持直连 `runtime-service`
 
-当前仓库内存在明显冲突：
+当前默认联调口径已经统一为：
 
-- `apps/runtime-web/.env.example` 默认写的是 `NEXT_PUBLIC_API_URL=http://localhost:2024`
-- 但根 README 与 `docs/local-dev.md` 当前推荐的是 `runtime-web -> runtime-service`
-- 且 `runtime-service` 当前默认端口是 `8123`
+- `runtime-web -> runtime-service`
+- `runtime-service` 默认端口是 `8123`
+- `apps/runtime-web/.env` 与 `.env.example` 都应保持 `NEXT_PUBLIC_API_URL=http://localhost:8123`
 
-因此本文建议实际部署时：
-
-- **把 `apps/runtime-web/.env` 的 `NEXT_PUBLIC_API_URL` 改成 `http://localhost:8123`**
+如果你本地历史配置里还残留 `http://localhost:2024`，请手动改回 `http://localhost:8123`。
 
 ## 6. 从零开始的完整准备步骤
 
@@ -642,7 +644,7 @@ PORT=3001 pnpm dev
 - `scripts/dev-down.sh`
 - `scripts/check-health.sh`
 
-但首次部署时，仍建议先手工逐个启动，排错最直观。
+对于最少描述触发的标准部署，先按 contract 做配置检查后优先使用根脚本 bring-up；如果脚本失败、状态不清，或已经进入排错阶段，再回退到手工逐个启动。
 
 日常重复操作时，建议固定这样用：
 
@@ -661,9 +663,9 @@ PORT=3001 pnpm dev
 - 在 `apps/platform-api/.env` 放实际配置
 - 并从 `apps/platform-api` 目录执行 `uv run ...`
 
-### 9.2 `runtime-web` 默认模板地址不对
+### 9.2 `runtime-web` 历史本地配置残留旧地址
 
-模板默认连 `2024`，但当前仓库实际推荐的是连 `8123`。
+当前模板已经按 `8123` 对齐；如果你本地 `apps/runtime-web/.env` 还残留旧的 `2024` 地址，需要手动改回 `http://localhost:8123`。
 
 ### 9.3 `runtime-service` 不是只复制 `.env` 就能跑
 
