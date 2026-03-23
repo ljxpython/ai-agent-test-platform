@@ -168,9 +168,10 @@ pnpm -v
 
 至少要能提供这个仓库实际会落地的一组配置：
 
-- `.env` 里的 `MODEL_ID`
 - `settings.yaml` 里的 `default.default_model_id`
 - `settings.yaml` 里的 `default.models.<model_id>` 配置块
+
+补充约定：`.env` 里的 `MODEL_ID` 默认可以留空；只有在你明确要覆盖 `default.default_model_id` 时才需要填写。
 
 ## 3. 一次性准备清单
 
@@ -369,7 +370,8 @@ curl http://127.0.0.1:2024/api/langgraph/info
 
 ```env
 APP_ENV=test
-MODEL_ID=glm4_mass
+# Leave empty to use settings.yaml -> <env>.default_model_id.
+MODEL_ID=
 
 MASS_URL=https://example.openai-compatible.com/v1
 MASS_GLM_4_MODEL=glm-4
@@ -379,7 +381,8 @@ MASS_KIMI_KEY=your_api_key_here
 说明：
 
 - `APP_ENV`：选择 `settings.yaml` 的环境块，如 `test` / `production`
-- `MODEL_ID`：必须在 `settings.yaml` 的 `models` 中存在
+- `MODEL_ID`：默认可留空；留空时使用当前环境的 `default_model_id`
+- 如果显式设置 `MODEL_ID`，它会覆盖默认模型，且值必须在 `settings.yaml` 的 `models` 中存在
 
 ### 最小 `settings.yaml` 示例
 
@@ -397,7 +400,7 @@ test:
   default_model_id: glm4_mass
 ```
 
-如果你是在给 AI 代理补充缺失模型配置，不要只回复 AK/SK、API Key、`base_url` 和模型名；请直接按上面这种仓库配置形状回复完整的 `MODEL_ID + settings.yaml` 模型块。
+如果你是在给 AI 代理补充缺失模型配置，不要只回复 AK/SK、API Key、`base_url` 和模型名；请直接按上面这种仓库配置形状回复完整的 `settings.yaml` 模型块；只有在需要覆盖默认模型时，再额外提供 `MODEL_ID`。
 
 ### 启动前准备
 

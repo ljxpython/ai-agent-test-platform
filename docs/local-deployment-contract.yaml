@@ -116,16 +116,16 @@ services:
         - apps/runtime-service/graph_src_v2/conf/settings.local.yaml
     minimum_required_checks:
       - APP_ENV exists in apps/runtime-service/graph_src_v2/.env
-      - MODEL_ID exists in apps/runtime-service/graph_src_v2/.env
+      - MODEL_ID in apps/runtime-service/graph_src_v2/.env is either blank or a valid model key from settings.yaml
       - default.default_model_id exists in apps/runtime-service/graph_src_v2/conf/settings.yaml
       - default.models.<model_id> exists in apps/runtime-service/graph_src_v2/conf/settings.yaml
     model_contract:
       real_deployment_prerequisites:
-        - User-provided MODEL_ID for apps/runtime-service/graph_src_v2/.env
+        - User decides whether apps/runtime-service/graph_src_v2/.env should leave MODEL_ID blank or explicitly override the default model
         - User-provided default.models.<model_id> block for apps/runtime-service/graph_src_v2/conf/settings.yaml
         - If multiple models are needed, the user reply should include all model blocks and identify the default model
       missing_material_request:
-        - MODEL_ID
+        - MODEL_ID override only when it differs from default_model_id
         - settings.yaml model block in repo shape
         - default_model_id when it differs from MODEL_ID
       required_fields:
@@ -137,7 +137,8 @@ services:
         - "Please reply once with a repo-shaped runtime config patch:"
         - |
             # apps/runtime-service/graph_src_v2/.env
-            MODEL_ID=<your_model_id>
+            # Leave MODEL_ID empty to use default_model_id.
+            MODEL_ID=
 
             # apps/runtime-service/graph_src_v2/conf/settings.yaml
             default:
@@ -240,7 +241,7 @@ services:
 
 failure_handling:
   model_config_missing:
-    - Real deployment cannot complete before the user provides a repo-shaped runtime config patch containing MODEL_ID and the matching settings.yaml model block
+    - Real deployment cannot complete before the user provides a repo-shaped runtime config patch containing the matching settings.yaml model block and, when needed, a MODEL_ID override
     - Ask the user once for the complete repo-shaped config package before retrying blocked runtime steps
     - Continue non-model setup and verification where possible
     - Report exact missing fields

@@ -56,9 +56,11 @@
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY`
 
+说明：`MODEL_ID` 建议默认留空，让 `settings.yaml` 的 `default_model_id` 生效；只有明确要覆盖默认模型时才填写，而且值必须在 `settings.yaml` 的 `models` 中存在。
+
 缺失模型配置时，优先补这个仓库实际要写入的配置组合：
 
-- `apps/runtime-service/graph_src_v2/.env` 中的 `MODEL_ID`
+- `apps/runtime-service/graph_src_v2/.env` 中的 `MODEL_ID`（只有在你确实需要显式覆盖默认模型时）
 - `apps/runtime-service/graph_src_v2/conf/settings.yaml` 中对应的 `default.models.<model_id>` 配置块
 - 不建议只给零散的 AK/SK、API Key、`base_url` 或模型名
 

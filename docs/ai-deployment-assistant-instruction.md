@@ -63,10 +63,11 @@
 
 要想把这套本地环境真实跑起来，用户必须先提供这个仓库实际会落地的 runtime 模型配置，而不是只给零散的 AK/SK、API Key、`base_url` 或模型名。
 
-至少要一次性补齐两部分：
+至少要一次性补齐核心模型配置：
 
-- `apps/runtime-service/graph_src_v2/.env` 中可用的 `MODEL_ID`
 - `apps/runtime-service/graph_src_v2/conf/settings.yaml` 中与这个 `MODEL_ID` 对应的模型配置块
+
+补充规则：`apps/runtime-service/graph_src_v2/.env` 中的 `MODEL_ID` 默认可以留空；留空时应使用 `settings.yaml` 当前环境块里的 `default_model_id`。只有当用户明确需要覆盖默认模型时，才要求提供 `MODEL_ID`。
 
 如果这些内容没有提供完整，`runtime-service` 就不能被视为真正可运行，真实部署也不能算完成。
 
@@ -87,7 +88,8 @@
 我先继续帮你处理其他不受影响的检查；不过要让 runtime-service 真正跑起来，我这边还缺这个仓库实际需要写入的模型配置。请你一次性按下面格式回复：
 
 # apps/runtime-service/graph_src_v2/.env
-MODEL_ID=<your_model_id>
+# Leave MODEL_ID empty to use default_model_id.
+MODEL_ID=
 
 # apps/runtime-service/graph_src_v2/conf/settings.yaml
 default:

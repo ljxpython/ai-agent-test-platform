@@ -18,7 +18,13 @@ cp graph_src_v2/.env.example graph_src_v2/.env
 2) 至少确认以下变量已填写：
 
 - `APP_ENV`：环境名（如 `test` / `production`），用于选择 `settings.yaml` 的环境块
-- `MODEL_ID`：要使用的模型组 id（必须在 `graph_src_v2/conf/settings.yaml` 的 `models` 中存在）
+
+`MODEL_ID` 使用规则：
+
+- 留空或不设置：使用 `graph_src_v2/conf/settings.yaml` 当前环境块里的 `default_model_id`
+- 显式设置：覆盖默认模型；值必须在 `graph_src_v2/conf/settings.yaml` 的 `models` 中存在
+
+建议默认先留空，只有明确要覆盖默认模型时再填写，避免本地 `.env` 长期残留旧的 model id。
 
 可选（按需启用）：
 
@@ -53,7 +59,7 @@ cp graph_src_v2/conf/settings.yaml.example graph_src_v2/conf/settings.yaml
   - `base_url`
   - `api_key`
 
-说明：运行时只需要传/设置 `MODEL_ID`（或使用 `default_model_id`），模型四元组由 `settings.yaml` 统一映射。
+说明：运行时可以显式传/设置 `MODEL_ID`，也可以直接使用 `default_model_id`；模型四元组由 `settings.yaml` 统一映射。
 
 安全建议：真实 `api_key` / 内网 `base_url` 建议放在 `settings.local.yaml` 做本地覆写，避免提交到仓库。
 
@@ -78,6 +84,8 @@ uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-brows
 ```
 
 如果你已经在 `apps/runtime-service` 目录内，直接执行最后一行 `uv run ...` 即可。
+
+注意：`graph_src_v2/langgraph.json` 会自动加载 `graph_src_v2/.env`。如果 `.env` 中保留了旧的 `MODEL_ID`，它会覆盖 `settings.yaml` 的默认模型；排查模型配置问题时，先检查这里有没有陈旧值。
 
 启动后建议先做最小健康检查：
 
