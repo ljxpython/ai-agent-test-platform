@@ -1,4 +1,4 @@
-<h1 align="center">企业级 AI Agent 平台架构</h1>
+<h1 align="center">企业级 AI Agent 平台</h1>
 
 <p align="center"><strong>Platform Governance + Agent Runtime + MCP + LangGraph 的企业级 AI Agent 平台基础骨架</strong></p>
 

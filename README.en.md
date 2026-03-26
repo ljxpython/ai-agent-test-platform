@@ -1,4 +1,4 @@
-<h1 align="center">Enterprise AI Agent Platform Architecture</h1>
+<h1 align="center">Enterprise AI Agent Platform</h1>
 
 <p align="center"><strong>An enterprise AI agent platform foundation for Platform Governance, Agent Runtime, MCP integration, and LangGraph-based execution</strong></p>
 
