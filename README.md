@@ -1,6 +1,6 @@
 <h1 align="center">企业级 AI Agent 平台</h1>
 
-<p align="center"><strong>Platform Governance + Agent Runtime + MCP + LangGraph 的企业级 AI Agent 平台基础骨架</strong></p>
+<p align="center"><strong>面向二次开发与企业落地的 AI Agent 平台底座</strong></p>
 
 <p align="center"><a href="README.en.md">English</a> | 中文</p>
 

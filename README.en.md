@@ -1,6 +1,6 @@
 <h1 align="center">Enterprise AI Agent Platform</h1>
 
-<p align="center"><strong>An enterprise AI agent platform foundation for Platform Governance, Agent Runtime, MCP integration, and LangGraph-based execution</strong></p>
+<p align="center"><strong>An AI agent platform foundation for enterprise delivery and secondary development</strong></p>
 
 <p align="center">English | <a href="README.md">中文</a></p>
 
