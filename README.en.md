@@ -2,7 +2,7 @@
 
 <p align="center"><strong>An enterprise AI agent platform foundation for Platform Governance, Agent Runtime, MCP integration, and LangGraph-based execution</strong></p>
 
-<p align="center">English | [中文](README.md)</p>
+<p align="center">English | <a href="README.md">中文</a></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/LangGraph-1.0%2B-0E9F6E" alt="LangGraph" />
@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/README-EN%2FZH-F59E0B" alt="README EN/ZH" />
 </p>
 
-<p align="center">[System Overview](#system-overview) · [Quick Start](#quick-start) · [Deployment Guide](docs/deployment-guide.md) · [AI Deployment](#ai-deploy)</p>
+<p align="center"><a href="#system-overview">System Overview</a> · <a href="#quick-start">Quick Start</a> · <a href="docs/deployment-guide.md">Deployment Guide</a> · <a href="#ai-deploy">AI Deployment</a></p>
 
 An enterprise AI agent platform architecture built on `LangGraph / LangChain`, intended as a reusable foundation for further development.  
 It separates the **platform governance layer** from the **Agent Runtime execution layer**, so the repo can support platform-side authentication, project management, audit, and catalog management, while also supporting runtime graph orchestration, model assembly, Tools / MCP / Skills integration, and rapid agent debugging.
