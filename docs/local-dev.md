@@ -27,8 +27,8 @@
 - `apps/platform-api/.env`
 - `apps/platform-web/.env`
 - `apps/runtime-web/.env`
-- `apps/runtime-service/graph_src_v2/.env`
-- `apps/runtime-service/graph_src_v2/conf/settings.yaml`
+- `apps/runtime-service/runtime_service/.env`
+- `apps/runtime-service/runtime_service/conf/settings.yaml`
 
 本地联调时，`runtime-web` 应直连 `http://localhost:8123`，不要沿用旧模板里的 `http://localhost:2024`。
 
@@ -43,16 +43,16 @@
 
 ### 4.1 `apps/runtime-service`
 
-启动前先检查 `apps/runtime-service/graph_src_v2/.env`：
+启动前先检查 `apps/runtime-service/runtime_service/.env`：
 
-- `MODEL_ID` 留空：使用 `apps/runtime-service/graph_src_v2/conf/settings.yaml` 当前环境的 `default_model_id`
+- `MODEL_ID` 留空：使用 `apps/runtime-service/runtime_service/conf/settings.yaml` 当前环境的 `default_model_id`
 - `MODEL_ID` 非空：会覆盖默认模型，且必须是 `settings.yaml` 中真实存在的模型 key
 
 如果只是按默认配置联调，建议把 `MODEL_ID` 留空，避免本地 `.env` 残留旧值导致运行时继续选错模型。
 
 ```bash
 cd apps/runtime-service
-uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-browser
+uv run langgraph dev --config runtime_service/langgraph.json --port 8123 --no-browser
 ```
 
 ### 4.2 `apps/platform-api`

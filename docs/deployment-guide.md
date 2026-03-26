@@ -163,8 +163,8 @@ pnpm -v
 
 `runtime-service` 启动前还必须准备模型配置：
 
-- `graph_src_v2/.env`
-- `graph_src_v2/conf/settings.yaml`
+- `runtime_service/.env`
+- `runtime_service/conf/settings.yaml`
 
 至少要能提供这个仓库实际会落地的一组配置：
 
@@ -363,8 +363,8 @@ curl http://127.0.0.1:2024/api/langgraph/info
 
 ### 关键配置文件
 
-- `apps/runtime-service/graph_src_v2/.env`
-- `apps/runtime-service/graph_src_v2/conf/settings.yaml`
+- `apps/runtime-service/runtime_service/.env`
+- `apps/runtime-service/runtime_service/conf/settings.yaml`
 
 ### 最小 `.env` 示例
 
@@ -406,8 +406,8 @@ test:
 
 ```bash
 cd apps/runtime-service
-cp graph_src_v2/.env.example graph_src_v2/.env
-cp graph_src_v2/conf/settings.yaml.example graph_src_v2/conf/settings.yaml
+cp runtime_service/.env.example runtime_service/.env
+cp runtime_service/conf/settings.yaml.example runtime_service/conf/settings.yaml
 uv sync
 ```
 
@@ -415,7 +415,7 @@ uv sync
 
 ```bash
 cd apps/runtime-service
-uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-browser
+uv run langgraph dev --config runtime_service/langgraph.json --port 8123 --no-browser
 ```
 
 ### 健康检查
@@ -436,7 +436,7 @@ curl http://127.0.0.1:8123/internal/capabilities/tools
 并改用：
 
 ```bash
-uv run langgraph dev --config graph_src_v2/langgraph_auth.json --port 8123 --no-browser
+uv run langgraph dev --config runtime_service/langgraph_auth.json --port 8123 --no-browser
 ```
 
 ## 5.3 `apps/platform-web`
@@ -572,8 +572,8 @@ docker run -d \
 
 ```bash
 cd apps/runtime-service
-cp graph_src_v2/.env.example graph_src_v2/.env
-cp graph_src_v2/conf/settings.yaml.example graph_src_v2/conf/settings.yaml
+cp runtime_service/.env.example runtime_service/.env
+cp runtime_service/conf/settings.yaml.example runtime_service/conf/settings.yaml
 uv sync
 ```
 
@@ -624,7 +624,7 @@ NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```bash
 # terminal 1
 cd apps/runtime-service
-uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-browser
+uv run langgraph dev --config runtime_service/langgraph.json --port 8123 --no-browser
 
 # terminal 2
 cd apps/platform-api
@@ -674,7 +674,7 @@ PORT=3001 pnpm dev
 
 它还必须有：
 
-- `graph_src_v2/conf/settings.yaml`
+- `runtime_service/conf/settings.yaml`
 - 且其中至少有一个可用模型组
 
 ### 9.4 `platform-api` 没有 PG 就启动不完整

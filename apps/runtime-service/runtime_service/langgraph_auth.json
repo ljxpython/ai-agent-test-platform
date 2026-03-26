@@ -1,0 +1,35 @@
+{
+  "python_version": "3.13",
+  "dockerfile_lines": [],
+  "dependencies": [
+    "./"
+  ],
+  "auth": {
+    "path": "./runtime_service/auth/provider.py:oauth_auth"
+  },
+  "graphs": {
+    "assistant": {
+      "path": "./runtime_service/agents/assistant_agent/graph.py:graph",
+      "description": "默认助手主入口：OAuth 鉴权模式下的推荐 assistant 范式，内置 HITL 与多模态中间件。"
+    },
+    "deepagent_demo": {
+      "path": "./runtime_service/agents/deepagent_agent/graph.py:graph",
+      "description": "deepagent 通用演示：包含 subagents + skills 的深度任务分解执行（鉴权模式）。"
+    }
+  },
+  "http": {
+    "app": "./runtime_service/custom_routes/app.py:app",
+    "cors": {
+      "allow_origins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost",
+        "http://127.0.0.1"
+      ],
+      "allow_methods": ["*"],
+      "allow_headers": ["*"],
+      "allow_credentials": false
+    }
+  },
+  "env": "./runtime_service/.env"
+}

@@ -110,19 +110,19 @@ services:
     port: 8123
     config_files:
       required:
-        - apps/runtime-service/graph_src_v2/.env
-        - apps/runtime-service/graph_src_v2/conf/settings.yaml
+        - apps/runtime-service/runtime_service/.env
+        - apps/runtime-service/runtime_service/conf/settings.yaml
       optional:
-        - apps/runtime-service/graph_src_v2/conf/settings.local.yaml
+        - apps/runtime-service/runtime_service/conf/settings.local.yaml
     minimum_required_checks:
-      - APP_ENV exists in apps/runtime-service/graph_src_v2/.env
-      - MODEL_ID in apps/runtime-service/graph_src_v2/.env is either blank or a valid model key from settings.yaml
-      - default.default_model_id exists in apps/runtime-service/graph_src_v2/conf/settings.yaml
-      - default.models.<model_id> exists in apps/runtime-service/graph_src_v2/conf/settings.yaml
+      - APP_ENV exists in apps/runtime-service/runtime_service/.env
+      - MODEL_ID in apps/runtime-service/runtime_service/.env is either blank or a valid model key from settings.yaml
+      - default.default_model_id exists in apps/runtime-service/runtime_service/conf/settings.yaml
+      - default.models.<model_id> exists in apps/runtime-service/runtime_service/conf/settings.yaml
     model_contract:
       real_deployment_prerequisites:
-        - User decides whether apps/runtime-service/graph_src_v2/.env should leave MODEL_ID blank or explicitly override the default model
-        - User-provided default.models.<model_id> block for apps/runtime-service/graph_src_v2/conf/settings.yaml
+        - User decides whether apps/runtime-service/runtime_service/.env should leave MODEL_ID blank or explicitly override the default model
+        - User-provided default.models.<model_id> block for apps/runtime-service/runtime_service/conf/settings.yaml
         - If multiple models are needed, the user reply should include all model blocks and identify the default model
       missing_material_request:
         - MODEL_ID override only when it differs from default_model_id
@@ -136,11 +136,11 @@ services:
       required_user_reply_template:
         - "Please reply once with a repo-shaped runtime config patch:"
         - |
-            # apps/runtime-service/graph_src_v2/.env
+            # apps/runtime-service/runtime_service/.env
             # Leave MODEL_ID empty to use default_model_id.
             MODEL_ID=
 
-            # apps/runtime-service/graph_src_v2/conf/settings.yaml
+            # apps/runtime-service/runtime_service/conf/settings.yaml
             default:
               default_model_id: <your_model_id>
               models:
@@ -152,7 +152,7 @@ services:
                   api_key: <your_api_key>
     start:
       workdir: apps/runtime-service
-      command: uv run langgraph dev --config graph_src_v2/langgraph.json --port 8123 --no-browser
+      command: uv run langgraph dev --config runtime_service/langgraph.json --port 8123 --no-browser
     health_checks:
       - curl http://127.0.0.1:8123/info
       - curl http://127.0.0.1:8123/internal/capabilities/models

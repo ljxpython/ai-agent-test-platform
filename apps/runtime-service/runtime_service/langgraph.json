@@ -1,0 +1,54 @@
+{
+  "python_version": "3.13",
+  "dockerfile_lines": [],
+  "dependencies": [
+    "./"
+  ],
+  "graphs": {
+    "assistant": {
+      "path": "./runtime_service/agents/assistant_agent/graph.py:graph",
+      "description": "默认助手主入口：基于 create_agent 的推荐范式，内置 HumanInTheLoopMiddleware 与多模态处理中间件。"
+    },
+    "customer_support_handoffs_demo": {
+      "path": "./runtime_service/agents/customer_support_agent/graph.py:graph",
+      "description": "客服交接演示：通过状态机步骤（保修收集→问题分类→方案处理）驱动 handoff 流程。"
+    },
+    "deepagent_demo": {
+      "path": "./runtime_service/agents/deepagent_agent/graph.py:graph",
+      "description": "deepagent 统一入口：包含 subagents + skills 的深度任务分解执行，并合并了本地数据分析产物工作流能力。"
+    },
+    "personal_assistant_demo": {
+      "path": "./runtime_service/agents/personal_assistant_agent/graph.py:graph",
+      "description": "个人助理演示：calendar/email 子代理协同，由 supervisor 统一调度。"
+    },
+    "skills_sql_assistant_demo": {
+      "path": "./runtime_service/agents/skills_sql_assistant_agent/graph.py:graph",
+      "description": "SQL 技能助手演示：middleware 注入技能目录，按需 load_skill 加载 schema 与业务规则。"
+    },
+    "sql_agent": {
+      "path": "./runtime_service/services/sql_agent/graph.py:graph",
+      "description": "SQL 问答服务：基于内置 Chinook SQLite 示例库的只读查询 Agent，自动完成表发现、schema 检查、SQL 生成、自检与执行。"
+    },
+    "usecase_workflow_agent": {
+      "path": "./runtime_service/services/usecase_workflow_agent/graph.py:graph",
+      "description": "用例生成工作流样板：基于 create_agent、MultimodalMiddleware 和阶段化工具过滤，串联需求分析、用例评审、人工确认与最终持久化。"
+    }
+  },
+  "http": {
+    "app": "./runtime_service/custom_routes/app.py:app",
+    "cors": {
+      "allow_origins": [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://localhost",
+        "http://127.0.0.1"
+      ],
+      "allow_methods": ["*"],
+      "allow_headers": ["*"],
+      "allow_credentials": false
+    }
+  },
+  "env": "./runtime_service/.env"
+}

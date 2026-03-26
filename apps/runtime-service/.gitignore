@@ -340,8 +340,8 @@ test_*.py
 !/tests/
 !/tests/**/*.py
 !/tests/**/conftest.py
-!/graph_src_v2/tests/
-!/graph_src_v2/tests/**/*.py
+!/runtime_service/tests/
+!/runtime_service/tests/**/*.py
 !/frontend/src/pages/test/
 
 ### Vuejs ###

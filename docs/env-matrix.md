@@ -42,10 +42,10 @@
 
 主要配置来源：
 
-- `apps/runtime-service/graph_src_v2/.env`
-- `apps/runtime-service/graph_src_v2/.env.example`
-- `apps/runtime-service/graph_src_v2/conf/settings.yaml`
-- `apps/runtime-service/graph_src_v2/conf/settings.local.yaml`
+- `apps/runtime-service/runtime_service/.env`
+- `apps/runtime-service/runtime_service/.env.example`
+- `apps/runtime-service/runtime_service/conf/settings.yaml`
+- `apps/runtime-service/runtime_service/conf/settings.local.yaml`
 
 关键变量：
 
@@ -60,8 +60,8 @@
 
 缺失模型配置时，优先补这个仓库实际要写入的配置组合：
 
-- `apps/runtime-service/graph_src_v2/.env` 中的 `MODEL_ID`（只有在你确实需要显式覆盖默认模型时）
-- `apps/runtime-service/graph_src_v2/conf/settings.yaml` 中对应的 `default.models.<model_id>` 配置块
+- `apps/runtime-service/runtime_service/.env` 中的 `MODEL_ID`（只有在你确实需要显式覆盖默认模型时）
+- `apps/runtime-service/runtime_service/conf/settings.yaml` 中对应的 `default.models.<model_id>` 配置块
 - 不建议只给零散的 AK/SK、API Key、`base_url` 或模型名
 
 ## 4. `runtime-web`

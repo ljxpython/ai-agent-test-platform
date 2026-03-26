@@ -143,12 +143,12 @@
 
 当前仓库里，真正和 AI 能力强相关的内容都已经收敛到 `runtime-service`：
 
-- graph 注册在 `graph_src_v2/langgraph.json`
-- 运行时参数解析在 `graph_src_v2/runtime/options.py`
-- 模型装配在 `graph_src_v2/runtime/modeling.py`
-- 工具装配在 `graph_src_v2/tools/registry.py`
-- MCP server 清单在 `graph_src_v2/mcp/servers.py`
-- 业务型智能体建议放在 `graph_src_v2/services/<service_name>/`
+- graph 注册在 `runtime_service/langgraph.json`
+- 运行时参数解析在 `runtime_service/runtime/options.py`
+- 模型装配在 `runtime_service/runtime/modeling.py`
+- 工具装配在 `runtime_service/tools/registry.py`
+- MCP server 清单在 `runtime_service/mcp/servers.py`
+- 业务型智能体建议放在 `runtime_service/services/<service_name>/`
 
 更关键的是，这里不是只给了一个空壳，而是已经准备好了多种开发范式和例子：
 
@@ -288,6 +288,6 @@ graph = make_graph
 - `apps/platform-api/docs/current-architecture.md`
 - `apps/platform-web/README.md`
 - `apps/runtime-web/README.md`
-- `apps/runtime-service/graph_src_v2/docs/README.md`
-- `apps/runtime-service/graph_src_v2/docs/05-template-to-runnable-agent-10min.md`
+- `apps/runtime-service/runtime_service/docs/README.md`
+- `apps/runtime-service/runtime_service/docs/05-template-to-runnable-agent-10min.md`
 - `apps/interaction-data-service/README.md`
