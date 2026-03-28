@@ -32,6 +32,8 @@ import mimetypes
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping, Sequence
 
+from langchain.messages import HumanMessage
+
 
 def file_path_to_frontend_content_block(path: str | Path) -> dict[str, Any]:
     """把本地文件编码成“前端请求中的附件 content block”。
@@ -71,13 +73,7 @@ def build_human_message(
     *,
     blocks: Sequence[Mapping[str, Any]] | None = None,
 ) -> Any:
-    """构造 LangChain 的 HumanMessage，但不强依赖 langchain 在 import 时存在。
-
-    这里使用延迟 import（import_module），使该文件在纯工具/脚本场景下更“轻”。
-    """
-    from importlib import import_module
-
-    HumanMessage = getattr(import_module("langchain.messages"), "HumanMessage")
+    """构造 LangChain 的 HumanMessage。"""
     content: list[Any] = [{"type": "text", "text": text}]
     if blocks:
         content.extend([dict(block) for block in blocks])

@@ -4,7 +4,7 @@
 
 当前多模态能力已经在仓库中落地，而不再只是设计草案。
 
-核心实现文件：`runtime_service/middlewares/multimodal.py`
+核心实现目录：`runtime_service/middlewares/multimodal/`
 
 已接入的 graph / agent 路径包括：
 

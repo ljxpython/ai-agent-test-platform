@@ -58,11 +58,14 @@ curl -sS http://127.0.0.1:8123/internal/capabilities/models
 
 - `runtime_service/devtools/multimodal_frontend_compat.py`：把 PDF / 图片等原始输入编码为「前端形状」的 content blocks，便于本地自测。
 - `runtime_service/devtools/dump_multimodal_fixtures.py`：遍历并输出 fixtures 的原始 bytes 与（如有）PDF 文本提取结果。
+- `runtime_service/tests/multimodal_selfcheck.py`：直接走一遍 `MultimodalMiddleware` 的解析与改写链路，适合单文件调试。
 
 运行命令：
 
 ```bash
 ./.venv/bin/python -m runtime_service.devtools.dump_multimodal_fixtures
+uv run python runtime_service/tests/multimodal_selfcheck.py --file runtime_service/test_data/11a1f536fbf8a56a69ffa6b298b2408d.jpeg
+uv run python runtime_service/tests/multimodal_selfcheck.py --file runtime_service/test_data/12-多轮对话中让AI保持长期记忆的8种优化方式篇.pdf
 ```
 
 fixtures 存放在 `runtime_service/test_data/`。
@@ -97,6 +100,7 @@ fixtures 存放在 `runtime_service/test_data/`。
 - `docs/05-template-to-runnable-agent-10min.md`：从模板到可运行 graph 的最小落地流程
 - `docs/06-multimodal-middleware-design.md`：当前多模态实现状态与扩展边界
 - `docs/07-service-modularization.md`：同一运行时内的业务服务模块化规范
+- `docs/08-middleware-development-playbook.md`：middleware 目录组织、生命周期钩子与测试规范
 
 ## 开发约定
 
@@ -107,4 +111,5 @@ fixtures 存放在 `runtime_service/test_data/`。
 5. 流程文档优先参考 `docs/archive/02-runnableconfig-vs-serverruntime.md`、`docs/04-agent-scaffold-templates.md`、`docs/05-template-to-runnable-agent-10min.md`
 6. 显式步骤流可额外参考 `customer_support_agent/graph.py`
 7. 业务服务模块化开发规范见 `docs/07-service-modularization.md`
-8. 改完代码后至少跑相关 pytest 与 `python -m compileall runtime_service`
+8. middleware 开发规范见 `docs/08-middleware-development-playbook.md`
+9. 改完代码后至少跑相关 pytest 与 `python -m compileall runtime_service`

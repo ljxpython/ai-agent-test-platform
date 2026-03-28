@@ -439,6 +439,56 @@ def test_multimodal_middleware_rewrites_mixed_image_and_pdf_blocks_in_order() ->
     assert response.result[0].text == "ok"
 
 
+def test_multimodal_middleware_detail_mode_includes_parsed_text_preview() -> None:
+    def fake_parser(
+        artifact: AttachmentArtifact, block: Mapping[str, Any]
+    ) -> AttachmentArtifact:
+        del block
+        next_artifact = dict(artifact)
+        next_artifact["status"] = "parsed"
+        next_artifact["summary_for_model"] = "PDF 已解析：这是测试摘要。"
+        next_artifact["parsed_text"] = "ABCDEFGHIJKL"
+        next_artifact["structured_data"] = {"key_points": ["测试点"]}
+        return cast(AttachmentArtifact, next_artifact)
+
+    middleware = MultimodalMiddleware(
+        parser=fake_parser,
+        detail_mode=True,
+        detail_text_max_chars=5,
+    )
+    request = ModelRequest(
+        model=cast(BaseChatModel, object()),
+        messages=[
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "请看这个 PDF"},
+                    {
+                        "type": "file",
+                        "mimeType": "application/pdf",
+                        "data": "pdfbase64",
+                        "metadata": {"filename": "report.pdf"},
+                    },
+                ]
+            )
+        ],
+        system_message=SystemMessage(content="Base prompt"),
+        state=cast(Any, {}),
+    )
+
+    def handler(updated_request: ModelRequest) -> ModelResponse:
+        content = cast(list[dict[str, Any]], updated_request.messages[0].content)
+        assert content[1]["type"] == "text"
+        assert "解析文本片段:" in content[1]["text"]
+        assert "ABCDE ...[已截断]" in content[1]["text"]
+        system_prompt = updated_request.system_prompt or ""
+        assert "解析文本片段:" in system_prompt
+        assert "ABCDE ...[已截断]" in system_prompt
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    response = middleware.wrap_model_call(request, handler)
+    assert response.result[0].text == "ok"
+
+
 def test_extract_pdf_text_from_base64_payload() -> None:
     pdf_bytes = (
         b"%PDF-1.4\n"
@@ -489,6 +539,132 @@ def test_multimodal_summary_not_reinjected_on_follow_up_text_turn() -> None:
         return ModelResponse(result=[AIMessage(content="ok")])
 
     response = middleware.wrap_model_call(request, handler)
+    assert response.result[0].text == "ok"
+
+
+def test_multimodal_middleware_accumulates_pdf_artifacts_across_turns() -> None:
+    middleware = MultimodalMiddleware()
+    first_state: dict[str, Any] = {}
+
+    first_request = ModelRequest(
+        model=cast(BaseChatModel, object()),
+        messages=[
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "第一份 PDF"},
+                    {
+                        "type": "file",
+                        "mimeType": "application/pdf",
+                        "data": "pdf_base64_a",
+                        "metadata": {"filename": "a.pdf"},
+                    },
+                ]
+            )
+        ],
+        system_message=SystemMessage(content="Base prompt"),
+        state=cast(Any, first_state),
+    )
+
+    def first_handler(updated_request: ModelRequest) -> ModelResponse:
+        state = cast(dict[str, Any], updated_request.state)
+        first_state.update(state)
+        assert len(state[MULTIMODAL_ATTACHMENTS_KEY]) == 1
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    middleware.wrap_model_call(first_request, first_handler)
+
+    second_request = ModelRequest(
+        model=cast(BaseChatModel, object()),
+        messages=[
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "第二份 PDF"},
+                    {
+                        "type": "file",
+                        "mimeType": "application/pdf",
+                        "data": "pdf_base64_b",
+                        "metadata": {"filename": "b.pdf"},
+                    },
+                ]
+            )
+        ],
+        system_message=SystemMessage(content="Base prompt"),
+        state=cast(Any, first_state),
+    )
+
+    def second_handler(updated_request: ModelRequest) -> ModelResponse:
+        state = cast(dict[str, Any], updated_request.state)
+        attachments = state[MULTIMODAL_ATTACHMENTS_KEY]
+        assert len(attachments) == 2
+        names = [item.get("name") for item in attachments]
+        assert "a.pdf" in names
+        assert "b.pdf" in names
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    response = middleware.wrap_model_call(second_request, second_handler)
+    assert response.result[0].text == "ok"
+
+
+def test_multimodal_middleware_accumulates_image_and_pdf_across_turns() -> None:
+    middleware = MultimodalMiddleware()
+    session_state: dict[str, Any] = {}
+
+    image_request = ModelRequest(
+        model=cast(BaseChatModel, object()),
+        messages=[
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "先看图片"},
+                    {
+                        "type": "image",
+                        "mimeType": "image/png",
+                        "data": "img_base64_a",
+                        "metadata": {"name": "image-a.png"},
+                    },
+                ]
+            )
+        ],
+        system_message=SystemMessage(content="Base prompt"),
+        state=cast(Any, session_state),
+    )
+
+    def image_handler(updated_request: ModelRequest) -> ModelResponse:
+        state = cast(dict[str, Any], updated_request.state)
+        session_state.update(state)
+        assert len(state[MULTIMODAL_ATTACHMENTS_KEY]) == 1
+        assert state[MULTIMODAL_ATTACHMENTS_KEY][0]["kind"] == "image"
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    middleware.wrap_model_call(image_request, image_handler)
+
+    pdf_request = ModelRequest(
+        model=cast(BaseChatModel, object()),
+        messages=[
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "再看 PDF"},
+                    {
+                        "type": "file",
+                        "mimeType": "application/pdf",
+                        "data": "pdf_base64_c",
+                        "metadata": {"filename": "c.pdf"},
+                    },
+                ]
+            )
+        ],
+        system_message=SystemMessage(content="Base prompt"),
+        state=cast(Any, session_state),
+    )
+
+    def pdf_handler(updated_request: ModelRequest) -> ModelResponse:
+        state = cast(dict[str, Any], updated_request.state)
+        attachments = state[MULTIMODAL_ATTACHMENTS_KEY]
+        kinds = [item["kind"] for item in attachments]
+        assert "image" in kinds
+        assert "pdf" in kinds
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    response = middleware.wrap_model_call(pdf_request, pdf_handler)
     assert response.result[0].text == "ok"
 
 
