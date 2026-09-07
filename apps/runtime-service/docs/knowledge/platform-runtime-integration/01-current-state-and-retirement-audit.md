@@ -3,7 +3,6 @@
 - 文档类型：Draft Supporting Audit
 - 状态：owner 已批准处置方向；实施与归档进行中
 - 审计日期：2026-09-03
-- 规范真源：[`redesign-platform-runtime-integration`](../../../../../openspec/changes/redesign-platform-runtime-integration/)
 
 ## 1. 审计标准
 

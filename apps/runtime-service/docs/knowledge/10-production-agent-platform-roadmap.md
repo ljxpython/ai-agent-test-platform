@@ -524,11 +524,7 @@ StateGraph；Deep Agent、MCP 和 Backend 能力在 R4 通过独立 Demo 验证�
 - [Runtime Custom Route 与模型配置边界](./26-runtime-custom-routes-and-model-config-design.md)
 - [Platform API 与 Runtime Service 分阶段整合设计](./27-platform-runtime-integration-phased-design.md)
 - [Runtime Service Demo 计划](./28-runtime-refactor-development-plan.md#13-可运行-demo-计划)
-- [runtime-service 当前架构标准](../standards/02-architecture.md)
-- [Agent 开发 Playbook](../standards/03-agent-development-playbook.md)
-- [Middleware 开发 Playbook](../standards/08-middleware-development-playbook.md)
 - [platform-api Runtime Gateway 标准](../../../../platform-api/docs/standards/runtime-gateway-interface-standard.md)
-- [现有 React Agent Web / Durable Run change](../../../../../openspec/changes/add-react-agent-web/proposal.md)
 - [Open SWE](https://github.com/langchain-ai/open-swe)
 
 外部 `agent-engineering-learning` 分析资料用于形成本文结论，但不作为本仓库 current standard；

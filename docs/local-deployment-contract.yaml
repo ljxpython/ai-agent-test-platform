@@ -11,20 +11,20 @@ document_precedence:
   canonical:
     - docs/local-deployment-contract.yaml
   supporting:
-    - docs/ai-deployment-assistant-instruction.md
+    - docs/guides/ai-deployment-assistant-instruction.md
     - README.md
-    - docs/local-dev.md
-    - docs/env-matrix.md
-    - docs/deployment-guide.md
-    - docs/development-guidelines.md
+    - docs/quickstart/local-dev.md
+    - docs/quickstart/env-matrix.md
+    - docs/quickstart/deployment-guide.md
+    - docs/guides/development-guidelines.md
   rule: >
     If any supporting document conflicts with this contract on default local deployment,
     this contract wins.
 
 agent_entrypoint:
-  one_line_user_prompt: 阅读 docs/ai-deployment-assistant-instruction.md 帮我部署环境
+  one_line_user_prompt: 阅读 docs/guides/ai-deployment-assistant-instruction.md 帮我部署环境
   normal_first_read_path:
-    - docs/ai-deployment-assistant-instruction.md
+    - docs/guides/ai-deployment-assistant-instruction.md
     - docs/local-deployment-contract.yaml
   supporting_docs_are_not_default_prerequisites: true
   behavior:
@@ -37,11 +37,11 @@ agent_entrypoint:
 
 preflight:
   first_actions:
-    - Read docs/ai-deployment-assistant-instruction.md
+    - Read docs/guides/ai-deployment-assistant-instruction.md
     - Read docs/local-deployment-contract.yaml
     - Inspect whether required local config files and user-supplied deployment materials already exist
   supporting_doc_autoread:
-    - If more root context is needed, continue reading README.md, docs/local-dev.md, docs/deployment-guide.md, or docs/env-matrix.md without asking the user to name them
+    - If more root context is needed, continue reading README.md, docs/quickstart/local-dev.md, docs/quickstart/deployment-guide.md, or docs/quickstart/env-matrix.md without asking the user to name them
     - Stop expanding only when the next concrete deployment step is clear or a real blocker remains
   startup_strategy:
     - For normal minimal-input deployment, validate required config first and then prefer root helper scripts for the first standard bring-up

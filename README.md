@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/README-EN%2FZH-F59E0B" alt="README EN/ZH" />
 </p>
 
-<p align="center"><a href="#system-overview">系统总览</a> · <a href="#frontend-entry">前端入口</a> · <a href="#quick-start">快速开始</a> · <a href="docs/deployment-guide.md">部署文档</a> · <a href="https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1">最新 Release</a> · <a href="docs/CHANGELOG.md">更新日志</a> · <a href="#acknowledgements">致谢参考</a> · <a href="#ai-deploy">AI代理部署</a></p>
+<p align="center"><a href="#system-overview">系统总览</a> · <a href="#frontend-entry">前端入口</a> · <a href="#quick-start">快速开始</a> · <a href="docs/quickstart/deployment-guide.md">部署文档</a> · <a href="https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1">最新 Release</a> · <a href="docs/CHANGELOG.md">更新日志</a> · <a href="#acknowledgements">致谢参考</a> · <a href="#ai-deploy">AI代理部署</a></p>
 
 ## Testcase Agent 展示视频
 
@@ -41,49 +41,43 @@
 - 想快速验证 LangGraph Runtime、Agent 行为和前端交互的开发者
 - 希望把 AI 协同开发真正纳入工程流程的团队
 
-> 想先理解 AI Harness 和任务分级，可看 [Harness Engineering 简明说明](docs/knowledge/harness-engineering.md)。
+> 想先理解开发流程和任务分级，可看 [AGENTS.md](AGENTS.md)。
 
 当前建议优先把下面几份文档当成正式事实源：
 
 - `docs/local-deployment-contract.yaml`
-- `docs/standards/01-ai-execution-system.md`
-- `docs/local-dev.md`
-- `docs/env-matrix.md`
+- `AGENTS.md`
+- `docs/quickstart/local-dev.md`
+- `docs/quickstart/env-matrix.md`
 - `deploy/README.md`
 - `docs/runbooks/container-update-runbook.md`
 
 如果你要从零开始使用 Docker / Docker Compose 部署当前项目，优先看：
 
 - `deploy/README.md`
-- `docs/zero-to-one-container-deploy.md`
+- `docs/quickstart/zero-to-one-container-deploy.md`
 - `docs/runbooks/container-update-runbook.md`
 
 ## AI 执行入口
 
-如果你希望后续的人类开发者或 AI 代理都按同一套 Harness Engineering 体系进入任务，建议先按下面顺序阅读：
+如果你希望后续的人类开发者或 AI 代理都按同一套开发规范进入任务，建议先按下面顺序阅读：
 
-1. [Root AGENTS Routing Surface](AGENTS.md)
-2. [AI 执行系统当前标准](docs/standards/01-ai-execution-system.md)
-3. [AI 执行系统使用指南](docs/ai-execution-system-usage-guide.md)
-4. [Docs 总入口](docs/README.md)
+1. [AGENTS.md](AGENTS.md) —— 开发流程、改动分级标准（本地/链路/治理改动）
+2. [Docs 总入口](docs/README.md)
 
 一句话理解：
 
-- `AGENTS.md`：薄路由与执行门禁
-- `docs/standards/`：当前正式标准
-- `docs/knowledge/`：背景、理由与设计哲学
-- `.harness/`：B1/B2 helper、历史计划和 repo 级报告，不是 canonical truth
-- `openspec/`：承载需要持久评审的 B2 和全部 B3 change lifecycle
+- `AGENTS.md`：开发规范入口，定义分级标准和验证要求
+- `docs/projects/`：链路/治理改动的项目文档（方案、任务、验证记录）
+- 各 app/service 自己的 `docs/`：服务内部标准
 
-需要显式判断任务应该走 B1、B2 还是 B3 时，在 Codex 中调用：
+需要判断任务应该走本地、链路还是治理改动时，在 Codex 中调用：
 
 ```text
-$route-project-change <任务描述>
+$route-change <任务描述>
 ```
 
-这个 Skill 只负责路由，不会绕过 `AGENTS.md`、leaf standard、人工审批或验证门禁。
-需要执行持久 B2/B3 流程的设备还应安装 OpenSpec CLI；安装方式、6 个官方 Skills
-和完整生命周期见 [AI 执行系统使用指南](docs/ai-execution-system-usage-guide.md#5-openspec-怎么参与)。
+规划链路/治理改动项目、记录实现细节、执行验证分别使用 `$plan-project`、`$implement-feature`、`$verify-change`。
 
 <a id="frontend-entry"></a>
 
@@ -156,20 +150,17 @@ $route-project-change <任务描述>
 
 ## 系统总览
 
-当前根目录默认联调脚本会启动 5 个正式应用：
+当前根目录默认联调脚本会启动 4 个正式应用：
 
 - `apps/interaction-data-service`：结果域数据服务 / 工作流结果落库与查询
 - `apps/platform-api`：正式平台后端 / 控制面 API
 - `apps/platform-web`：正式平台前端宿主 / 管理台入口
 - `apps/runtime-service`：LangGraph 执行层 / Agent Runtime
-- `apps/lightrag-service`：仓库内知识服务，同时提供 `platform-api` 侧 LightRAG HTTP 和 `runtime-service` 侧 project-scoped MCP
 
 ### 主要链路
 
 - 平台链路：`platform-web -> platform-api -> runtime-service`
 - 结果链路：`runtime-service -> interaction-data-service`
-- 知识 HTTP 链路：`platform-api -> lightrag-service`
-- 知识 MCP 链路：`runtime-service -> lightrag-service`
 
 ### 前端入口
 
@@ -187,9 +178,8 @@ $route-project-change <任务描述>
 
 1. `runtime-service`
 2. `interaction-data-service`
-3. `lightrag-service`
-4. `platform-api`
-5. `platform-web`
+3. `platform-api`
+4. `platform-web`
 
 ### 根目录脚本
 
@@ -255,7 +245,7 @@ docker compose -f deploy/docker-compose.stack.nginx.yml --env-file deploy/.env.s
 建议阅读顺序：
 
 - `deploy/README.md`
-- `docs/zero-to-one-container-deploy.md`
+- `docs/quickstart/zero-to-one-container-deploy.md`
 - `docs/runbooks/container-update-runbook.md`
 
 ### 如果你想单独启动 `platform-web`
@@ -278,8 +268,6 @@ VITE_DEV_PORT=3002 pnpm --dir "apps/platform-web" dev
 
 - `interaction-data-service`：`8081`
 - `runtime-service`：`8123`
-- `lightrag-service` HTTP：`9621`
-- `lightrag-service` MCP SSE：`8621`
 - `platform-api`：`2142`
 - `platform-web`：`3000`
 
@@ -292,15 +280,12 @@ VITE_DEV_PORT=3002 pnpm --dir "apps/platform-web" dev
 ```bash
 curl http://127.0.0.1:8081/_service/health
 curl http://127.0.0.1:8123/info
-curl http://127.0.0.1:9621/health
-curl http://127.0.0.1:8621/sse
 curl http://127.0.0.1:2142/_system/health
 curl http://127.0.0.1:2142/api/langgraph/info
 ```
 
-如果 `platform-api` 的 `/api/langgraph/info`、`interaction-data-service` 的
-`/_service/health` 和 `lightrag-service` 的 `/health` 都返回成功，说明平台、结果落库和
-知识 HTTP 主链已经基本打通；MCP SSE 可连接性由统一健康检查脚本继续验证。
+如果 `platform-api` 的 `/api/langgraph/info` 和 `interaction-data-service` 的
+`/_service/health` 都返回成功，说明平台链路和结果落库主链已经基本打通。
 
 ![本地联调启动流程图](docs/assets/local-dev-startup-flow.zh.svg)
 
@@ -310,24 +295,19 @@ curl http://127.0.0.1:2142/api/langgraph/info
 AITestLab/
 ├── apps/
 │   ├── interaction-data-service/
-│   ├── lightrag-service/
 │   ├── platform-api/
 │   ├── platform-web/
 │   ├── runtime-service/
 │   └── ...
 ├── .codex/skills/
-├── .harness/
 ├── docs/
-├── openspec/
 ├── scripts/
 └── deploy/
 ```
 
 - `apps/`：业务应用目录，包含当前默认联调服务与其他按需维护的应用目录
-- `.codex/skills/`：可跨设备复用的项目级 Codex / OpenSpec Skills
-- `.harness/`：helper、历史计划和 repo 级验证报告
+- `.codex/skills/`：可跨设备复用的项目级 Codex Skills
 - `docs/`：部署、开发、约束和背景文档
-- `openspec/`：持久 B2/B3 change、已批准 capability specs 和归档
 - `scripts/`：统一启动、停止、健康检查脚本
 - `archive/`：历史归档说明
 
@@ -342,22 +322,21 @@ AITestLab/
 先看：
 
 - `docs/local-deployment-contract.yaml`
-- `docs/local-dev.md`
-- `docs/env-matrix.md`
+- `docs/quickstart/local-dev.md`
+- `docs/quickstart/env-matrix.md`
 
 ### 我想了解完整部署细节
 
 再看：
 
-- `docs/deployment-guide.md`
+- `docs/quickstart/deployment-guide.md`
 
 ### 我想继续开发或二开
 
 重点看：
 
-- `docs/standards/01-ai-execution-system.md`
-- `docs/ai-execution-system-usage-guide.md`
-- `docs/development-guidelines.md`
+- `AGENTS.md`
+- `docs/guides/development-guidelines.md`
 - `docs/project-story.md`
 
 ### 我想做正式发版
@@ -375,12 +354,12 @@ AITestLab/
 
 入口文档：
 
-- `docs/ai-deployment-assistant-instruction.md`
+- `docs/guides/ai-deployment-assistant-instruction.md`
 
 如果你只是想触发标准本地部署，这句话就够了：
 
 ```text
-阅读 `docs/ai-deployment-assistant-instruction.md` 帮我部署环境。
+阅读 `docs/guides/ai-deployment-assistant-instruction.md` 帮我部署环境。
 ```
 
 如果你已经知道本地要用哪套模型，建议把模型配置也一次性发给代理。这样代理更容易一次把环境配好，而不是启动到一半再回头追问 runtime 模型配置。
@@ -388,7 +367,7 @@ AITestLab/
 更推荐直接发这段（把占位符替换成你自己的真实配置，且只让代理写入本地 `settings.local.yaml`，不要把真实 key 提交回仓库）：
 
 ```text
-阅读 `docs/ai-deployment-assistant-instruction.md` 帮我部署环境。
+阅读 `docs/guides/ai-deployment-assistant-instruction.md` 帮我部署环境。
 
 默认推理模型使用 `<YOUR_REASONING_MODEL_ID>`。
 当前多模态链路需要的模型一并配置为 `<YOUR_MULTIMODAL_MODEL_ID>`。
@@ -439,7 +418,7 @@ default:
 
 如果你是第一次接触这个仓库，比较推荐的阅读顺序是：
 
-1. 先看当前仓库的 `README`、`docs/local-deployment-contract.yaml` 和 `docs/local-dev.md`
+1. 先看当前仓库的 `README`、`docs/local-deployment-contract.yaml` 和 `docs/quickstart/local-dev.md`
 2. 再看 `ai-learning-portfolio` 中的本地实操记录索引
 3. 如果想先从简单案例入手，就看 Text-to-SQL；如果想看复杂业务协作场景，就看多智能体需求研发案例
 
@@ -454,9 +433,8 @@ default:
 - `platform-api` 可启动
 - `platform-api -> runtime-service` 联调已通过
 - `runtime-service -> interaction-data-service` 已接入本地联调脚本
-- `lightrag-service` 的 HTTP + MCP 已接入默认本地一键启动脚本
 - `platform-web` 是当前正式平台前端入口
-- Harness + OpenSpec 已形成路由、B3 实施前审批、持久验证证据、spec sync、archive 和 CI 检查闭环
+- 开发流程已收口到 `AGENTS.md`：改动分级（本地/链路/治理）、`plan-project`/`route-change`/`implement-feature`/`verify-change` Skills
 - 当前正式版本为 [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 
 当前仍保持的约定：

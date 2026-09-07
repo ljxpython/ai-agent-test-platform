@@ -7,8 +7,6 @@
 如果这是跨应用需求，或者你希望 AI 先判定这件事该不该落在正式前端，先读：
 
 1. [Root AGENTS Routing Surface](../../AGENTS.md)
-2. [AI 执行系统当前标准](../../docs/standards/01-ai-execution-system.md)
-3. [AI 执行系统使用指南](../../docs/ai-execution-system-usage-guide.md)
 
 然后再进入 `platform-web` 自己的 leaf standard：
 

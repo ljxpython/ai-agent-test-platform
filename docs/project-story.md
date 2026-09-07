@@ -1,6 +1,6 @@
 # 项目故事与演进记录
 
-> 状态说明：这篇文档主要记录项目演进过程与阶段性思考，不是当前实现的正式事实来源。当前架构、启动链路和部署口径请优先以 `README.md`、`docs/deployment-guide.md`、`docs/local-dev.md` 和 `docs/local-deployment-contract.yaml` 为准。
+> 状态说明：这篇文档主要记录项目演进过程与阶段性思考，不是当前实现的正式事实来源。当前架构、启动链路和部署口径请优先以 `README.md`、`docs/quickstart/deployment-guide.md`、`docs/quickstart/local-dev.md` 和 `docs/local-deployment-contract.yaml` 为准。
 
 ## 1. 项目初心
 

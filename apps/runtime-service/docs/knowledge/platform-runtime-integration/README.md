@@ -4,7 +4,6 @@
 - 状态：总体方案已确认；L1/L2/L3 自动化与本机浏览器链路已完成；旧兼容代码/文档和重叠 OpenSpec 已清理归档；仅 owner UAT 与本 change 最终 spec sync/archive 保留门禁（2026-09-07）
 - Owning loci：`apps/platform-web`、`apps/platform-api`
 - Execution band：B3 Governed
-- OpenSpec 真源：[`redesign-platform-runtime-integration`](../../../../../openspec/changes/redesign-platform-runtime-integration/)
 
 ## 1. 专项要解决什么
 
@@ -59,12 +58,6 @@ GraphHarbor 必须对这些路径、envelope、SSE、取消、重连和失败语
 10. [实施状态与验证记录](./10-implementation-status.md)：按 Harness 记录功能点、代码落点、验证命令、结果和未覆盖边界。
 11. [Agent/Thread 统计与保留策略](./11-agent-thread-statistics-retention.md)：当前事实源、统计口径、保留边界和历史数据清理门槛。
 12. [模型目录与前端信息架构简化方案](./12-simplified-model-and-ui-plan.md)：移除 profile/E2E 门禁，收敛 Agent、Graph、Models 和 Runtime Policy 的产品边界。
-13. [OpenSpec proposal](../../../../../openspec/changes/redesign-platform-runtime-integration/proposal.md)：Why、范围和 capability。
-14. [OpenSpec design](../../../../../openspec/changes/redesign-platform-runtime-integration/design.md)：完整技术取舍与 open questions。
-15. OpenSpec `specs/`、`tasks.md`、`verification.md`：批准后的规范、执行任务和唯一证据记录。
-
-项目级 Harness 文档见 [`docs/platform-runtime-integration/`](../../../../../docs/platform-runtime-integration/README.md)：
-其中记录完整的项目 intake、owner 决策、实施阶段、证据矩阵和开放约束；本目录继续保留 Runtime 侧的详细技术材料。
 
 平台 Chat 文字 Harness 见 [`apps/platform-web/docs/chat-frontend-harness.md`](../../../../platform-web/docs/chat-frontend-harness.md)：这是 send/stream/reopen/HITL/cancel 的人工执行卡和证据真源。
 

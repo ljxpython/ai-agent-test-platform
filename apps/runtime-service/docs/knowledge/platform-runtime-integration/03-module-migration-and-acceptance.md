@@ -2,8 +2,6 @@
 
 - 文档类型：Draft Supporting Delivery Design
 - 状态：L1 部分实现；L2 链路进行中
-- 任务真源：[`tasks.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/tasks.md)
-- 证据真源：[`verification.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/verification.md)
 
 > 方案更新（2026-09-04）：模型管理以本文新版本为准：七字段最小配置、API key write-only、服务端加密、
 > 查询脱敏。旧的 revision、execution reference、Secret Store/JWKS 和生产模型代理要求已被当前最小方案

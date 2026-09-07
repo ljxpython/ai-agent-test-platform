@@ -64,7 +64,7 @@ R0～R6 完成前不改 Platform 业务代码。P1 不是 Runtime 的前置条�
 | R4 | [19 Tool/MCP/副作用](./19-runtime-tool-capability-mcp-and-side-effect-design.md)、[20 Backend/Workspace/Skills/Subagents](./20-runtime-backend-workspace-skills-and-subagents-design.md) | [11 Service 目录规范](./11-agent-service-directory-architecture.md)、[23 生命周期](./23-graph-thread-backend-checkpoint-lifecycle-design.md)、[14 Contracts](./14-runtime-contracts-and-resolution-design.md) | 显式工具装配、权限隔离、资源生命周期和子 Agent |
 | R5 | [16 可观测与 Langfuse](./16-runtime-observability-and-langfuse-design.md) | [15 Middleware 生命周期](./15-runtime-middleware-lifecycle-and-failure-semantics.md)、[25 测试契约](./25-runtime-testing-and-cross-service-contract-design.md) | Runtime Trace、日志、指标、脱敏和 fail-soft |
 | R6 | [23 Graph/Thread/Checkpoint 生命周期](./23-graph-thread-backend-checkpoint-lifecycle-design.md)、[24 启停设计](./24-package-langgraph-startup-shutdown-design.md)、[25 测试契约](./25-runtime-testing-and-cross-service-contract-design.md)、[30 Agent Server 替代研究](./30-agent-server-replacement-research.md) | [18 事件与 Run Explorer](./18-open-swe-to-runtime-event-and-run-explorer-design.md)、[22 Platform/Runtime 契约](./22-platform-runtime-contract-design.md) | Durable Run、恢复、重连、重启和终态收敛 |
-| P1 | [Platform Runtime Integration 专项](./platform-runtime-integration/README.md)、[OpenSpec change](../../../../openspec/changes/redesign-platform-runtime-integration/) | 22、27 号文档仅作 Superseded 历史参考；[25 测试契约](./25-runtime-testing-and-cross-service-contract-design.md) | SDK-compatible Gateway、Agent 执行标识、模型配置、Context/delegation、事实源、权限和跨服务验收 |
+| P1 | [Platform Runtime Integration 专项](./platform-runtime-integration/README.md) | 22、27 号文档仅作 Superseded 历史参考；[25 测试契约](./25-runtime-testing-and-cross-service-contract-design.md) | SDK-compatible Gateway、Agent 执行标识、模型配置、Context/delegation、事实源、权限和跨服务验收 |
 
 文档冲突时，28 号只决定“何时做、做到什么门槛”；14、15、19、20、22、23、24、25 等领域
 文档决定“具体怎么做”。旧目录和旧契约仍然不属于任何阶段的参考输入。
@@ -407,9 +407,7 @@ API 与 Worker readiness、唯一 Worker、真实 `recovery_demo` 功能探针�
 P1 已完成 owner pre-apply review，`GATE-13` 已确认，尚未进入 apply。详细架构、模块改造、旧内容处置、测试矩阵
 和最终确认清单统一从
 [`platform-runtime-integration/`](./platform-runtime-integration/README.md)
-进入；规范、任务和证据统一由
-[`redesign-platform-runtime-integration`](../../../../openspec/changes/redesign-platform-runtime-integration/)
-维护。22、27 号文档已经 Superseded，不得继续扩写成第二份 P1 设计。
+进入。22、27 号文档已经 Superseded，不得继续扩写成第二份 P1 设计。
 
 P1 的最短目标链固定为：
 

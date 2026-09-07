@@ -10,9 +10,9 @@
 
 1. `docs/local-deployment-contract.yaml`
 2. `README.md` / `README.en.md`
-3. `docs/local-dev.md`
-4. `docs/env-matrix.md`
-5. `docs/deployment-guide.md`
+3. `docs/quickstart/local-dev.md`
+4. `docs/quickstart/env-matrix.md`
+5. `docs/quickstart/deployment-guide.md`
 
 当前仓库的总哲学是 `AI Harness`：
 

@@ -3,7 +3,6 @@
 - 文档类型：Harness planning record
 - 状态：`Accepted by owner; 9.1-9.4/9.6-9.7 local-complete; 9.5 in-progress`
 - 适用范围：`platform-web`、`platform-api`、Runtime model resolution、本地全链路测试
-- 关联 OpenSpec：[`redesign-platform-runtime-integration`](../../../../../openspec/changes/redesign-platform-runtime-integration/)
 
 ## 1. 目标
 

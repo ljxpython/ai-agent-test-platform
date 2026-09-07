@@ -13,7 +13,7 @@
 当前正式本地默认 bring-up 事实仍以：
 
 - [`docs/local-deployment-contract.yaml`](../docs/local-deployment-contract.yaml)
-- [`docs/deployment-guide.md`](../docs/deployment-guide.md)
+- [`docs/deployment-guide.md`](../docs/quickstart/deployment-guide.md)
 
 为准。
 
@@ -254,10 +254,3 @@ runtime 上游认证配置：
 
 - [`docs/runbooks/container-update-runbook.md`](../docs/runbooks/container-update-runbook.md)
 
-## 5. 历史设计记录
-
-以下内容记录容器化实施前的原始决策，包含当时的旧宿主命名，不是当前操作入口：
-
-- [PRD](../.harness/plans/prd-containerized-deployment-20260421.md)
-- [Test Spec](../.harness/plans/test-spec-containerized-deployment-20260421.md)
-- [TODO Checklist](../.harness/plans/todo-containerized-deployment-20260421.md)

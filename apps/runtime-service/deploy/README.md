@@ -162,14 +162,6 @@ uv run python scripts/validate_runtime_config.py \
 - 仅 env/config 变更：
   - recreate
 
-## 7. 历史设计记录
-
-以下内容只用于追溯原始容器化决策：
-
-- [PRD](../../../.harness/plans/prd-containerized-deployment-20260421.md)
-- [Test Spec](../../../.harness/plans/test-spec-containerized-deployment-20260421.md)
-- [TODO Checklist](../../../.harness/plans/todo-containerized-deployment-20260421.md)
-
 ## 8. 使用宿主 PostgreSQL/Redis
 
 本地账号可以用于 Runtime，但必须使用专用数据库、专用用户和独立 Redis DB/namespace，并在

@@ -2,7 +2,6 @@
 
 - 文档类型：Draft Supporting Design
 - 状态：owner 已冻结方案；实现与证据进行中
-- 规范真源：[OpenSpec design](../../../../../openspec/changes/redesign-platform-runtime-integration/design.md)
 
 > 方案更新（2026-09-04）：本文旧的模型代理、版本引用和 Secret Store 描述已由
 > [推荐基线](./04-recommended-baseline-and-open-decisions.md) 与

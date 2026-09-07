@@ -10,7 +10,7 @@
 - [`apps/runtime-service/deploy/README.md`](../apps/runtime-service/deploy/README.md)
 - [`docs/zero-to-one-container-deploy.md`](./zero-to-one-container-deploy.md)
 - [`docs/container-address-guide.md`](./container-address-guide.md)
-- [`docs/runbooks/container-update-runbook.md`](./runbooks/container-update-runbook.md)
+- [`docs/runbooks/container-update-runbook.md`](../runbooks/container-update-runbook.md)
 
 ## 1. 当前正式部署口径
 
@@ -59,7 +59,7 @@ platform-api -> interaction-data-service
 
 如果你想理解为什么架构要这么拆，先看：
 
-- `docs/development-paradigm.md`
+- `AGENTS.md`
 - `apps/platform-api/docs/handbook/project-handbook.md`
 
 ## 3. 系统依赖准备
@@ -141,7 +141,7 @@ pnpm -v
 如果缺配置，建议优先看：
 
 - `docs/local-deployment-contract.yaml`
-- `docs/env-matrix.md`
+- `docs/quickstart/env-matrix.md`
 - `apps/runtime-service/README.md`
 
 ### 4.3 `apps/interaction-data-service`
@@ -316,14 +316,14 @@ curl http://127.0.0.1:2142/api/langgraph/info
 
 1. `docs/local-deployment-contract.yaml`
 2. `README.md`
-3. `docs/local-dev.md`
-4. `docs/env-matrix.md`
-5. `docs/development-paradigm.md`
+3. `docs/quickstart/local-dev.md`
+4. `docs/quickstart/env-matrix.md`
+5. `AGENTS.md`
 6. `apps/platform-api/docs/handbook/project-handbook.md`
 
 如果你是要让 AI 帮你部署，入口仍然是：
 
-- `docs/ai-deployment-assistant-instruction.md`
+- `docs/guides/ai-deployment-assistant-instruction.md`
 
 ## 10. 文档边界说明
 
@@ -337,4 +337,4 @@ curl http://127.0.0.1:2142/api/langgraph/info
 
 1. `docs/local-deployment-contract.yaml`
 2. 根脚本与实际服务配置
-3. 本文和 `docs/local-dev.md`
+3. 本文和 `docs/quickstart/local-dev.md`

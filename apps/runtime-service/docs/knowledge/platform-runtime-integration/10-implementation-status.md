@@ -3,8 +3,6 @@
 - 文档类型：Harness supporting implementation record
 - 状态：`L1 local-complete; L2 local-complete; L3 chain-complete`
 - 更新时间：2026-09-07
-- 权威任务：[`openspec/changes/redesign-platform-runtime-integration/tasks.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/tasks.md)
-- 权威证据：[`verification.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/verification.md)
 
 本文按 Harness 的 `功能点 -> 概念 -> 实施 -> 代码落点 -> 验证 -> 状态` 记录当前实现。这里不把
 mock、fake 或未执行的人工验收写成完成。

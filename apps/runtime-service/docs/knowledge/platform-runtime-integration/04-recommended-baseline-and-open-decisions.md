@@ -3,7 +3,6 @@
 - 文档类型：`Supporting Decision Register`
 - 状态：`owner-confirmed; implementation-partial`
 - 阶段口径：当前实施使用 `L1/L2/L3`；历史 `P1` 仅作为 OpenSpec 变更范围标识。
-- 规范真源：[`redesign-platform-runtime-integration`](../../../../../openspec/changes/redesign-platform-runtime-integration/)
 
 ## 1. 当前方案
 

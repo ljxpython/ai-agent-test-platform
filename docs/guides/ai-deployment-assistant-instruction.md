@@ -2,14 +2,14 @@
 
 如果你是一个正在帮助用户处理这个仓库本地环境的 AI 助手、开发代理或自动化协作者，请把本文当成单入口协作说明，而不是第二份部署手册。
 
-如果用户只说一句：`阅读 docs/ai-deployment-assistant-instruction.md 帮我部署环境`，这句话已经足够触发正常流程。你不应该要求用户再补一大段提示词，也不应该把“接下来该读哪些根文档”再反问给用户。
+如果用户只说一句：`阅读 docs/guides/ai-deployment-assistant-instruction.md 帮我部署环境`，这句话已经足够触发正常流程。你不应该要求用户再补一大段提示词，也不应该把“接下来该读哪些根文档”再反问给用户。
 
 对用户来说，触发正常本地部署只需要这一句；对代理来说，后续该继续读取哪些根级 supporting docs、何时启动脚本、何时回退到逐服务排查，都是你自己的职责。
 
 正常本地部署时，至少先读取两份根级文档：
 
 1. `docs/local-deployment-contract.yaml`
-2. `docs/ai-deployment-assistant-instruction.md`
+2. `docs/guides/ai-deployment-assistant-instruction.md`
 
 不要把 app README、app docs 或源码阅读当作默认前置步骤。只有在用户明确要求排查某个可选服务或某个应用内部问题时，才进入更深层文档。
 
@@ -37,12 +37,12 @@
 
 执行本地部署任务时，按下面顺序处理：
 
-1. 把用户那句“阅读 `docs/ai-deployment-assistant-instruction.md` 帮我部署环境”视为足够的启动信号
+1. 把用户那句“阅读 `docs/guides/ai-deployment-assistant-instruction.md` 帮我部署环境”视为足够的启动信号
 2. 读取 `docs/local-deployment-contract.yaml`
 3. 先看 `profiles.default-local`
 4. 再看 `agent_entrypoint`、`preflight`、`global` 和对应的 `services.*`
 5. 先检查本地已有配置与用户已提供材料是否足够
-6. 如果依赖准备、启动方式或 env 细节还不够清楚，自行继续读取 `README.md`、`docs/local-dev.md`、`docs/deployment-guide.md`、`docs/env-matrix.md` 中相关部分，不要把“下一步该读什么”再问给用户
+6. 如果依赖准备、启动方式或 env 细节还不够清楚，自行继续读取 `README.md`、`docs/quickstart/local-dev.md`、`docs/quickstart/deployment-guide.md`、`docs/quickstart/env-matrix.md` 中相关部分，不要把“下一步该读什么”再问给用户
 7. 对于最少描述触发的标准部署，先完成配置检查，再优先用根目录脚本启动和检查；如果脚本失败或状态不清，再回退到逐服务启动排查
 8. 如果材料足够，直接继续部署、验证和汇报
 9. 如果继续读取根级文档并检查本地文件后，后续受阻步骤仍真实依赖用户材料或用户决策，立刻一次性向用户索要完整缺失内容，然后只暂停受阻步骤

@@ -6,10 +6,6 @@
     "langchain-reference": {
       "serverUrl": "https://reference.langchain.com/mcp"
     },
-    "codegraph": {
-      "command": "/Users/lijiaxin/.nvm/versions/node/v22.22.2/bin/codegraph",
-      "args": ["serve", "--mcp"]
-    },
     "ponytail": {
       "command": "/Users/lijiaxin/.nvm/versions/node/v22.22.2/bin/node",
       "args": [

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/README-EN%2FZH-F59E0B" alt="README EN/ZH" />
 </p>
 
-<p align="center"><a href="#system-overview">System Overview</a> · <a href="#frontend-entry">Frontend Entry</a> · <a href="#quick-start">Quick Start</a> · <a href="docs/deployment-guide.md">Deployment Guide</a> · <a href="https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1">Latest Release</a> · <a href="docs/CHANGELOG.md">Changelog</a> · <a href="#acknowledgements">Acknowledgements</a> · <a href="#ai-deploy">AI Deployment</a></p>
+<p align="center"><a href="#system-overview">System Overview</a> · <a href="#frontend-entry">Frontend Entry</a> · <a href="#quick-start">Quick Start</a> · <a href="docs/quickstart/deployment-guide.md">Deployment Guide</a> · <a href="https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1">Latest Release</a> · <a href="docs/CHANGELOG.md">Changelog</a> · <a href="#acknowledgements">Acknowledgements</a> · <a href="#ai-deploy">AI Deployment</a></p>
 
 ## Testcase Agent Demo
 
@@ -34,14 +34,14 @@
 An enterprise AI agent platform architecture built on `LangGraph / LangChain`, intended as a reusable foundation for further development.  
 It separates the **platform governance layer** from the **Agent Runtime execution layer**, so the repo can support platform-side authentication, project management, audit, and catalog management, while also supporting runtime graph orchestration, model assembly, Tools / MCP / Skills integration, and rapid agent debugging.
 
-The repository currently provides a default five-service local bring-up path, plus an optional runtime debug entry. It is suitable for:
+The repository currently provides a default four-service local bring-up path, plus an optional runtime debug entry. It is suitable for:
 
 - Teams that want to build on mainstream agent infrastructure instead of inventing a closed framework
 - Projects that need both platform capabilities and agent execution capabilities
 - Developers who want to validate LangGraph Runtime behavior and frontend interaction quickly
 - Teams that want to bring AI-assisted collaboration into the real engineering workflow
 
-> If you want to understand why the project is designed this way and how development should continue, start with [docs/development-paradigm.md](docs/development-paradigm.md). Most supporting docs in this repo are currently Chinese-first.
+> If you want to understand the development workflow and change-level standards, start with [AGENTS.md](AGENTS.md). Most supporting docs in this repo are currently Chinese-first.
 
 <a id="frontend-entry"></a>
 
@@ -71,20 +71,17 @@ In short, the repo is meant to let AI agents keep building inside a controlled e
 The current entry docs for that harness are:
 
 1. `AGENTS.md`
-2. `docs/standards/01-ai-execution-system.md`
-3. `docs/ai-execution-system-usage-guide.md`
-4. `docs/README.md`
+2. `docs/README.md`
 
-Use the explicit project router in Codex when a task needs a B1/B2/B3 decision:
+Use the explicit change router in Codex when a task needs a local/chain/governed change decision:
 
 ```text
-$route-project-change <task description>
+$route-change <task description>
 ```
 
 The router does not override root rules, leaf standards, human approval, or verification
-gates. Machines that execute persisted B2/B3 workflows also need the OpenSpec CLI. See
-[the AI execution usage guide](docs/ai-execution-system-usage-guide.md#5-openspec-怎么参与)
-for installation, the six official Skills, and the full lifecycle.
+gates. Use `$plan-project`, `$implement-feature`, and `$verify-change` to plan chain/governed change projects,
+record implementation details, and run verification.
 
 ## What Problem This Project Solves
 
@@ -111,23 +108,17 @@ That article is more frontend-oriented and is useful for quickly understanding t
 
 ## System Overview
 
-The default local bring-up currently includes five formal services:
+The default local bring-up currently includes four formal services:
 
 - `apps/interaction-data-service`: result-domain data service for workflow result persistence and querying
 - `apps/platform-api`: official platform backend / control-plane API
 - `apps/platform-web`: official platform frontend / admin workspace entry
 - `apps/runtime-service`: LangGraph execution layer / Agent Runtime
-- `apps/lightrag-service`: in-repo knowledge service that provides both the `platform-api` LightRAG HTTP lane and the `runtime-service` project-scoped MCP lane
-
-Optional in-repo services:
-
 
 ### Main Paths
 
 - Platform path: `platform-web -> platform-api -> runtime-service`
 - Result-domain path: `runtime-service -> interaction-data-service`
-- Knowledge HTTP path: `platform-api -> lightrag-service`
-- Knowledge MCP path: `runtime-service -> lightrag-service`
 
 ### What The Frontend Entries Are For
 
@@ -145,9 +136,8 @@ Optional in-repo services:
 
 1. `runtime-service`
 2. `interaction-data-service`
-3. `lightrag-service`
-4. `platform-api`
-5. `platform-web`
+3. `platform-api`
+4. `platform-web`
 
 ### Root Scripts
 
@@ -181,8 +171,6 @@ Then open:
 
 - `interaction-data-service`: `8081`
 - `runtime-service`: `8123`
-- `lightrag-service` HTTP: `9621`
-- `lightrag-service` MCP SSE: `8621`
 - `platform-api`: `2142`
 - `platform-web`: `3000`
 
@@ -195,16 +183,13 @@ Then open:
 ```bash
 curl http://127.0.0.1:8081/_service/health
 curl http://127.0.0.1:8123/info
-curl http://127.0.0.1:9621/health
-curl http://127.0.0.1:8621/sse
 curl http://127.0.0.1:2142/_system/health
 curl http://127.0.0.1:2142/api/langgraph/info
 ```
 
-If `/api/langgraph/info` on `platform-api`, `/_service/health` on
-`interaction-data-service`, and `/health` on `lightrag-service` all succeed, the platform,
-result persistence, and knowledge HTTP paths are basically connected. The unified health
-script also checks MCP SSE connectivity.
+If `/api/langgraph/info` on `platform-api` and `/_service/health` on
+`interaction-data-service` both succeed, the platform and result persistence paths are
+basically connected.
 
 ![Local Startup Flow](docs/assets/local-dev-startup-flow.en.svg)
 
@@ -214,24 +199,19 @@ script also checks MCP SSE connectivity.
 AITestLab/
 ├── apps/
 │   ├── interaction-data-service/
-│   ├── lightrag-service/
 │   ├── platform-api/
 │   ├── platform-web/
 │   ├── runtime-service/
 │   └── ...
 ├── .codex/skills/
-├── .harness/
 ├── docs/
-├── openspec/
 ├── scripts/
 └── archive/
 ```
 
 - `apps/`: business apps, including the default local startup set and other maintained application directories
-- `.codex/skills/`: portable project-level Codex and OpenSpec Skills
-- `.harness/`: helpers, historical plans, and repo-level verification reports
+- `.codex/skills/`: portable project-level Codex Skills
 - `docs/`: deployment, development, constraints, and background docs
-- `openspec/`: persisted B2/B3 changes, approved capability specs, and archives
 - `scripts/`: unified start, stop, and health-check scripts
 - `archive/`: historical archive notes
 
@@ -246,22 +226,21 @@ AITestLab/
 Start with:
 
 - `docs/local-deployment-contract.yaml`
-- `docs/local-dev.md`
-- `docs/env-matrix.md`
+- `docs/quickstart/local-dev.md`
+- `docs/quickstart/env-matrix.md`
 
 ### I Want Full Deployment Details
 
 Then read:
 
-- `docs/deployment-guide.md`
+- `docs/quickstart/deployment-guide.md`
 
 ### I Want To Continue Development Or Customize The Project
 
 Focus on:
 
-- `docs/standards/01-ai-execution-system.md`
-- `docs/ai-execution-system-usage-guide.md`
-- `docs/development-guidelines.md`
+- `AGENTS.md`
+- `docs/guides/development-guidelines.md`
 - `docs/project-story.md`
 
 ### I Want To Do An Official Release
@@ -279,12 +258,12 @@ Start with:
 
 Entry document:
 
-- `docs/ai-deployment-assistant-instruction.md`
+- `docs/guides/ai-deployment-assistant-instruction.md`
 
 If you only want to trigger the standard local deployment flow, this sentence is enough:
 
 ```text
-Read `docs/ai-deployment-assistant-instruction.md` and help me deploy the environment.
+Read `docs/guides/ai-deployment-assistant-instruction.md` and help me deploy the environment.
 ```
 
 If you already know which models should be used locally, it is better to provide the model configuration to the agent in the same message. That makes it much easier for the agent to finish the bring-up in one pass instead of stopping midway to ask for runtime model settings.
@@ -292,7 +271,7 @@ If you already know which models should be used locally, it is better to provide
 This fuller prompt is the recommended version. Replace the placeholders with your real values, and only let the agent write them into local `settings.local.yaml`. Do not commit real secrets back into the repo.
 
 ```text
-Read `docs/ai-deployment-assistant-instruction.md` and help me deploy the environment.
+Read `docs/guides/ai-deployment-assistant-instruction.md` and help me deploy the environment.
 
 Use `<YOUR_REASONING_MODEL_ID>` as the default reasoning model.
 Also configure `<YOUR_MULTIMODAL_MODEL_ID>` for the current multimodal pipeline.
@@ -343,7 +322,7 @@ You can read those three notes like this:
 
 If this is your first time looking at the repo, the recommended reading order is:
 
-1. Read this `README`, `docs/local-deployment-contract.yaml`, and `docs/local-dev.md`
+1. Read this `README`, `docs/local-deployment-contract.yaml`, and `docs/quickstart/local-dev.md`
 2. Then check the local practice index in `ai-learning-portfolio`
 3. If you want a simpler starting point, begin with Text-to-SQL. If you want a more complex collaboration case, start with the multi-agent requirement case
 
@@ -351,7 +330,7 @@ If this is your first time looking at the repo, the recommended reading order is
 
 This repo has already completed:
 
-- The default local startup set under `apps/*` now includes the repo-local LightRAG service lanes
+- The default local startup set is collapsed onto `apps/*`
 - `apps/platform-web` is the official platform frontend host
 - `apps/platform-api` is the official platform control plane
 - `runtime-service` can start
@@ -359,9 +338,8 @@ This repo has already completed:
 - `platform-api` can start
 - `platform-api -> runtime-service` integration has passed
 - `runtime-service -> interaction-data-service` has been wired into the local bring-up scripts
-- `lightrag-service` HTTP + MCP are now wired into the default local one-click startup scripts
 - `platform-web` is the official platform frontend host
-- Harness and OpenSpec now cover routing, the B3 pre-apply gate, durable verification evidence, spec sync, archive, and CI enforcement
+- The development workflow is collapsed into `AGENTS.md`: change levels (local/chain/governed) plus the `plan-project`/`route-change`/`implement-feature`/`verify-change` Skills
 - The current release is [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 
 Current conventions that are still kept:
