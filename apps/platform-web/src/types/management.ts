@@ -103,7 +103,6 @@ export type ManagementAssistant = {
   name: string
   description: string
   graph_id: string
-  langgraph_assistant_id: string
   runtime_base_url: string
   sync_status: string
   last_sync_error?: string | null

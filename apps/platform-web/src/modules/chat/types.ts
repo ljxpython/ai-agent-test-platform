@@ -29,9 +29,6 @@ export type ChatWorkspaceFeatures = {
 
 export type ChatRunOptions = {
   modelId: string
-  systemPrompt: string
-  enableTools: boolean
-  toolNames: string[]
   temperature: string
   maxTokens: string
 }

@@ -24,6 +24,7 @@ import {
 import type { ChatState, UsePlatformChatStreamOptions } from './platform-chat-stream/types'
 
 export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
+  const projectId = options.projectId.value.trim()
   const commandPending = ref(false)
   const cancelling = ref(false)
   const detailError = ref('')
@@ -31,23 +32,35 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
   const lastRunId = ref('')
   const lastEventAt = ref('')
   const reconciledTerminal = ref(false)
+  const reconciledInterrupted = ref(false)
   const preferPersistedProjection = ref(false)
 
   const reconcileMissedTerminal = async (runId: string) => {
-    const projectId = options.projectId.value.trim()
     const threadId = options.activeThreadId.value.trim()
     if (!projectId || !threadId || !runId) return
 
     for (let attempt = 0; attempt < 20 && stream.isLoading.value; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 250))
       const status = await getRuntimeRunStatus(projectId, threadId, runId).catch(() => '')
-      if (!['success', 'succeeded', 'completed', 'error', 'failed', 'cancelled', 'canceled'].includes(status)) {
+      if (
+        ![
+          'success',
+          'succeeded',
+          'completed',
+          'error',
+          'failed',
+          'cancelled',
+          'canceled',
+          'interrupted'
+        ].includes(status)
+      ) {
         continue
       }
       if (options.activeThreadId.value.trim() !== threadId) {
         return
       }
-      reconciledTerminal.value = true
+      reconciledInterrupted.value = status === 'interrupted'
+      reconciledTerminal.value = !reconciledInterrupted.value
       await stream.stop({ cancel: false })
       await options.onRefreshThread(threadId)
       return
@@ -57,7 +70,6 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
   const authorizedFetch = createLanggraphAuthorizedFetch()
   const scopedFetch: typeof fetch = (input, init) => {
     const headers = new Headers(init?.headers)
-    const projectId = options.projectId.value.trim()
     if (projectId) {
       headers.set('x-project-id', projectId)
     } else {
@@ -106,8 +118,12 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
       if (reason === 'stopped' && reconciledTerminal.value) {
         detailInfo.value = '本轮运行已完成，页面已同步服务端结果。'
       }
+      if (reason === 'stopped' && reconciledInterrupted.value) {
+        detailInfo.value = '本轮运行等待人工确认，请处理下方确认事项后继续。'
+      }
 
       reconciledTerminal.value = false
+      reconciledInterrupted.value = false
 
       await options.onRefreshThread(options.activeThreadId.value, {
         preserveInfo: reason === 'stopped'

@@ -25,7 +25,6 @@ describe('runtime contract helper', () => {
         }
       },
       context: {
-        system_prompt: 'context prompt',
         user_id: 'user-1'
       },
       metadata: {
@@ -47,10 +46,7 @@ describe('runtime contract helper', () => {
         }
       },
       context: {
-        system_prompt: 'context prompt',
         model_id: 'config-model',
-        enable_tools: true,
-        tools: ['utc_now']
       },
       metadata: {
         source: 'workspace'
@@ -67,7 +63,6 @@ describe('runtime contract helper', () => {
         recursion_limit: 8
       },
       context: {
-        system_prompt: 'runtime prompt',
         model_id: 'legacy-model',
         enable_tools: true,
         tools: ['legacy']
@@ -76,9 +71,7 @@ describe('runtime contract helper', () => {
         source: 'workspace',
         project_id: 'legacy-project'
       },
-      runtimeModelId: 'gpt-4o-mini',
-      runtimeEnableTools: false,
-      runtimeToolNames: ['utc_now']
+      runtimeModelId: 'gpt-4o-mini'
     })
 
     expect(payload).toEqual({
@@ -88,7 +81,6 @@ describe('runtime contract helper', () => {
         recursion_limit: 8
       },
       context: {
-        system_prompt: 'runtime prompt',
         model_id: 'gpt-4o-mini'
       },
       metadata: {
@@ -100,9 +92,6 @@ describe('runtime contract helper', () => {
   it('builds chat submit options without client-owned prompt or tool policy', () => {
     const options = buildChatRunSubmitOptions({
       modelId: 'gpt-4.1',
-      systemPrompt: 'Keep answers concise.',
-      enableTools: false,
-      toolNames: ['utc_now'],
       temperature: '0.3',
       maxTokens: '2048'
     })

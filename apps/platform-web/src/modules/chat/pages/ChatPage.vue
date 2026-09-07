@@ -74,7 +74,9 @@ const activeTarget = computed(() => resolveChatTarget(activeTargetPreference.val
 const chatWorkspaceKey = computed(() => {
   const target = activeTarget.value
   return target
-    ? `${activeProjectId.value || ''}:${target.targetType}:${target.resolvedTargetId}`
+    ? `${activeProjectId.value || ''}:${target.targetType}:${target.resolvedTargetId}:${
+        startNewThreadOnLoad.value ? 'new' : 'existing'
+      }`
     : ''
 })
 

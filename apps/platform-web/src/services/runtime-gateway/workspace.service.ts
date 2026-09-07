@@ -46,10 +46,6 @@ export type RuntimeThreadSnapshot = {
   historyError: RuntimeGatewayErrorMeta | null
 }
 
-export type RuntimeThreadCreateOptions = {
-  sessionKind?: 'legacy_debug'
-}
-
 type CountResponse = {
   count?: number
   total?: number
@@ -506,14 +502,12 @@ export async function getRuntimeThreadSnapshot(
 
 export async function createRuntimeThread(
   projectId: string,
-  target: RuntimeGatewayTargetDescriptor,
-  options: RuntimeThreadCreateOptions = {}
+  target: RuntimeGatewayTargetDescriptor
 ): Promise<ManagementThread> {
   const client = createLanggraphClient(projectId)
   const createdThread = (await client.threads.create({
     metadata: {
-      ...buildThreadMetadata(target),
-      ...(options.sessionKind ? { session_kind: options.sessionKind } : {})
+      ...buildThreadMetadata(target)
     }
   })) as LanggraphThread<Record<string, unknown>>
 

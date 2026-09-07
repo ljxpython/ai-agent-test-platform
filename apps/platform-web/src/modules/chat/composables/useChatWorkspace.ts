@@ -34,9 +34,6 @@ export function useChatWorkspace(options: UseChatWorkspaceOptions) {
   const defaultModelId = ref('')
   const runOptions = reactive<ChatRunOptions>({
     modelId: '',
-    systemPrompt: '',
-    enableTools: false,
-    toolNames: [],
     temperature: '',
     maxTokens: ''
   })
@@ -140,12 +137,13 @@ export function useChatWorkspace(options: UseChatWorkspaceOptions) {
       () => options.startNewThreadOnLoad?.value ?? false
     ],
     async () => {
-      const startNewThread = options.startNewThreadOnLoad?.value ?? false
-      const initialThreadId = startNewThread ? '' : options.initialThreadId.value
-      threadWorkspace.resetForContextChange('')
+      const requestedThreadId = options.initialThreadId.value.trim()
+      // An explicit thread URL is authoritative; startNew only applies to a blank URL.
+      const startNewThread = (options.startNewThreadOnLoad?.value ?? false) && !requestedThreadId
+      threadWorkspace.resetForContextChange()
       await Promise.all([
         loadRuntimeCatalog(),
-        threadWorkspace.loadThreadList(initialThreadId, { selectLatest: !startNewThread })
+        threadWorkspace.loadThreadList(requestedThreadId, { selectLatest: !startNewThread })
       ])
     },
     { immediate: true }
@@ -155,14 +153,7 @@ export function useChatWorkspace(options: UseChatWorkspaceOptions) {
     () => options.initialThreadId.value,
     async (nextThreadId) => {
       const normalizedThreadId = nextThreadId.trim()
-      if (!normalizedThreadId) {
-        if (activeThreadId.value) {
-          threadWorkspace.clearActiveThreadState()
-        }
-        return
-      }
-
-      if (normalizedThreadId === activeThreadId.value) {
+      if (!normalizedThreadId || normalizedThreadId === activeThreadId.value) {
         return
       }
 

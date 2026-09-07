@@ -388,7 +388,7 @@ watch(
       <template #actions>
         <router-link
           class="pw-btn pw-btn-secondary"
-          to="/workspace/runtime"
+          to="/workspace/models"
         >
           返回 Runtime
         </router-link>

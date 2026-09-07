@@ -174,8 +174,8 @@ export async function findAssistantByTargetId(
   return (
     payload.items.find((item) => {
       const assistantId = item.id?.trim() || ''
-      const langgraphAssistantId = item.langgraph_assistant_id?.trim() || ''
-      return assistantId === normalizedTargetId || langgraphAssistantId === normalizedTargetId
+      const graphId = item.graph_id?.trim() || ''
+      return assistantId === normalizedTargetId || graphId === normalizedTargetId
     }) || null
   )
 }

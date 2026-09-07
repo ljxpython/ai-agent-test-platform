@@ -1,16 +1,7 @@
 type RuntimeObject = Record<string, unknown>
 
-type RuntimeToolsOverride = {
-  modelId?: string
-  enableTools?: boolean
-  toolNames?: string[]
-}
-
 type RuntimeRunOptionsInput = {
   modelId: string
-  systemPrompt: string
-  enableTools: boolean
-  toolNames: string[]
   temperature: string
   maxTokens: string
 }
@@ -34,8 +25,6 @@ type AssistantDraftPayloadInput = {
   context?: RuntimeObject
   metadata?: RuntimeObject
   runtimeModelId?: string
-  runtimeEnableTools?: boolean
-  runtimeToolNames?: string[]
 }
 
 const TRUSTED_RUNTIME_CONTEXT_KEYS = [
@@ -52,13 +41,11 @@ const PROJECT_SCOPE_ALIAS_KEYS = ['project_id', 'projectId', 'x-project-id'] as 
 
 const RUNTIME_CONTEXT_BUSINESS_KEYS = [
   'model_id',
-  'system_prompt',
   'temperature',
   'max_tokens',
-  'top_p',
-  'enable_tools',
-  'tools'
+  'top_p'
 ] as const
+const UNSUPPORTED_RUNTIME_CONTEXT_KEYS = ['system_prompt', 'enable_tools', 'tools'] as const
 
 function stripKeys(payload: RuntimeObject, keys: readonly string[]): RuntimeObject {
   const nextPayload = { ...payload }
@@ -126,7 +113,11 @@ export function normalizeRuntimeContractSections(sections: {
   metadata?: RuntimeObject
 }) {
   let nextConfig = stripKeys({ ...(sections.config || {}) }, PROJECT_SCOPE_ALIAS_KEYS)
-  let nextContext = stripKeys({ ...(sections.context || {}) }, TRUSTED_RUNTIME_CONTEXT_KEYS)
+  nextConfig = stripKeys(nextConfig, UNSUPPORTED_RUNTIME_CONTEXT_KEYS)
+  let nextContext = stripKeys(
+    stripKeys({ ...(sections.context || {}) }, TRUSTED_RUNTIME_CONTEXT_KEYS),
+    UNSUPPORTED_RUNTIME_CONTEXT_KEYS
+  )
   const nextMetadata = stripKeys({ ...(sections.metadata || {}) }, PROJECT_SCOPE_ALIAS_KEYS)
 
   const configNormalized = moveRuntimeBusinessFieldsIntoContext(nextConfig, nextContext)
@@ -136,7 +127,10 @@ export function normalizeRuntimeContractSections(sections: {
   const configurable = nextConfig.configurable
   const configurableSource =
     configurable && typeof configurable === 'object' && !Array.isArray(configurable)
-      ? stripKeys(configurable as RuntimeObject, TRUSTED_RUNTIME_CONTEXT_KEYS)
+      ? stripKeys(
+          stripKeys(configurable as RuntimeObject, TRUSTED_RUNTIME_CONTEXT_KEYS),
+          UNSUPPORTED_RUNTIME_CONTEXT_KEYS
+        )
       : {}
   const configurableNormalized = moveRuntimeBusinessFieldsIntoContext(configurableSource, nextContext)
   nextContext = configurableNormalized.context
@@ -194,9 +188,9 @@ export function normalizeAssistantRuntimePayload(payload: AssistantRuntimePayloa
   return nextPayload
 }
 
-export function applyAssistantRuntimeOverrides(context: RuntimeObject, overrides: RuntimeToolsOverride) {
+export function applyAssistantRuntimeOverrides(context: RuntimeObject, modelId?: string) {
   const nextContext: RuntimeObject = { ...context }
-  const normalizedModelId = overrides.modelId?.trim() || ''
+  const normalizedModelId = modelId?.trim() || ''
 
   if (normalizedModelId) {
     nextContext.model_id = normalizedModelId
@@ -204,28 +198,11 @@ export function applyAssistantRuntimeOverrides(context: RuntimeObject, overrides
     delete nextContext.model_id
   }
 
-  if (overrides.enableTools) {
-    nextContext.enable_tools = true
-    const cleanedTools = (overrides.toolNames || []).map((item) => item.trim()).filter(Boolean)
-    if (cleanedTools.length > 0) {
-      nextContext.tools = cleanedTools
-    } else {
-      delete nextContext.tools
-    }
-  } else {
-    delete nextContext.enable_tools
-    delete nextContext.tools
-  }
-
   return nextContext
 }
 
 export function buildAssistantDraftPayload(input: AssistantDraftPayloadInput): AssistantRuntimePayload {
-  const contextWithOverrides = applyAssistantRuntimeOverrides(input.context || {}, {
-    modelId: input.runtimeModelId,
-    enableTools: input.runtimeEnableTools,
-    toolNames: input.runtimeToolNames
-  })
+  const contextWithOverrides = applyAssistantRuntimeOverrides(input.context || {}, input.runtimeModelId)
 
   const normalizedPayload = normalizeAssistantRuntimePayload({
     graph_id: input.graphId,

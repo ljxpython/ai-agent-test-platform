@@ -95,9 +95,6 @@ const followPauseState = reactive<Record<FollowPauseReason, boolean>>({
 })
 const draftRunOptions = reactive({
   modelId: '',
-  systemPrompt: '',
-  enableTools: false,
-  toolNames: [] as string[],
   temperature: '',
   maxTokens: ''
 })
@@ -487,6 +484,7 @@ function syncThreadIdToRoute(threadId: string) {
     }
   } else {
     delete nextQuery.threadId
+    nextQuery.startNew = '1'
   }
 
   void router.replace({

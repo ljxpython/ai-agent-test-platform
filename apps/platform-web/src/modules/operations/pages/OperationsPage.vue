@@ -216,10 +216,10 @@ function formatJson(value: Record<string, unknown> | null | undefined) {
 
 function inferResourceRoute(operation: ManagementOperation) {
   if (operation.kind === 'runtime.models.refresh') {
-    return '/workspace/runtime/models'
+    return '/workspace/models'
   }
   if (operation.kind === 'runtime.tools.refresh') {
-    return '/workspace/runtime/models'
+    return '/workspace/models'
   }
   if (operation.kind === 'runtime.graphs.refresh') {
     return '/workspace/graphs'

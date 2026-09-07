@@ -11,6 +11,16 @@ import {
 } from './helpers'
 
 export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDeps) {
+  async function refreshAfterInterruptResume(threadId: string) {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await Promise.resolve(deps.options.onRefreshThread(threadId)).catch(() => undefined)
+      if (deps.interruptPayload.value === undefined) {
+        return
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+  }
+
   async function reportRunError(error: unknown, fallbackMessage: string) {
     const normalized = normalizeRuntimeGatewayError(error, fallbackMessage)
     if (normalized.status === 409) {
@@ -141,6 +151,7 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
         ...runtimeSubmitOptions,
         interruptId: interruptId?.trim() || undefined
       })
+      await refreshAfterInterruptResume(threadId)
       deps.commandPending.value = false
       return true
     } catch (runError) {
@@ -163,6 +174,7 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
 
     try {
       await deps.stream.respondAll(responsesById, buildChatRunSubmitOptions(deps.options.runOptions))
+      await refreshAfterInterruptResume(threadId)
       deps.commandPending.value = false
       return true
     } catch (runError) {
@@ -197,6 +209,7 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
 
     try {
       await deps.stream.submit(undefined, {
+        threadId,
         forkFrom: checkpointId,
         ...runtimeSubmitOptions,
       })
@@ -237,6 +250,7 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
           messages: [optimisticMessage]
         },
         {
+          threadId,
           forkFrom: checkpointId,
           ...runtimeSubmitOptions,
         }

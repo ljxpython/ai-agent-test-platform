@@ -288,7 +288,7 @@ async function confirmDelete() {
 }
 
 function resolveAssistantTargetId(assistant: ManagementAssistant) {
-  return assistant.langgraph_assistant_id?.trim() || assistant.id
+  return assistant.graph_id.trim()
 }
 
 function openAssistantChat(assistant: ManagementAssistant) {
@@ -372,13 +372,6 @@ function assistantActions(assistant: ManagementAssistant): ActionMenuItem[] {
       icon: 'copy',
       disabled: busy || !assistant.graph_id,
       onSelect: () => handleCopyValue('Graph ID', assistant.graph_id || '')
-    },
-    {
-      key: 'copy-langgraph-assistant-id',
-      label: assistant.langgraph_assistant_id ? '复制 LangGraph ID' : '未绑定 LangGraph ID',
-      icon: 'copy',
-      disabled: busy || !assistant.langgraph_assistant_id,
-      onSelect: () => handleCopyValue('LangGraph Assistant ID', assistant.langgraph_assistant_id || '')
     },
     {
       key: 'detail',

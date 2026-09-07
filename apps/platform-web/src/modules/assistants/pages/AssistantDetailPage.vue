@@ -118,7 +118,7 @@ const stats = computed(() => {
     {
       label: 'Graph',
       value: assistant?.graph_id || '--',
-      hint: assistant?.langgraph_assistant_id ? shortId(assistant.langgraph_assistant_id) : '未同步',
+      hint: assistant?.graph_id ? shortId(assistant.graph_id) : '未绑定',
       icon: 'graph',
       tone: 'success'
     },
@@ -389,7 +389,7 @@ function openAssistantChat() {
     return
   }
 
-  const targetAssistantId = item.value.langgraph_assistant_id?.trim() || item.value.id
+  const targetAssistantId = item.value.graph_id.trim()
   const projectId = activeProjectId.value
   if (projectId) {
     writeRecentChatTarget(projectId, {
@@ -653,23 +653,23 @@ watch([configPropertyDefs, editConfig], () => {
 
             <div class="space-y-3 text-sm leading-7 text-gray-600 dark:text-dark-300">
               <div class="flex items-start justify-between gap-3">
-                <span>Assistant ID</span>
+                <span>Agent ID</span>
                 <button
                   type="button"
                   class="break-all text-right font-semibold text-gray-900 transition hover:text-primary-600 dark:text-white"
-                  @click="item && handleCopyValue('Assistant ID', item.id)"
+                  @click="item && handleCopyValue('Agent ID', item.id)"
                 >
                   {{ item?.id || '--' }}
                 </button>
               </div>
               <div class="flex items-start justify-between gap-3">
-                <span>LangGraph ID</span>
+                <span>Graph ID</span>
                 <button
                   type="button"
                   class="break-all text-right font-semibold text-gray-900 transition hover:text-primary-600 dark:text-white"
-                  @click="item?.langgraph_assistant_id && handleCopyValue('LangGraph Assistant ID', item.langgraph_assistant_id)"
+                  @click="item?.graph_id && handleCopyValue('Graph ID', item.graph_id)"
                 >
-                  {{ item?.langgraph_assistant_id || '--' }}
+                  {{ item?.graph_id || '--' }}
                 </button>
               </div>
               <div class="flex items-start justify-between gap-3">

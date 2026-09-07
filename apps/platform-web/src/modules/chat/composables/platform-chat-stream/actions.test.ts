@@ -45,9 +45,6 @@ function createDeps(submit = vi.fn().mockResolvedValue(undefined)): PlatformChat
       selectedBranch: ref(''),
       runOptions: {
         modelId: '',
-        systemPrompt: '',
-        enableTools: false,
-        toolNames: [],
         temperature: '',
         maxTokens: ''
       },
@@ -158,6 +155,7 @@ describe('platform chat stream actions', () => {
     expect(deps.stream.submit).toHaveBeenCalledWith(
       undefined,
       expect.objectContaining({
+        threadId: 'thread-1',
         forkFrom: 'checkpoint-parent',
         config: {}
       })
@@ -181,6 +179,9 @@ describe('platform chat stream actions', () => {
   it('resumes a hydrated persisted interrupt through the SDK protocol action', async () => {
     const deps = createDeps()
     deps.interruptPayload = computed(() => ({ id: 'interrupt-a' }))
+    deps.options.onRefreshThread = vi.fn().mockImplementation(async () => {
+      deps.interruptPayload = computed(() => undefined)
+    })
     const actions = createPlatformChatStreamActions(deps)
 
     await expect(
@@ -196,5 +197,19 @@ describe('platform chat stream actions', () => {
         interruptId: 'interrupt-a'
       })
     )
+    expect(deps.options.onRefreshThread).toHaveBeenCalledWith('thread-1')
+  })
+
+  it('refreshes the persisted thread after submitting all interrupt decisions', async () => {
+    const deps = createDeps()
+    const actions = createPlatformChatStreamActions(deps)
+
+    await expect(
+      actions.resumeAllInterruptedRuns({
+        'interrupt-a': { decisions: [{ type: 'approve' }] }
+      })
+    ).resolves.toBe(true)
+
+    expect(deps.options.onRefreshThread).toHaveBeenCalledWith('thread-1')
   })
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BaseIcon from '@/components/base/BaseIcon.vue'
@@ -78,8 +78,21 @@ async function selectProject(projectId: string) {
       query: route.query,
       hash: route.hash,
     })
+  } else if (route.name === 'workspace-chat') {
+    const nextQuery = { ...route.query }
+    delete nextQuery.threadId
+    // Project changes must start a blank chat. Keep the intent in the URL so
+    // both the old-project and new-project watchers skip historical threads.
+    nextQuery.startNew = '1'
+    await router.replace({
+      name: String(route.name),
+      query: nextQuery,
+      hash: route.hash
+    })
+    await nextTick()
+    await setActiveProjectId(projectId)
   } else {
-    setActiveProjectId(projectId)
+    await setActiveProjectId(projectId)
   }
 
   close()

@@ -41,47 +41,56 @@ function snapshot(threadId: string): RuntimeThreadSnapshot {
   }
 }
 
-function debugSnapshot(threadId: string): RuntimeThreadSnapshot {
+function interruptedSnapshot(threadId: string): RuntimeThreadSnapshot {
   const result = snapshot(threadId)
-  result.detail.metadata = { session_kind: 'legacy_debug' }
+  result.state = {
+    values: result.detail.values || {},
+    checkpoint: { checkpoint_id: `${threadId}-checkpoint` },
+    interrupts: [
+      {
+        id: 'interrupt-1',
+        value: {
+          action_requests: [{ name: 'workflow_confirmation', args: {} }],
+          review_configs: [
+            { action_name: 'workflow_confirmation', allowed_decisions: ['approve', 'reject'] }
+          ]
+        }
+      }
+    ]
+  }
   return result
 }
 
 describe('useChatThreadWorkspace', () => {
-  it('excludes legacy debug sessions from the formal chat workspace', async () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('projects the current state interrupt into the persisted chat head', async () => {
+    vi.clearAllMocks()
     vi.mocked(listRuntimeThreadsPage).mockResolvedValueOnce({
-      items: [
-        {
-          thread_id: 'debug-thread',
-          status: 'interrupted',
-          metadata: { session_kind: 'legacy_debug' }
-        },
-        {
-          thread_id: 'chat-thread',
-          status: 'idle',
-          metadata: {}
-        }
-      ],
-      total: 2,
+      items: [{ thread_id: 'hitl-thread', status: 'interrupted', metadata: {} }],
+      total: 1,
       limit: 100,
       offset: 0
     })
-    vi.mocked(getRuntimeThreadSnapshot).mockResolvedValueOnce(snapshot('chat-thread'))
-    const activeThreadId = ref('')
+    vi.mocked(getRuntimeThreadSnapshot).mockResolvedValueOnce(interruptedSnapshot('hitl-thread'))
+
+    const historyItems = ref<Record<string, unknown>[]>([])
     const workspace = useChatThreadWorkspace({
       projectId: computed(() => 'project-1'),
       target: computed(() => ({
-        targetType: 'graph' as const,
-        graphId: 'assistant',
-        updatedAt: '',
-        resolvedTargetId: 'assistant',
-        displayName: 'Assistant',
-        label: 'Graph · Assistant'
+        targetType: 'assistant' as const,
+        assistantId: 'workflow_demo',
+        assistantName: 'Workflow Demo HITL',
+        resolvedTargetId: 'workflow_demo',
+        displayName: 'Workflow Demo HITL',
+        label: 'Agent · Workflow Demo HITL'
       })),
-      activeThreadId,
+      activeThreadId: ref(''),
       activeThread: ref(null),
       selectedBranch: ref(''),
-      historyItems: ref<Record<string, unknown>[]>([]),
+      historyItems,
       displayState: computed(() => null),
       clearStreamDetailFeedback: vi.fn(),
       resetStreamView: vi.fn(),
@@ -89,63 +98,12 @@ describe('useChatThreadWorkspace', () => {
       streamDetailInfo: ref('')
     })
 
-    workspace.resetForContextChange('debug-thread')
-    expect(activeThreadId.value).toBe('debug-thread')
-    await workspace.loadThreadList('debug-thread')
+    await workspace.loadThreadList('hitl-thread')
 
-    expect(workspace.threadItems.value.map((item) => item.thread_id)).toEqual(['chat-thread'])
-    expect(getRuntimeThreadSnapshot).toHaveBeenCalledOnce()
-    expect(getRuntimeThreadSnapshot).toHaveBeenCalledWith(
-      'project-1',
-      'chat-thread',
-      expect.any(Object)
-    )
-    expect(activeThreadId.value).toBe('chat-thread')
-  })
-
-  it('rejects a preferred debug snapshot and selects the next formal thread', async () => {
-    vi.clearAllMocks()
-    vi.mocked(listRuntimeThreadsPage).mockResolvedValueOnce({
-      items: [
-        { thread_id: 'debug-thread', status: 'interrupted', metadata: {} },
-        { thread_id: 'chat-thread', status: 'idle', metadata: {} }
-      ],
-      total: 2,
-      limit: 100,
-      offset: 0
+    expect(historyItems.value.at(-1)).toMatchObject({
+      checkpoint: { checkpoint_id: 'hitl-thread-checkpoint' },
+      interrupts: [{ id: 'interrupt-1' }]
     })
-    vi.mocked(getRuntimeThreadSnapshot)
-      .mockResolvedValueOnce(debugSnapshot('debug-thread'))
-      .mockResolvedValueOnce(snapshot('chat-thread'))
-    const activeThreadId = ref('debug-thread')
-    const resetStreamView = vi.fn()
-    const workspace = useChatThreadWorkspace({
-      projectId: computed(() => 'project-1'),
-      target: computed(() => ({
-        targetType: 'graph' as const,
-        graphId: 'assistant',
-        updatedAt: '',
-        resolvedTargetId: 'assistant',
-        displayName: 'Assistant',
-        label: 'Graph · Assistant'
-      })),
-      activeThreadId,
-      activeThread: ref(null),
-      selectedBranch: ref(''),
-      historyItems: ref<Record<string, unknown>[]>([]),
-      displayState: computed(() => null),
-      clearStreamDetailFeedback: vi.fn(),
-      resetStreamView,
-      streamDetailError: ref(''),
-      streamDetailInfo: ref('')
-    })
-
-    await workspace.loadThreadList('debug-thread')
-
-    expect(workspace.threadItems.value.map((item) => item.thread_id)).toEqual(['chat-thread'])
-    expect(getRuntimeThreadSnapshot).toHaveBeenCalledTimes(2)
-    expect(activeThreadId.value).toBe('chat-thread')
-    expect(resetStreamView).toHaveBeenCalled()
   })
 
   it('keeps a blank active thread when initialization explicitly starts a new conversation', async () => {

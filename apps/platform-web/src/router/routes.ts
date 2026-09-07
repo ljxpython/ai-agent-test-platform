@@ -177,45 +177,15 @@ const workspaceChildren: RouteRecordRaw[] = [
   },
   {
     path: 'runtime',
-    component: { render: () => h(RouterView) },
-    children: [
-      {
-        path: '',
-        name: 'workspace-runtime',
-        component: () => import('@/modules/runtime/pages/RuntimePage.vue'),
-        meta: {
-          title: 'Runtime',
-          eyebrow: 'Runtime',
-          requiredPermissions: ['project.runtime.read'],
-          permissionProjectSource: 'workspace',
-          allowWithoutProject: true
-        }
-      },
-      {
-        path: 'models',
-        name: 'workspace-runtime-models',
-        component: () => import('@/modules/runtime/pages/RuntimeModelsPage.vue'),
-        meta: {
-          title: 'Runtime Models',
-          eyebrow: 'Runtime',
-          requiredPermissions: ['project.runtime.read'],
-          permissionProjectSource: 'workspace',
-          allowWithoutProject: true
-        }
-      },
-      {
-        path: 'policies',
-        name: 'workspace-runtime-policies',
-        component: () => import('@/modules/runtime/pages/RuntimePoliciesPage.vue'),
-        meta: {
-          title: 'Runtime Policies',
-          eyebrow: 'Runtime',
-          requiredPermissions: ['project.runtime.read'],
-          permissionProjectSource: 'workspace',
-          allowWithoutProject: true
-        }
-      }
-    ]
+    redirect: '/workspace/models'
+  },
+  {
+    path: 'runtime/models',
+    redirect: '/workspace/models'
+  },
+  {
+    path: 'runtime/policies',
+    redirect: '/workspace/models'
   },
   {
     path: 'control-plane',

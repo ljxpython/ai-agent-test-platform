@@ -6,6 +6,9 @@ const streamMock = vi.hoisted(() => ({
   value: null as Record<string, unknown> | null,
   options: null as Record<string, unknown> | null
 }))
+const authorizedFetchMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+)
 
 vi.mock('@langchain/vue', () => ({
   useStream: (options: Record<string, unknown>) => {
@@ -13,6 +16,21 @@ vi.mock('@langchain/vue', () => ({
     return streamMock.value
   }
 }))
+
+vi.mock('@/services/langgraph/client', () => ({
+  createLanggraphAuthorizedFetch: () => authorizedFetchMock,
+  getLanggraphApiUrl: () => '/api/langgraph'
+}))
+
+vi.mock('@/services/runtime-gateway/workspace.service', async () => {
+  const actual = await vi.importActual<typeof import('@/services/runtime-gateway/workspace.service')>(
+    '@/services/runtime-gateway/workspace.service'
+  )
+  return {
+    ...actual,
+    getRuntimeRunStatus: vi.fn().mockResolvedValue('interrupted')
+  }
+})
 
 function createStream() {
   return {
@@ -48,9 +66,6 @@ function createOptions(onRefreshThread = vi.fn().mockResolvedValue(undefined)) {
     selectedBranch: ref(''),
     runOptions: {
       modelId: '',
-      systemPrompt: '',
-      enableTools: false,
-      toolNames: [],
       temperature: '',
       maxTokens: ''
     },
@@ -133,6 +148,26 @@ describe('usePlatformChatStream', () => {
     expect(adapter.displayState.value).toBeNull()
     expect(adapter.toolCalls.value).toEqual([])
     expect(adapter.interruptPayload.value).toBeUndefined()
+  })
+
+  it('keeps the controller fetch bound to its creation-time project scope', async () => {
+    const stream = createStream()
+    streamMock.value = stream
+    const projectId = ref('project-1')
+    const options = {
+      ...createOptions(),
+      projectId: computed(() => projectId.value)
+    }
+    usePlatformChatStream(options)
+    const scopedFetch = streamMock.options?.fetch as typeof fetch
+
+    projectId.value = 'project-2'
+    await nextTick()
+    await scopedFetch('/api/langgraph/threads/thread-1/state')
+
+    const requestInit = authorizedFetchMock.mock.calls.at(-1)?.[1] as RequestInit
+    expect(new Headers(requestInit.headers).get('x-project-id')).toBe('project-1')
+    expect(stream.stop).not.toHaveBeenCalled()
   })
 
   it('shows the persisted thread head when a completed v2 stream projection is empty', async () => {
@@ -251,5 +286,22 @@ describe('usePlatformChatStream', () => {
 
     expect(adapter.detailInfo.value).toBe('已切换到空白对话。发送第一条消息时，系统才会创建新的 thread。')
     expect(options.onRefreshThread).not.toHaveBeenCalled()
+  })
+
+  it('converges an interrupted server run without cancelling it', async () => {
+    const stream = createStream()
+    streamMock.value = stream
+    const options = createOptions()
+    const adapter = usePlatformChatStream(options)
+
+    stream.isLoading.value = true
+    await (streamMock.options?.onCreated as (info: { runId: string }) => void)({
+      runId: 'run-hitl'
+    })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    expect(stream.stop).toHaveBeenCalledWith({ cancel: false })
+    expect(options.onRefreshThread).toHaveBeenCalledWith('thread-1')
+    expect(adapter.detailInfo.value).toBe('')
   })
 })
