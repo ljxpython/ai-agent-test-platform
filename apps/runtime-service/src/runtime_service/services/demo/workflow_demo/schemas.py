@@ -17,3 +17,4 @@ class WorkflowState(TypedDict, total=False):
     resume_error: str | None
     prepared_count: int
     response: str
+    _runtime_model_ref: str

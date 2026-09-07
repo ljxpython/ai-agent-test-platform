@@ -1,8 +1,8 @@
 # Platform Runtime Integration 实施状态
 
 - 文档类型：Harness supporting implementation record
-- 状态：`L1 local-complete; L2 local-complete; L3 partial`
-- 更新时间：2026-09-05
+- 状态：`L1 local-complete; L2 local-complete; L3 chain-complete`
+- 更新时间：2026-09-07
 - 权威任务：[`openspec/changes/redesign-platform-runtime-integration/tasks.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/tasks.md)
 - 权威证据：[`verification.md`](../../../../../openspec/changes/redesign-platform-runtime-integration/verification.md)
 
@@ -99,8 +99,8 @@ mock、fake 或未执行的人工验收写成完成。
 以下不是代码遗漏，而是没有可信输入或需要额外人工/真实环境证据：
 
 - 真实 HITL graph 的浏览器 respond/retry 链路；服务端 `workflow_demo` respond 已通过；
-- 完整浏览器 E2E 与 owner 页面 UAT；
-- 浏览器已覆盖登录、切换 `dev`、Agent 目录（`reference_agent`、`workflow_demo`）、Graphs 目录、Chat 页面和 console errors=0；完整浏览器 send/stream/reopen/HITL/respond/cancel/cross-project 流程仍未全部执行。
+-- 完整浏览器 retry、history/branch、响应式、基础可访问性、跨 project 拒绝与 owner 页面 UAT；
+-- 浏览器已覆盖登录、切换 `dev`、Agent 目录（`reference_agent`、`workflow_demo`）、Graphs 目录、Chat 页面、真实 send/stream/reopen/HITL/respond/cancel 主链路和 console errors=0；完整 retry/history/branch/responsive/accessibility/cross-project 仍未全部执行。
 - 生产 Provider、Secret Store、RS256/JWKS、execution reference 和模型代理治理；这些已被 owner 废弃，未来需另立 change；
 - 历史 Thread inventory、legacy upstream Assistant mutation 删除；
 - 独立 outbox 表、生产定时扫描、性能 SLO 和灰度回滚。
@@ -129,6 +129,9 @@ mock、fake 或未执行的人工验收写成完成。
 | 模型配置真实执行 | 页面录入的 URL/protocol/model/key 参与 Runtime resolver | `runtime_catalog`、`runtime_gateway`、`runtime_service/runtime/modeling.py`、`reference_agent` | opaque reference 与内部解密读取已通过定向测试；本机真实录入后 Run 待执行 | `in-progress` |
 | Chat active Run 409 恢复 | active/HITL Run 仍阻止同 Thread 新建 Run；前端不得显示 `[object Object]`，冲突后应恢复最新 Thread 状态 | `apps/platform-web/src/services/langgraph/client.ts`、`services/runtime-gateway/workspace.service.ts`、`modules/chat/composables/platform-chat-stream/actions.ts`、`apps/platform-api/app/modules/runtime_gateway/application/service.py` | Web 24 项定向测试通过；Gateway 对历史 active ledger 先读取执行事实，仅在明确终态时收敛；durable coordinator 17 tests 通过 | `local-complete` |
 | Chat 生命周期语义 | 切换 Thread、SSE/SDK 订阅结束与显式 Stop 必须区分；前两者不得写成取消 | `modules/chat/composables/usePlatformChatStream.ts`、`platform-chat-stream/actions.ts` | Web 124 tests、typecheck、lint（0 error）；真实浏览器新对话无 cancel 请求 | `chain-complete` |
+| 浏览器主链路补证 | send/stream/reopen/HITL/respond/cancel 使用真实模型和真实本地服务 | `actions.ts`、`usePlatformChatStream.ts`、`workflow_demo` | Thread `d24d42c2-7879-4c95-abd9-398404d444cc` 覆盖双轮与 reopen；Thread `3d493394-45dd-4508-879a-a54752238bd4` 覆盖 HITL/respond；Thread `a31fc13b-95f3-478d-b89a-9867ab664d84` 覆盖显式 cancel，console errors=0；Web 24 项定向测试与 typecheck 通过 | `chain-partial` |
+| 2026-09-06 定向回归 | 验证 HITL resume 轮询、SDK stopped 语义、历史 active ledger 收敛、workflow_demo 最新用户消息和模型配置 resolver | `platform-chat-stream/actions.ts`、`usePlatformChatStream.ts`、`runtime_gateway/application/service.py`、`workflow_demo` | Web 3 files / 24 tests passed；Web typecheck 通过；Platform API 51 tests OK（第一次根目录执行失败为命令 workdir 错误，正确目录重跑通过）；Runtime workflow/model/config 18 passed | `local-complete` |
+| 旧 Runtime/Chat surface 清理 | 旧 Runtime/Policy/Tools 页面、旧 Assistant alias 和无调用者 upstream CRUD 已删除；正式 Chat 不再生成旧工具字段 | `router/routes.ts`、`runtime-contract.ts`、`useChatWorkspace.ts`、`20260907_0007` migration | Web 全量 37 files / 129 tests、typecheck/build 通过；API 165 tests OK；旧页面、旧列、旧 profile 表均已清理 | `chain-complete` |
 | Agent 产品收敛 | 用户只操作 Agent；Graph 作为内部部署目录 | `AppSidebar.vue`、`routes.ts` | Models 一级入口，Graph/Runtime/Policy 隐藏；Web typecheck 通过 | `local-complete` |
 | 策略页面收敛 | 后端 deny-first 保留，模型/Agent 控件并入对应页面 | `RuntimePoliciesPage.vue`、Models/Agents pages | Models 提供项目默认模型操作；策略入口隐藏；typecheck 通过 | `local-complete` |
 
@@ -264,6 +267,20 @@ GitHub/Slack/Linear、消息入队或 Dashboard API 业务逻辑。
 **状态**：新对话入口语义 `chain-complete`；完整浏览器 send/stream/reopen/HITL/respond/cancel/cross-project
 和 owner UAT 仍按 5.5/7.4/7.6 保持 `partial`。
 
+## 10.7 浏览器 retry、历史分支与模型目录真实执行（2026-09-07）
+
+| 功能点 | 概念 | 代码落点 | 验证 | 状态 |
+| --- | --- | --- | --- | --- |
+| Retry/Edit Thread 绑定 | fork/retry/edit 必须继续使用当前 Thread；SDK 不得隐式生成不存在的新 Thread | `apps/platform-web/src/modules/chat/composables/platform-chat-stream/actions.ts` | 单测 8 passed；真实 Thread `6d1a1e06-8224-4917-8a6f-797ef4de2c4a` retry `/commands`、stream、Run、state/history 全部 200，console errors=0 | `chain-complete` |
+| History/branch | 历史 checkpoint 可查看、切换到分支并返回最新，不修改 GraphHarbor 事实 | `ChatContextDrawer.vue`、`useChatThreadWorkspace.ts`、`branching` | Playwright 显示 20 checkpoints、1 分叉组，可进入历史分支并返回最新 | `chain-complete` |
+| Responsive/accessibility | 小屏无横向溢出；可见交互控件有可访问名称 | Platform Web Chat components | Playwright `390x844`：scrollWidth=390，visible buttons named | `chain-complete` |
+| Model catalog -> Runtime | 页面保存七字段模型配置后，后续 Chat Run 使用目录中的模型；凭据只写不读 | `RuntimeModelsPage.vue`、runtime catalog/gateway/resolver | 页面编辑后真实 Run `3f620898-bf69-4020-ac78-23224b4f05d7` 原样返回 `BROWSER_CATALOG_MODEL_EDIT_20260907`；刷新恢复；未暴露 API key | `chain-complete` |
+| Cross-project denial | project scope 来自可信认证，不因 Thread metadata 或 URL 串项目 | Gateway project boundary、Chat workspace | `test` scope 读取 dev Thread 返回 404，未泄漏内容 | `chain-complete` |
+| Delegation hash negative | 区分认证边界前置拒绝与标准 Runs 已持久化后 Runtime error | `tests/integration/test_agent_server_auth.py` | 本机 GraphHarbor 2 passed：invalid scope 无持久化；hash mismatch 为 error/failed terminal Run | `chain-complete` |
+
+本轮仍未完成：owner 页面 UAT，以及当前 change 的最终 spec sync/archive。这两项需要 owner 的产品接受结论，
+不能用自动化证据替代。
+
 ## 11. 最小验证命令
 
 ```bash
@@ -274,3 +291,10 @@ rtk uv run --frozen python scripts/check_docs.py
 rtk openspec validate redesign-platform-runtime-integration --strict --no-interactive
 rtk git diff --check
 ```
+
+## 12. 2026-09-07 收尾校验
+
+- Platform API 全量 unittest：164 tests，OK（skipped=3）。
+- Runtime 全量 pytest：203 passed，22 skipped。
+- `scripts/check_docs.py`、OpenSpec strict validate、`git diff --check` 均通过。
+- 物理删除、旧 OpenSpec 生命周期处理和 owner UAT 仍需单独授权/执行，不能由自动化校验替代。

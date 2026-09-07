@@ -18,7 +18,9 @@ async def get_agent(config: RunnableConfig) -> Pregel:
 - `route="approve"` 进入批准节点；
 - `route="reject"` 进入拒绝节点；
 - 不提供 `route` 时调用真实模型回答当前对话；
-- `requires_confirmation=True` 时先暂停，Resume 的值必须是 `approve` 或 `reject`。
+- `requires_confirmation=True` 时先暂停，Resume 支持直接传 `approve`/`reject`，也支持正式 Chat
+  HITL 面板使用的 `{"decisions": [{"type": "approve"}]}` 或 reject envelope。
+- 浏览器标准 Chat 输入包含“需要人工确认”时，会进入同一确认中断；这是该 Demo 的稳定 HITL 验收入口。
 - Chat 请求会从当前 Thread 中最新的 user/human 消息提取文本并传给模型，把最终响应追加到 `messages`；
   同一个 Thread 的每一轮都会处理当前输入，不会复用第一轮的 `message`。
 

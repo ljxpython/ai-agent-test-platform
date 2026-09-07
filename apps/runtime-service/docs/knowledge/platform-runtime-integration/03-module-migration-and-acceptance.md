@@ -84,7 +84,7 @@ Profile 必须记录 SDK、protocol、GraphHarbor、runtime-service package 的�
 - Platform 产品只保存 `agent_key`、project ownership、展示字段和 policy/default 引用；
 - `agent_key` 与 Runtime catalog 的 `graph_id` 使用同一个稳定值；
 - 停止 upstream Assistant create/update/delete；
-- 对旧 `langgraph_assistant_id` 和 Platform Assistant UUID 做数据审计、迁移和最终删除；
+- 已完成旧 `langgraph_assistant_id` 与 Platform Assistant UUID 的数据审计、回填和删除；当前只保留 `graph_id`。
 - disabled/missing/cross-project/stale graph 均在 upstream 前拒绝。
 
 ### Runtime Catalog / Policy

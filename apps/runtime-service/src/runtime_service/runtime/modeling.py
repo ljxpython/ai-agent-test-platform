@@ -47,7 +47,7 @@ def build_model(
     provider, separator, model_name = config.model_id.partition(":")
     model_name = model_name if separator else config.model_id
     if connection is not None:
-        provider = connection.get("provider", provider)
+        provider = str(connection.get("provider", provider)).strip().lower()
         model_name = connection.get("model", model_name)
     kwargs = _generation_kwargs(config)
 

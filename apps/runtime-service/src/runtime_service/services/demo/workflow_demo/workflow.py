@@ -1,9 +1,8 @@
 """Workflow StateGraph topology around the model-backed Agent."""
 
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Literal
 
-from langchain_core.messages import AIMessage
 from langchain_core.runnables.config import var_child_runnable_config
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
@@ -40,6 +39,11 @@ def _is_user_message(value: object) -> bool:
     ) in {"human", "user"}
 
 
+def _requires_confirmation(message: str) -> bool:
+    """Expose a stable browser-triggerable HITL path for this demo graph."""
+    return "需要人工确认" in message
+
+
 def prepare(state: WorkflowState) -> dict[str, object]:
     message = state.get("message", "").strip()
     for candidate in reversed(state.get("messages", [])):
@@ -51,6 +55,8 @@ def prepare(state: WorkflowState) -> dict[str, object]:
     return {
         "prepared_count": state.get("prepared_count", 0) + 1,
         "message": message,
+        "requires_confirmation": bool(state.get("requires_confirmation"))
+        or _requires_confirmation(message),
     }
 
 
@@ -59,13 +65,47 @@ def confirm(state: WorkflowState) -> dict[str, object]:
         {
             "kind": "workflow_confirmation",
             "message": state["message"],
-            "allowed_decisions": ["approve", "reject"],
+            "action_requests": [
+                {
+                    "name": "workflow_confirmation",
+                    "args": {"message": state["message"]},
+                }
+            ],
+            "review_configs": [
+                {
+                    "action_name": "workflow_confirmation",
+                    "allowed_decisions": ["approve", "reject"],
+                }
+            ],
             "error": state.get("resume_error"),
         }
     )
-    if not isinstance(decision, str) or decision not in {"approve", "reject"}:
+
+    # The web HITL panel resumes with {decisions: [{type: ...}]}; keep the
+    # string form for local/runtime compatibility tests and direct callers.
+    if isinstance(decision, str):
+        normalized_decision = decision
+    elif isinstance(decision, Mapping):
+        decisions = decision.get("decisions")
+        first_decision = decisions[0] if isinstance(decisions, list) and decisions else None
+        normalized_decision = (
+            first_decision.get("type")
+            if isinstance(first_decision, Mapping)
+            else ""
+        )
+    else:
+        normalized_decision = ""
+
+    if normalized_decision not in {"approve", "reject"}:
         return {"resume_error": "workflow.invalid_resume"}
-    return {"confirmation": decision, "resume_error": None}
+    model_ref = decision.get("_runtime_model_ref") if isinstance(decision, Mapping) else None
+    result: dict[str, object] = {
+        "confirmation": normalized_decision,
+        "resume_error": None,
+    }
+    if isinstance(model_ref, str) and model_ref:
+        result["_runtime_model_ref"] = model_ref
+    return result
 
 
 def select_route(state: WorkflowState) -> dict[str, Literal["approve", "reject", "respond"]]:
@@ -81,17 +121,15 @@ def after_confirm(state: WorkflowState) -> Literal["confirm", "route"]:
 
 
 def approve(state: WorkflowState) -> dict[str, object]:
-    response = f"workflow approved: {state['message']}"
-    return {"response": response, "messages": [AIMessage(content=response)]}
+    return {"confirmation": "approve"}
 
 
 def reject(state: WorkflowState) -> dict[str, object]:
-    response = f"workflow rejected: {state['message']}"
-    return {"response": response, "messages": [AIMessage(content=response)]}
+    return {"confirmation": "reject"}
 
 
 def build_graph(
-    model_agent: object,
+    model_agent: Callable[[WorkflowState], Awaitable[object]],
     *,
     model_config: Mapping[str, object] | None = None,
     runtime_context: RuntimeContext | None = None,
@@ -107,7 +145,7 @@ def build_graph(
             configurable = dict(model_config.get("configurable") or {})
             configurable.update(current_config.get("configurable") or {})
             invoke_config["configurable"] = configurable
-        result = await model_agent.ainvoke(  # type: ignore[attr-defined]
+        result = await (await model_agent(state)).ainvoke(  # type: ignore[attr-defined]
             {"messages": messages},
             config=invoke_config,
             # The outer GraphHarbor runtime may omit Context when entering a
@@ -145,7 +183,7 @@ def build_graph(
         choose_route,
         {"approve": "approve", "reject": "reject", "respond": "respond"},
     )
-    graph.add_edge("approve", END)
-    graph.add_edge("reject", END)
+    graph.add_edge("approve", "respond")
+    graph.add_edge("reject", "respond")
     graph.add_edge("respond", END)
     return graph.compile(checkpointer=InMemorySaver())

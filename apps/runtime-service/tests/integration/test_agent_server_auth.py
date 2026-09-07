@@ -106,6 +106,13 @@ def test_graphharbor_invalid_delegation_has_no_persistence(
     asyncio.run(_test_invalid_delegation_no_side_effect(durable_url))
 
 
+def test_graphharbor_context_hash_mismatch_records_terminal_run(
+    durable_url: str,
+) -> None:
+    """Standard Runs may persist before Runtime rejects a mismatched context hash."""
+    asyncio.run(_test_context_hash_mismatch(durable_url))
+
+
 async def _test_invalid_delegation_no_side_effect(base_url: str) -> None:
     thread_id = str(uuid.uuid4())
     scope_claims = jwt.decode(_token(), SECRET, algorithms=["HS256"], options={"verify_signature": False})
@@ -127,6 +134,33 @@ async def _test_invalid_delegation_no_side_effect(base_url: str) -> None:
             await valid.threads.get(thread_id)
     finally:
         await valid.aclose()
+
+
+async def _test_context_hash_mismatch(base_url: str) -> None:
+    context = {"temperature": 0}
+    client = get_client(
+        url=base_url,
+        headers={"Authorization": f"Bearer {_token()}"},
+    )
+    thread_id = str(uuid.uuid4())
+    try:
+        await client.threads.create(thread_id=thread_id, if_exists="raise")
+        run = await client.runs.create(
+            thread_id,
+            "reference_agent",
+            input={"messages": [{"role": "user", "content": "hash mismatch"}]},
+            context=context,
+            stream_mode=["values"],
+            durability="sync",
+        )
+        run_id = run.get("run_id") if isinstance(run, dict) else run.run_id
+        assert run_id
+        await client.runs.join(thread_id, run_id)
+        observed = await client.runs.get(thread_id, run_id)
+        status = observed.get("status") if isinstance(observed, dict) else observed.status
+        assert status in {"error", "failed"}
+    finally:
+        await client.aclose()
 
 
 async def _test_unknown_context(base_url: str) -> None:

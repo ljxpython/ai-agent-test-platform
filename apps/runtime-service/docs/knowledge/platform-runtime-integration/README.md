@@ -1,7 +1,7 @@
 # Platform Runtime Integration 专项
 
 - 文档类型：Draft Supporting Navigation
-- 状态：总体方案已确认；L1/L2 本机闭环已完成，L3 已完成服务端真实 HITL 链和浏览器页面冒烟，完整浏览器 E2E 与 owner UAT 仍保留门禁（2026-09-05）
+- 状态：总体方案已确认；L1/L2/L3 自动化与本机浏览器链路已完成；旧兼容代码/文档和重叠 OpenSpec 已清理归档；仅 owner UAT 与本 change 最终 spec sync/archive 保留门禁（2026-09-07）
 - Owning loci：`apps/platform-web`、`apps/platform-api`
 - Execution band：B3 Governed
 - OpenSpec 真源：[`redesign-platform-runtime-integration`](../../../../../openspec/changes/redesign-platform-runtime-integration/)
@@ -126,6 +126,6 @@ GraphHarbor 必须对这些路径、envelope、SSE、取消、重连和失败语
   `verification.md`。
 - [推荐基线与未决问题](./04-recommended-baseline-and-open-decisions.md)保存推荐基线、已接受决策和剩余
   讨论顺序；owner 接受后同步为 OpenSpec contract，实施状态仍以 `tasks.md` 和 `verification.md` 为准。
-- 当前状态为 `L1 local-complete; L2 local-complete; L3 partial`；实现和证据仍以 `tasks.md`、`verification.md` 为准。
+- 当前状态为 `L1 local-complete; L2 local-complete; L3 chain-complete`；实现和证据仍以 `tasks.md`、`verification.md` 为准。
 - 旧文件出现 `Superseded` 只表示禁止继续作为新实现依据，不表示已经移动、删除或完成 migration。
-- 2026-09-05 实施记录：Gateway 已收窄为正式 Chat allowlist；旧 ChatDebugPage/debug service、Chat 与 Assistant 创建页的 Tools 选择入口、Runtime Tools 管理页路由和导航已删除；Runtime target ownership 优先使用 `(project_id, graph_id)`，Agent CRUD 不再触发 upstream Assistant mutation，历史 assistant id 仅作读取兼容；Platform API 实现已迁移到 `app/modules/agents`，旧 `assistants` 仅保留兼容导出；L2 smoke 已覆盖 Thread search/count/get、State/History、标准 Runs 选项和 API/Worker restart，workflow_demo HITL respond 已通过。模型配置现在经 Gateway 签发短期 opaque reference，Runtime 通过内部端点读取解密连接；Platform API 定向 29 项、Runtime 8 项和 Web typecheck 通过。完整实施状态仍以 OpenSpec `tasks.md` 与 `verification.md` 为准。
+- 2026-09-07 实施记录：完成 `20260907_0007` Agent alias migration，旧 Run 回填、profile 表迁移和冲突保护通过；删除无路由 Runtime/Policy/Tools 页面、Assistant upstream CRUD adapter 与 legacy debug 分支；旧 contract/计划/checklist 文档和重叠 OpenSpec 已归档。Platform API 165 tests、Platform Web 37 files/129 tests、typecheck/build、docs check、OpenSpec strict validate、diff check 均通过。完整实施状态仍以 OpenSpec `tasks.md` 与 `verification.md` 为准。

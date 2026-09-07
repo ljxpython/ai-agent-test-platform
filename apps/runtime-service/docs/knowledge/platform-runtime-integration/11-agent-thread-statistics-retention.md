@@ -19,7 +19,7 @@ GraphHarbor 持有 Thread、Run、Checkpoint、Event 的唯一事实。Platform 
 | --- | --- | --- | --- |
 | 可执行 Agent 数 | `langgraph.json` / GraphHarbor graph catalog | `graphs/search` 或 `graphs/count` 返回的 graph key 数 | 不统计旧 Assistant 行；当前正式 graph 为 `reference_agent`、`workflow_demo` |
 | 项目 Agent 数 | Platform PostgreSQL `agents` | 按 `project_id` 过滤记录数 | 表示项目绑定/配置数，不表示 graph catalog 总数 |
-| Agent 使用数 | GraphHarbor Run + Platform `runtime_runs.agent_key` | 按 `agent_key` 去重 | 只统计真实 Run，不读取 `langgraph_assistant_id` 作为新键 |
+| Agent 使用数 | GraphHarbor Run + Platform `runtime_runs.agent_key` | 按 `agent_key` 去重 | 只统计真实 Run，使用 `graph_id` 作为 Agent key |
 | Thread 总数 | GraphHarbor PostgreSQL | 通过 Gateway 的 scoped `threads/count` | Platform `runtime_runs` 的 distinct `thread_id` 只能作为治理下界 |
 | Run 总数/状态 | GraphHarbor PostgreSQL | 通过 Gateway 的 scoped Runs 查询 | Platform 状态是 projection，不覆盖 upstream 状态 |
 | Active Run | GraphHarbor 当前 Run 状态 + Platform durable ledger | `submitted/running` 或 HITL interrupt 未解决均为 active | SSE 断开不改变 active；显式 cancel 才改变状态 |
@@ -53,7 +53,7 @@ GraphHarbor，也不能根据 Thread metadata 自行汇总权限范围。
 | 表 | 数量 | 观察 |
 | --- | ---: | --- |
 | `agents` | 0 | 旧 `graph_id=assistant` 行已删除 |
-| `assistant_profiles` | 0 | 对应旧 profile 已删除 |
+| `agent_profiles` | 5 | 旧 `assistant_profiles` 已迁移并删除 |
 | `runtime_runs` | 125 | 未发现上述旧 Agent 对应的当前项目治理引用 |
 | `runtime_run_interrupts` | 2 | 仅为治理索引 |
 
@@ -64,7 +64,7 @@ GraphHarbor，也不能根据 Thread metadata 自行汇总权限范围。
 
 - Graph catalog：`apps/runtime-service/langgraph.json`；Platform Gateway 的 `graphs/search`、
   `graphs/count` allowlist。
-- Project Agent：`apps/platform-api/app/modules/agents`；数据库表 `agents`、`assistant_profiles`。
+- Project Agent：`apps/platform-api/app/modules/agents`；数据库表 `agents`、`agent_profiles`。
 - Thread/Run 代理：`apps/platform-api/app/modules/runtime_gateway`；事实读取转发 GraphHarbor。
 - Governance projection：`apps/platform-api/app/modules/runtime_gateway/infra/sqlalchemy/models.py`。
 - 旧包兼容：`apps/platform-api/app/modules/assistants` 只做导出，不得新增业务逻辑。

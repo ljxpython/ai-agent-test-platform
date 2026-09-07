@@ -106,9 +106,10 @@ async def _catalog_connection(
     *,
     model_id: str,
     project_id: str,
+    reference: object | None = None,
 ) -> dict[str, str] | None:
     configurable = _configurable(config)
-    reference = configurable.get("_runtime_model_ref")
+    reference = reference or configurable.get("runtime_model_ref")
     endpoint = os.getenv("PLATFORM_RUNTIME_MODEL_CONFIG_URL", "").strip()
     if not reference or not endpoint or not project_id:
         return None
@@ -149,31 +150,32 @@ async def get_agent(config: RunnableConfig) -> Pregel:
         tool_permissions=_TOOL_PERMISSIONS,
     )
     injected = _runtime_model(config, local=local)
-    connection = None if injected is not None else await _catalog_connection(
-        config,
-        model_id=resolved.model_id,
-        project_id=facts.principal.project_id,
-    )
-    model = injected or build_model(resolved, connection=connection)
-
-    model_agent = create_agent(
-        model=model,
-        tools=[read_reference],
-        system_prompt=_DEFAULTS.system_prompt,
-        middleware=[
-            ModelCallLimitMiddleware(run_limit=10, exit_behavior="end"),
-            ModelCallTimeoutMiddleware(timeout_seconds=30),
-        ],
-        context_schema=RuntimeContext,
-        name="workflow_demo_model",
-    )
+    async def model_agent_for(state: Mapping[str, object]) -> object:
+        connection = None if injected is not None else await _catalog_connection(
+            config,
+            model_id=resolved.model_id,
+            project_id=facts.principal.project_id,
+            reference=state.get("_runtime_model_ref"),
+        )
+        model = injected or build_model(resolved, connection=connection)
+        return create_agent(
+            model=model,
+            tools=[read_reference],
+            system_prompt=_DEFAULTS.system_prompt,
+            middleware=[
+                ModelCallLimitMiddleware(run_limit=10, exit_behavior="end"),
+                ModelCallTimeoutMiddleware(timeout_seconds=30),
+            ],
+            context_schema=RuntimeContext,
+            name="workflow_demo_model",
+        )
     bound_config = dict(config)
     bound_configurable = dict(bound_config.get("configurable") or {})
     bound_configurable.pop("_runtime_model", None)
     bound_configurable.pop("_runtime_test_local_auth", None)
     bound_config["configurable"] = bound_configurable
     graph = build_graph(
-        model_agent,
+        model_agent_for,
         model_config=bound_config,
         runtime_context=context,
     )

@@ -307,6 +307,12 @@ def resolve_runtime_config(
         raise _fail("runtime.tool.permission_invalid", "tool_permissions")
 
     model_id = context.model_id if context.model_id is not None else defaults.model_id
+    # Keep provider-prefixed defaults compatible with catalog keys after the
+    # Platform has already restricted the delegation allowlist.
+    if model_id not in policy.allowed_model_ids and ":" in model_id:
+        _, catalog_model_id = model_id.split(":", 1)
+        if policy.allowed_model_ids.count(catalog_model_id) == 1:
+            model_id = catalog_model_id
     if model_id not in policy.allowed_model_ids:
         raise _fail("runtime.model.not_allowed", "model_id")
     temperature = context.temperature if context.temperature is not None else defaults.temperature
