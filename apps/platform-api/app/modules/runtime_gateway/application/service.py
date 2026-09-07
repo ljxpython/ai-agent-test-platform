@@ -131,6 +131,26 @@ def _run_id_from_command_result(result: Any) -> str | None:
     return clean_str(candidate)
 
 
+def _protocol_command_response(command: Mapping[str, Any], result: Any) -> Any:
+    """Normalize GraphHarbor's legacy command result to Protocol v2."""
+    if isinstance(result, dict) and result.get("type") in {"success", "error"}:
+        return result
+    response: dict[str, Any] = {
+        "type": "success",
+        "id": command.get("id"),
+        "result": (
+            result["result"]
+            if isinstance(result, dict) and "result" in result
+            else result
+            if isinstance(result, dict)
+            else {}
+        ),
+    }
+    if isinstance(result, dict) and isinstance(result.get("meta"), dict):
+        response["meta"] = result["meta"]
+    return response
+
+
 def _run_items(result: Any) -> list[dict[str, Any]]:
     if isinstance(result, list):
         return [item for item in result if isinstance(item, dict)]
@@ -268,6 +288,18 @@ def _interrupt_ids(state: Any) -> set[str]:
 
 def _normalize_payload(payload: dict[str, Any] | None) -> dict[str, Any]:
     return ensure_dict(payload)
+
+
+def _redact_runtime_private_fields(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            key: _redact_runtime_private_fields(item)
+            for key, item in value.items()
+            if not (str(key).startswith("_runtime_") or key == "runtime_model_ref")
+        }
+    if isinstance(value, list):
+        return [_redact_runtime_private_fields(item) for item in value]
+    return value
 
 
 def _thread_metadata(thread: dict[str, Any]) -> dict[str, Any]:
@@ -443,11 +475,6 @@ class RuntimeGatewayService:
                         project_id=project_uuid,
                         graph_id=assistant_id,
                     )
-                    if agent is None:
-                        agent = SqlAlchemyAssistantsRepository(uow.session).get_by_project_and_langgraph_assistant_id(
-                            project_id=project_uuid,
-                            langgraph_assistant_id=assistant_id,
-                        )
                     if agent is not None:
                         profile_defaults = {
                             key: agent.context[key]
@@ -463,10 +490,45 @@ class RuntimeGatewayService:
             requested=context,
         )
         if merged == context:
+            next_payload = payload
+        else:
+            next_payload = dict(payload)
+            next_payload["context"] = merged
+        return await self._normalize_catalog_model_id(
+            project_id=project_id,
+            payload=next_payload,
+        )
+
+    async def _normalize_catalog_model_id(
+        self,
+        *,
+        project_id: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Map legacy provider:model aliases to the configured catalog key."""
+        context = ensure_dict(payload.get("context"))
+        requested = clean_str(context.get("model_id"))
+        if (
+            not requested
+            or ":" not in requested
+            or not self._runtime_id
+            or self._session_factory is None
+        ):
             return payload
-        next_payload = dict(payload)
-        next_payload["context"] = merged
-        return next_payload
+        _, catalog_key = requested.split(":", 1)
+        if not catalog_key:
+            return payload
+        async with SqlAlchemyUnitOfWork(self._session_factory) as uow:
+            repository = SqlAlchemyRuntimeCatalogRepository(uow.session)
+            exact = repository.get_model_by_key(runtime_id=self._runtime_id, model_key=requested)
+            candidate = repository.get_model_by_key(runtime_id=self._runtime_id, model_key=catalog_key)
+        if exact is not None or candidate is None or not candidate.enabled:
+            return payload
+        normalized_context = dict(context)
+        normalized_context["model_id"] = catalog_key
+        normalized_payload = dict(payload)
+        normalized_payload["context"] = normalized_context
+        return normalized_payload
 
     async def _project_default_model_id(self, *, project_id: str) -> str | None:
         session_factory = self._require_session_factory()
@@ -560,9 +622,15 @@ class RuntimeGatewayService:
         """Pass only a short-lived model capability through the generic Agent Server."""
         if not self._runtime_model_config_secret:
             return payload
-        model_id = clean_str(ensure_dict(payload.get("context")).get("model_id"))
+        context = ensure_dict(payload.get("context"))
+        config = ensure_dict(payload.get("config"))
+        configurable = ensure_dict(config.get("configurable"))
+        runtime_options = ensure_dict(configurable.get("platform_runtime"))
+        model_id = clean_str(context.get("model_id") or runtime_options.get("model_id"))
         if not model_id:
             return payload
+        if "model_id" not in context:
+            context = {**runtime_options, **context}
         session_factory = self._require_session_factory()
         async with SqlAlchemyUnitOfWork(session_factory) as uow:
             item = SqlAlchemyRuntimeCatalogRepository(uow.session).get_model_by_key(
@@ -579,7 +647,9 @@ class RuntimeGatewayService:
         )
         config = ensure_dict(payload.get("config"))
         configurable = dict(ensure_dict(config.get("configurable")))
-        configurable["_runtime_model_ref"] = reference
+        # GraphHarbor drops configurable fields prefixed with `_` when a Run
+        # resumes. This opaque capability must survive that generic transport.
+        configurable["runtime_model_ref"] = reference
         next_config = dict(config)
         next_config["configurable"] = configurable
         next_payload = dict(payload)
@@ -626,12 +696,6 @@ class RuntimeGatewayService:
                 project_id=project_uuid,
                 graph_id=assistant_id,
             )
-            if item is None:
-                # Read-only compatibility for historical rows; new runs use graph_id.
-                item = repository.get_by_project_and_langgraph_assistant_id(
-                    project_id=project_uuid,
-                    langgraph_assistant_id=assistant_id,
-                )
             return item is not None
 
     async def _assert_runtime_target_allowed(
@@ -1083,7 +1147,7 @@ class RuntimeGatewayService:
         project_id: str,
         thread_id: str,
         interrupt_id: str,
-    ) -> str:
+    ) -> StoredDurableRun:
         session_factory = self._require_session_factory()
         state = await self._upstream.get_thread_state(thread_id, {})
         interrupt_ids = _interrupt_ids(state)
@@ -1119,7 +1183,7 @@ class RuntimeGatewayService:
                     code="interrupt_not_active",
                     message="The interrupt has already been resolved",
                 )
-            return active_run.run_id
+            return active_run
 
     async def _assert_run_project_scope(
         self,
@@ -1414,7 +1478,8 @@ class RuntimeGatewayService:
             thread_id=thread_id,
             write=False,
         )
-        return await self._upstream.get_thread_state(thread_id, _normalize_payload(params))
+        state = await self._upstream.get_thread_state(thread_id, _normalize_payload(params))
+        return _redact_runtime_private_fields(state)
 
     async def update_thread_state(
         self,
@@ -1461,7 +1526,8 @@ class RuntimeGatewayService:
             thread_id=thread_id,
             write=False,
         )
-        return await self._upstream.get_thread_history(thread_id, _normalize_payload(payload))
+        history = await self._upstream.get_thread_history(thread_id, _normalize_payload(payload))
+        return _redact_runtime_private_fields(history)
 
     async def create_global_run(
         self,
@@ -1786,34 +1852,102 @@ class RuntimeGatewayService:
                     code="interrupt_id_required",
                     message="input.respond requires interrupt_id",
                 )
-            active_run_id = await self._assert_active_interrupt(
+            active_run = await self._assert_active_interrupt(
                 project_id=project_id,
                 thread_id=thread_id,
                 interrupt_id=interrupt_id,
             )
-            result = await self._upstream.send_thread_command(thread_id, command)
+            resume_command = command
+            stored_context = active_run.context_snapshot
+            request_params = ensure_dict(command["params"])
+            request_config = ensure_dict(request_params.get("config"))
+            request_configurable = ensure_dict(request_config.get("configurable"))
+            request_options = ensure_dict(request_configurable.get("platform_runtime"))
+            context_snapshot = dict(stored_context) if isinstance(stored_context, dict) else {}
+            if not context_snapshot:
+                context_snapshot = dict(ensure_dict(request_params.get("context")))
+            context_snapshot.update(request_options)
+            if context_snapshot:
+                normalized_context_payload = await self._normalize_catalog_model_id(
+                    project_id=project_id,
+                    payload={"context": dict(context_snapshot)},
+                )
+                context_snapshot = ensure_dict(normalized_context_payload.get("context"))
+                resume_config = dict(ensure_dict(command["params"].get("config")))
+                resume_config["context"] = dict(context_snapshot)
+                configurable = dict(ensure_dict(resume_config.get("configurable")))
+                runtime_options = dict(
+                    ensure_dict(configurable.get("platform_runtime"))
+                )
+                runtime_options.update(context_snapshot)
+                configurable["platform_runtime"] = runtime_options
+                resume_config["configurable"] = configurable
+                enriched = await self._attach_runtime_model_reference(
+                    project_id=project_id,
+                    payload={"context": dict(context_snapshot), "config": resume_config},
+                )
+                resume_response = ensure_dict(command["params"].get("response"))
+                model_reference = clean_str(
+                    ensure_dict(enriched.get("config"))
+                    .get("configurable", {})
+                    .get("runtime_model_ref")
+                )
+                if model_reference:
+                    resume_response["_runtime_model_ref"] = model_reference
+                resume_command = {
+                    **command,
+                    "params": {
+                        **command["params"],
+                        "context": dict(context_snapshot),
+                        "config": enriched.get("config", resume_config),
+                        "response": resume_response,
+                    },
+                }
+
+            upstream = self._upstream
+            if (
+                self._delegation_headers_factory is not None
+                and hasattr(upstream, "with_forwarded_headers")
+            ):
+                context_hash = active_run.context_hash
+                if isinstance(context_snapshot, dict):
+                    context_hash, _ = _runtime_context_snapshot(
+                        {"params": {"context": context_snapshot}}
+                    )
+                upstream = upstream.with_forwarded_headers(
+                    self._delegation_headers_factory(
+                        project_id=project_id,
+                        agent_key=active_run.agent_key,
+                        thread_id=thread_id,
+                        context_hash=context_hash or "sha256:" + "0" * 64,
+                    )
+                )
+            result = await upstream.send_thread_command(thread_id, resume_command)
             if not (
                 isinstance(result, dict)
                 and str(result.get("type") or "").lower() == "error"
             ):
                 resumed_run_id = _run_id_from_command_result(result)
-                if resumed_run_id and resumed_run_id != active_run_id:
+                if resumed_run_id and resumed_run_id != active_run.run_id:
                     session_factory = self._require_session_factory()
                     async with SqlAlchemyUnitOfWork(session_factory) as uow:
                         SqlAlchemyDurableRunsRepository(uow.session).replace_active_run_id(
                             project_id=project_id,
                             thread_id=thread_id,
-                            run_id=active_run_id,
+                            run_id=active_run.run_id,
                             next_run_id=resumed_run_id,
                         )
                 await self._mark_interrupt_resolved(
                     project_id=project_id,
                     thread_id=thread_id,
-                    run_id=active_run_id,
+                    run_id=active_run.run_id,
                     interrupt_id=interrupt_id,
                 )
-            return result
-        return await self._upstream.send_thread_command(thread_id, command)
+            return _protocol_command_response(command, result)
+        return _protocol_command_response(
+            command,
+            await self._upstream.send_thread_command(thread_id, command),
+        )
 
     async def stream_thread_events(
         self,

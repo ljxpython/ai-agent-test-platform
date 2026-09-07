@@ -538,7 +538,7 @@ class DurableRunCoordinatorTest(unittest.IsolatedAsyncioTestCase):
             payload=response,
         )
 
-        self.assertEqual(result["run_id"], "run-1")
+        self.assertEqual(result["result"]["run_id"], "run-1")
         self.upstream.send_thread_command.assert_awaited_with("thread-1", response)
 
     async def test_interrupted_run_stays_active_and_resume_replaces_upstream_run_id(self) -> None:

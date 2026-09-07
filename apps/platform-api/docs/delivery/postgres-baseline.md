@@ -101,7 +101,7 @@ export PLATFORM_API_BOOTSTRAP_ADMIN_PASSWORD=admin123456
 - `announcements`
 - `announcement_reads`
 - `agents`
-- `assistant_profiles`
+- `agent_profiles`
 - `audit_logs`
 
 IAM 增量 revision `20260723_0001` 还增加：

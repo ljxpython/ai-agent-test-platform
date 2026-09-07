@@ -1,6 +1,5 @@
-from app.adapters.langgraph.assistants_client import (
+from app.adapters.langgraph.sdk_client import (
     FORWARDED_HEADER_KEYS,
-    LangGraphAssistantsClient,
     build_forward_headers,
 )
 from app.adapters.langgraph.graphs_sdk_adapter import LangGraphGraphsSdkAdapter
@@ -14,7 +13,6 @@ from app.adapters.langgraph.threads_sdk_adapter import LangGraphThreadsSdkAdapte
 __all__ = [
     "FORWARDED_HEADER_KEYS",
     "GraphParameterSchemaProvider",
-    "LangGraphAssistantsClient",
     "LangGraphGraphsSdkAdapter",
     "LangGraphRunsSdkAdapter",
     "LangGraphRuntimeClient",

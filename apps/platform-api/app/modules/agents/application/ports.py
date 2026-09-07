@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 
@@ -13,7 +13,6 @@ class StoredAssistantAggregate:
     name: str
     description: str
     graph_id: str
-    langgraph_assistant_id: str
     runtime_base_url: str
     sync_status: str
     last_sync_error: str | None
@@ -56,7 +55,6 @@ class AssistantsRepositoryProtocol(Protocol):
         description: str,
         graph_id: str,
         runtime_base_url: str,
-        langgraph_assistant_id: str,
     ) -> StoredAssistantAggregate: ...
 
     def update_assistant_runtime_fields(
@@ -90,21 +88,6 @@ class AssistantsRepositoryProtocol(Protocol):
     ) -> StoredAssistantAggregate: ...
 
     def delete_assistant(self, *, assistant_id: UUID) -> None: ...
-
-
-class AssistantsUpstreamProtocol(Protocol):
-    async def create_assistant(self, payload: Mapping[str, Any]) -> Any: ...
-
-    async def get_assistant(self, assistant_id: str) -> Any: ...
-
-    async def update_assistant(self, assistant_id: str, payload: Mapping[str, Any]) -> Any: ...
-
-    async def delete_assistant(
-        self,
-        assistant_id: str,
-        *,
-        delete_threads: bool = False,
-    ) -> Any: ...
 
 
 class AssistantParameterSchemaProviderProtocol(Protocol):

@@ -32,7 +32,6 @@ class _FakeAssistantsService:
             name="Research Demo",
             description="resynced by worker",
             graph_id="research_demo",
-            langgraph_assistant_id="lg-assistant-1",
             runtime_base_url="http://127.0.0.1:8123",
             metadata={"source": "worker-test"},
         )

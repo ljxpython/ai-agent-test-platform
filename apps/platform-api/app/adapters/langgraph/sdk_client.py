@@ -7,6 +7,23 @@ import langgraph_sdk
 
 from app.core.errors import PlatformApiError, UpstreamServiceError
 
+FORWARDED_HEADER_KEYS = ("x-request-id",)
+
+
+def build_forward_headers(
+    headers: Mapping[str, str | None],
+    *,
+    request_id: str | None = None,
+) -> dict[str, str]:
+    forwarded = {
+        key: value
+        for key in FORWARDED_HEADER_KEYS
+        if (value := headers.get(key))
+    }
+    if "x-request-id" not in forwarded and request_id:
+        forwarded["x-request-id"] = request_id
+    return forwarded
+
 
 def get_langgraph_client(
     *,
@@ -109,43 +126,3 @@ def raise_runtime_upstream_error(exc: Exception, *, fallback_detail: str) -> Non
         message="LangGraph upstream is unavailable",
     ) from exc
 
-
-def raise_assistants_upstream_error(exc: Exception, *, upstream_path: str) -> None:
-    if isinstance(exc, (PlatformApiError, UpstreamServiceError)):
-        raise exc
-
-    if isinstance(exc, httpx.TimeoutException):
-        raise UpstreamServiceError(
-            upstream="langgraph",
-            status_code=504,
-            code="langgraph_upstream_timeout",
-            message="LangGraph upstream timed out",
-        ) from exc
-
-    response = getattr(exc, "response", None)
-    status_code = getattr(response, "status_code", None)
-    if isinstance(status_code, int):
-        raise PlatformApiError(
-            code="langgraph_upstream_request_failed",
-            status_code=502,
-            message=f"LangGraph upstream request failed ({status_code})",
-            extra={
-                "upstream_status_code": status_code,
-                "upstream_path": upstream_path,
-            },
-        ) from exc
-
-    if isinstance(exc, httpx.HTTPError):
-        raise UpstreamServiceError(
-            upstream="langgraph",
-            status_code=502,
-            code="langgraph_upstream_unavailable",
-            message="LangGraph upstream is unavailable",
-        ) from exc
-
-    raise UpstreamServiceError(
-        upstream="langgraph",
-        status_code=502,
-        code="langgraph_upstream_unavailable",
-        message="LangGraph upstream is unavailable",
-    ) from exc

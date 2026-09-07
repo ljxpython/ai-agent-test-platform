@@ -27,7 +27,6 @@ from app.modules.agents.application.contracts import (
 )
 from app.modules.agents.application.ports import (
     AssistantParameterSchemaProviderProtocol,
-    AssistantsUpstreamProtocol,
     StoredAssistantAggregate,
 )
 from app.modules.agents.domain import (
@@ -69,13 +68,11 @@ class AssistantsService:
         *,
         session_factory: sessionmaker[Session] | None,
         runtime_base_url: str,
-        upstream: AssistantsUpstreamProtocol,
         schema_provider: AssistantParameterSchemaProviderProtocol,
         policy_engine: IamPolicyEngine | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._runtime_base_url = runtime_base_url.rstrip("/")
-        self._upstream = upstream
         self._schema_provider = schema_provider
         self._policy_engine = policy_engine or IamPolicyEngine()
 
@@ -102,7 +99,6 @@ class AssistantsService:
             name=item.name,
             description=item.description,
             graph_id=item.graph_id,
-            langgraph_assistant_id=item.langgraph_assistant_id,
             runtime_base_url=item.runtime_base_url,
             sync_status=sync_status,
             last_sync_error=item.last_sync_error,
@@ -195,9 +191,6 @@ class AssistantsService:
                     description=command.description.strip(),
                     graph_id=command.graph_id.strip(),
                     runtime_base_url=self._runtime_base_url,
-                    # Agent key is the graph id. The legacy column remains a
-                    # read-compatibility alias until historical data is retired.
-                    langgraph_assistant_id=command.graph_id.strip(),
                 )
                 item = repository.upsert_assistant_profile(
                     assistant_id=created.id,

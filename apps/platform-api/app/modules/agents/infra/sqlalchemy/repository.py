@@ -7,12 +7,12 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.modules.agents.application.ports import StoredAssistantAggregate
-from app.modules.agents.infra.sqlalchemy.models import AgentRecord, AssistantProfileRecord
+from app.modules.agents.infra.sqlalchemy.models import AgentProfileRecord, AgentRecord
 
 
 def _to_aggregate(
     agent: AgentRecord,
-    profile: AssistantProfileRecord | None,
+    profile: AgentProfileRecord | None,
 ) -> StoredAssistantAggregate:
     return StoredAssistantAggregate(
         id=agent.id,
@@ -20,7 +20,6 @@ def _to_aggregate(
         name=agent.name,
         description=agent.description,
         graph_id=agent.graph_id,
-        langgraph_assistant_id=agent.langgraph_assistant_id,
         runtime_base_url=agent.runtime_base_url,
         sync_status=agent.sync_status,
         last_sync_error=agent.last_sync_error,
@@ -43,9 +42,9 @@ class SqlAlchemyAssistantsRepository:
     def _get_agent(self, assistant_id: UUID) -> AgentRecord | None:
         return self.session.get(AgentRecord, assistant_id)
 
-    def _get_profile(self, assistant_id: UUID) -> AssistantProfileRecord | None:
-        stmt = select(AssistantProfileRecord).where(
-            AssistantProfileRecord.agent_id == assistant_id
+    def _get_profile(self, assistant_id: UUID) -> AgentProfileRecord | None:
+        stmt = select(AgentProfileRecord).where(
+            AgentProfileRecord.agent_id == assistant_id
         )
         return self.session.scalar(stmt)
 
@@ -59,10 +58,10 @@ class SqlAlchemyAssistantsRepository:
         graph_id: str | None,
     ) -> tuple[list[StoredAssistantAggregate], int]:
         base_stmt = (
-            select(AgentRecord, AssistantProfileRecord)
+            select(AgentRecord, AgentProfileRecord)
             .outerjoin(
-                AssistantProfileRecord,
-                AssistantProfileRecord.agent_id == AgentRecord.id,
+                AgentProfileRecord,
+                AgentProfileRecord.agent_id == AgentRecord.id,
             )
             .where(AgentRecord.project_id == project_id)
         )
@@ -72,7 +71,6 @@ class SqlAlchemyAssistantsRepository:
                 func.lower(AgentRecord.name).like(normalized)
                 | func.lower(AgentRecord.description).like(normalized)
                 | func.lower(AgentRecord.graph_id).like(normalized)
-                | func.lower(AgentRecord.langgraph_assistant_id).like(normalized)
             )
         if graph_id and graph_id.strip():
             base_stmt = base_stmt.where(AgentRecord.graph_id == graph_id.strip())
@@ -89,10 +87,10 @@ class SqlAlchemyAssistantsRepository:
 
     def get_assistant_by_id(self, assistant_id: UUID) -> StoredAssistantAggregate | None:
         stmt = (
-            select(AgentRecord, AssistantProfileRecord)
+            select(AgentRecord, AgentProfileRecord)
             .outerjoin(
-                AssistantProfileRecord,
-                AssistantProfileRecord.agent_id == AgentRecord.id,
+                AgentProfileRecord,
+                AgentProfileRecord.agent_id == AgentRecord.id,
             )
             .where(AgentRecord.id == assistant_id)
         )
@@ -109,38 +107,14 @@ class SqlAlchemyAssistantsRepository:
         graph_id: str,
     ) -> StoredAssistantAggregate | None:
         stmt = (
-            select(AgentRecord, AssistantProfileRecord)
+            select(AgentRecord, AgentProfileRecord)
             .outerjoin(
-                AssistantProfileRecord,
-                AssistantProfileRecord.agent_id == AgentRecord.id,
+                AgentProfileRecord,
+                AgentProfileRecord.agent_id == AgentRecord.id,
             )
             .where(
                 AgentRecord.project_id == project_id,
                 AgentRecord.graph_id == graph_id,
-            )
-            .limit(1)
-        )
-        row = self.session.execute(stmt).tuples().first()
-        if row is None:
-            return None
-        agent, profile = row
-        return _to_aggregate(agent, profile)
-
-    def get_by_project_and_langgraph_assistant_id(
-        self,
-        *,
-        project_id: UUID,
-        langgraph_assistant_id: str,
-    ) -> StoredAssistantAggregate | None:
-        stmt = (
-            select(AgentRecord, AssistantProfileRecord)
-            .outerjoin(
-                AssistantProfileRecord,
-                AssistantProfileRecord.agent_id == AgentRecord.id,
-            )
-            .where(
-                AgentRecord.project_id == project_id,
-                AgentRecord.langgraph_assistant_id == langgraph_assistant_id,
             )
             .limit(1)
         )
@@ -158,7 +132,6 @@ class SqlAlchemyAssistantsRepository:
         description: str,
         graph_id: str,
         runtime_base_url: str,
-        langgraph_assistant_id: str,
     ) -> StoredAssistantAggregate:
         record = AgentRecord(
             project_id=project_id,
@@ -166,7 +139,6 @@ class SqlAlchemyAssistantsRepository:
             description=description,
             graph_id=graph_id,
             runtime_base_url=runtime_base_url,
-            langgraph_assistant_id=langgraph_assistant_id,
             sync_status="ready",
             last_sync_error=None,
             last_synced_at=datetime.now(timezone.utc),
@@ -223,7 +195,7 @@ class SqlAlchemyAssistantsRepository:
     ) -> StoredAssistantAggregate:
         profile = self._get_profile(assistant_id)
         if profile is None:
-            profile = AssistantProfileRecord(
+            profile = AgentProfileRecord(
                 agent_id=assistant_id,
                 status=status,
                 config=config,

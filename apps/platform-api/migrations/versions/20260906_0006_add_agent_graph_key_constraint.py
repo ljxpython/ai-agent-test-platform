@@ -27,19 +27,22 @@ def upgrade() -> None:
             "Cannot add uq_agents_project_graph_id: duplicate project_id/graph_id rows exist"
         )
 
-    constraints = {
-        item["name"] for item in inspector.get_unique_constraints("agents")
-    }
-    if "uq_agents_project_graph_id" not in constraints:
-        with op.batch_alter_table("agents") as batch:
-            batch.create_unique_constraint(
-                "uq_agents_project_graph_id",
-                ["project_id", "graph_id"],
-            )
+    constraints = {item["name"] for item in inspector.get_unique_constraints("agents")}
+    indexes = {item["name"] for item in inspector.get_indexes("agents")}
+    if "uq_agents_project_graph_id" not in constraints | indexes:
+        op.create_index(
+            "uq_agents_project_graph_id",
+            "agents",
+            ["project_id", "graph_id"],
+            unique=True,
+        )
 
 
 def downgrade() -> None:
     bind = op.get_bind()
-    if "agents" in sa.inspect(bind).get_table_names():
-        with op.batch_alter_table("agents") as batch:
-            batch.drop_constraint("uq_agents_project_graph_id", type_="unique")
+    inspector = sa.inspect(bind)
+    if "agents" not in inspector.get_table_names():
+        return
+    indexes = {item["name"] for item in inspector.get_indexes("agents")}
+    if "uq_agents_project_graph_id" in indexes:
+        op.drop_index("uq_agents_project_graph_id", table_name="agents")

@@ -18,11 +18,6 @@ class AgentRecord(Base):
             "graph_id",
             name="uq_agents_project_graph_id",
         ),
-        UniqueConstraint(
-            "project_id",
-            "langgraph_assistant_id",
-            name="uq_agents_project_langgraph_assistant",
-        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -39,7 +34,6 @@ class AgentRecord(Base):
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     graph_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     runtime_base_url: Mapped[str] = mapped_column(String(512), nullable=False)
-    langgraph_assistant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     description: Mapped[str] = mapped_column(String, nullable=False, default="")
     sync_status: Mapped[str] = mapped_column(String(32), nullable=False, default="ready")
     last_sync_error: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -53,15 +47,15 @@ class AgentRecord(Base):
         server_default=func.now(),
     )
 
-    assistant_profile: Mapped["AssistantProfileRecord | None"] = relationship(
+    agent_profile: Mapped["AgentProfileRecord | None"] = relationship(
         back_populates="agent",
         cascade="all,delete",
         uselist=False,
     )
 
 
-class AssistantProfileRecord(Base):
-    __tablename__ = "assistant_profiles"
+class AgentProfileRecord(Base):
+    __tablename__ = "agent_profiles"
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -92,4 +86,4 @@ class AssistantProfileRecord(Base):
         onupdate=func.now(),
     )
 
-    agent: Mapped[AgentRecord] = relationship(back_populates="assistant_profile")
+    agent: Mapped[AgentRecord] = relationship(back_populates="agent_profile")

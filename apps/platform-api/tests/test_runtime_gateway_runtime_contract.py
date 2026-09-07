@@ -488,6 +488,40 @@ class RuntimeGatewayRuntimeContractTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(factory.call_args.kwargs["context_hash"].startswith("sha256:"))
         upstream.create_thread_run.assert_not_awaited()
 
+    async def test_run_launch_attaches_opaque_model_reference_from_platform_runtime_context(self) -> None:
+        class _Uow:
+            async def __aenter__(self):
+                return SimpleNamespace(session=object())
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return None
+
+        service = RuntimeGatewayService(session_factory=object(), upstream=SimpleNamespace())
+        service._runtime_model_config_secret = "test-secret"  # type: ignore[attr-defined]
+        service._runtime_model_config_ttl_seconds = 60  # type: ignore[attr-defined]
+        service._runtime_id = "runtime-1"  # type: ignore[attr-defined]
+        item = SimpleNamespace(enabled=True)
+        with (
+            patch("app.modules.runtime_gateway.application.service.SqlAlchemyUnitOfWork", return_value=_Uow()),
+            patch("app.modules.runtime_gateway.application.service.SqlAlchemyRuntimeCatalogRepository") as repository,
+            patch("app.modules.runtime_gateway.application.service.create_model_reference", return_value="v1.opaque.sig"),
+        ):
+            repository.return_value.get_model_by_key.return_value = item
+            result = await service._attach_runtime_model_reference(
+                project_id="project-1",
+                payload={
+                    "config": {
+                        "configurable": {
+                            "platform_runtime": {"model_id": "model-1"},
+                        },
+                    },
+                },
+            )
+
+        configurable = result["config"]["configurable"]
+        self.assertEqual(configurable["runtime_model_ref"], "v1.opaque.sig")
+        self.assertNotIn("api_key", str(result))
+
     async def test_input_respond_preserves_protocol_payload(self) -> None:
         payload = {
             "id": 12,
@@ -525,6 +559,59 @@ class RuntimeGatewayRuntimeContractTest(unittest.IsolatedAsyncioTestCase):
             run_id=unittest.mock.ANY,
             interrupt_id="interrupt-1",
         )
+
+    async def test_input_respond_renews_model_reference_for_resume(self) -> None:
+        payload = {
+            "id": 13,
+            "method": "input.respond",
+            "params": {
+                "interrupt_id": "interrupt-1",
+                "response": {"decisions": [{"type": "approve"}]},
+            },
+        }
+        upstream = SimpleNamespace(
+            send_thread_command=AsyncMock(return_value={"type": "success", "id": 13})
+        )
+        service = RuntimeGatewayService(session_factory=None, upstream=upstream)
+        service._load_thread = AsyncMock(return_value={"metadata": {}})  # type: ignore[method-assign]
+        service._project_default_model_id = AsyncMock(return_value=None)  # type: ignore[method-assign]
+        service._assert_active_interrupt = AsyncMock(  # type: ignore[method-assign]
+            return_value=SimpleNamespace(
+                run_id="run-1",
+                agent_key="workflow_demo",
+                context_hash="sha256:context",
+                context_snapshot={"model_id": "model-1"},
+            )
+        )
+        service._mark_interrupt_resolved = AsyncMock()  # type: ignore[method-assign]
+        service._attach_runtime_model_reference = AsyncMock(  # type: ignore[method-assign]
+            return_value={"config": {"configurable": {"runtime_model_ref": "opaque"}}}
+        )
+
+        await service.send_thread_command(
+            actor=SimpleNamespace(),
+            project_id="project-1",
+            thread_id="thread-1",
+            payload=payload,
+        )
+
+        forwarded = upstream.send_thread_command.await_args.args[1]
+        self.assertEqual(
+            forwarded["params"]["response"]["_runtime_model_ref"], "opaque"
+        )
+
+    async def test_thread_state_redacts_runtime_private_fields(self) -> None:
+        upstream = SimpleNamespace(
+            get_thread_state=AsyncMock(return_value={"values": {"_runtime_model_ref": "opaque", "runtime_model_ref": "opaque", "message": "hello"}})
+        )
+        service = RuntimeGatewayService(session_factory=None, upstream=upstream)
+        service._load_thread = AsyncMock(return_value={"metadata": {}})  # type: ignore[method-assign]
+
+        result = await service.get_thread_state(
+            actor=SimpleNamespace(), project_id="project-1", thread_id="thread-1", params=None
+        )
+
+        self.assertEqual(result, {"values": {"message": "hello"}})
 
     async def test_create_global_run_injects_project_default_model(self) -> None:
         upstream = SimpleNamespace(create_global_run=AsyncMock(return_value={"ok": True}))

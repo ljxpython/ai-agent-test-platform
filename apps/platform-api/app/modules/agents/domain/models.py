@@ -28,7 +28,6 @@ class AssistantItem(BaseModel):
     name: str
     description: str = ""
     graph_id: str
-    langgraph_assistant_id: str
     runtime_base_url: str
     sync_status: AssistantSyncStatus = AssistantSyncStatus.READY
     last_sync_error: str | None = None

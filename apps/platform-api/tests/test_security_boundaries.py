@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.context import build_request_context
-from app.adapters.langgraph.assistants_client import build_forward_headers
+from app.adapters.langgraph import build_forward_headers
 from app.core.db import build_engine, create_core_tables, session_scope
 from app.core.security import hash_password
 from app.entrypoints.http.middleware.audit_log import _should_capture_response

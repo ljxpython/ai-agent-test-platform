@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.adapters.interaction_data import InteractionDataClient
-from app.adapters.langgraph import GraphParameterSchemaProvider, LangGraphAssistantsClient
+from app.adapters.langgraph import GraphParameterSchemaProvider
 from app.core.config import Settings
 from app.modules.agents.application import AssistantsService
 from app.modules.operations.application.artifacts import LocalOperationArtifactStore
@@ -68,17 +68,10 @@ def _build_assistants_service(
     settings: Settings,
     session_factory: sessionmaker[Session] | None,
 ) -> AssistantsService:
-    upstream = LangGraphAssistantsClient(
-        base_url=settings.langgraph_upstream_url,
-        api_key=settings.langgraph_upstream_api_key,
-        timeout_seconds=settings.langgraph_upstream_timeout_seconds,
-        forwarded_headers={},
-    )
     schema_provider = GraphParameterSchemaProvider(settings)
     return AssistantsService(
         session_factory=session_factory,
         runtime_base_url=settings.langgraph_upstream_url,
-        upstream=upstream,
         schema_provider=schema_provider,
     )
 

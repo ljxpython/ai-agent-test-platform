@@ -5,8 +5,6 @@ from sqlalchemy.orm import sessionmaker
 
 from app.adapters.langgraph import (
     GraphParameterSchemaProvider,
-    LangGraphAssistantsClient,
-    build_forward_headers,
 )
 from app.core.config import Settings
 from app.core.context.models import ActorContext, ProjectContext
@@ -28,21 +26,10 @@ def get_assistants_service(request: Request) -> AssistantsService:
     settings: Settings = request.app.state.settings
     if session_factory is not None and not isinstance(session_factory, sessionmaker):
         session_factory = None
-    forwarded_headers = build_forward_headers(
-        request.headers,
-        request_id=getattr(request.state, "request_id", None),
-    )
-    upstream = LangGraphAssistantsClient(
-        base_url=settings.langgraph_upstream_url,
-        api_key=settings.langgraph_upstream_api_key,
-        timeout_seconds=settings.langgraph_upstream_timeout_seconds,
-        forwarded_headers=forwarded_headers,
-    )
     schema_provider = GraphParameterSchemaProvider(settings)
     return AssistantsService(
         session_factory=session_factory,
         runtime_base_url=settings.langgraph_upstream_url,
-        upstream=upstream,
         schema_provider=schema_provider,
     )
 
