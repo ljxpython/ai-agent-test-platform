@@ -190,7 +190,6 @@ OpenSpec change，评审 proposal/spec/design/tasks 后再实施。
 
 - 前端适配后端已有字段
 - 平台 API 内部模块重组但不改变公开行为
-- runtime-web 对现有 runtime contract 的调试能力适配
 
 ### B3 Governed
 

@@ -54,13 +54,7 @@ Harness。
 - [发布记录](./releases/)
 
 需要持久评审的 B2 变更和全部 B3 变更使用 `openspec/changes/` 管理。历史
-`.harness/plans/` 不再作为 active change 的位置。
-
-当前 Draft 方案：
-
-- [Platform Runtime Integration 项目文档](./platform-runtime-integration/README.md)：Harness intake、决策记录、实施计划和证据状态。
-- [Platform Runtime Integration 专项](../apps/runtime-service/docs/knowledge/platform-runtime-integration/README.md)
-- [React Agent Web 重设计](./agent-web-redesign/README.md)
+`.harness/plans/` 已清理，不再作为 active change 的位置。
 
 ## 5. 文档状态
 

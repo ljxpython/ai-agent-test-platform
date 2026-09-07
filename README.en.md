@@ -52,7 +52,6 @@ The repository currently provides a default five-service local bring-up path, pl
 Use the frontend entries in this repo like this:
 
 - `apps/platform-web`: official platform workspace frontend
-- `apps/runtime-web`: runtime-facing debug frontend
 
 If you just want the current official local demo path, start the root scripts and open `apps/platform-web`.
 
@@ -122,12 +121,10 @@ The default local bring-up currently includes five formal services:
 
 Optional in-repo services:
 
-- `apps/runtime-web`: debug frontend that talks directly to the runtime
 
 ### Main Paths
 
 - Platform path: `platform-web -> platform-api -> runtime-service`
-- Debug path: `runtime-web -> runtime-service`
 - Result-domain path: `runtime-service -> interaction-data-service`
 - Knowledge HTTP path: `platform-api -> lightrag-service`
 - Knowledge MCP path: `runtime-service -> lightrag-service`
@@ -135,7 +132,6 @@ Optional in-repo services:
 ### What The Frontend Entries Are For
 
 - `platform-web`: official platform product workspace and the default frontend host
-- `runtime-web`: agent debugging, interaction validation, and fast runtime iteration
 
 ## Architecture Diagram
 
@@ -152,7 +148,6 @@ Optional in-repo services:
 3. `lightrag-service`
 4. `platform-api`
 5. `platform-web`
-6. `runtime-web` (optional)
 
 ### Root Scripts
 
@@ -190,12 +185,10 @@ Then open:
 - `lightrag-service` MCP SSE: `8621`
 - `platform-api`: `2142`
 - `platform-web`: `3000`
-- `runtime-web`: `3001`
 
 ### URLs After Startup
 
 - `platform-web`: `http://127.0.0.1:3000`
-- `runtime-web`: `http://127.0.0.1:3001`
 
 ### Minimum Health Checks
 
@@ -225,7 +218,6 @@ AITestLab/
 │   ├── platform-api/
 │   ├── platform-web/
 │   ├── runtime-service/
-│   ├── runtime-web/
 │   └── ...
 ├── .codex/skills/
 ├── .harness/
@@ -368,8 +360,7 @@ This repo has already completed:
 - `platform-api -> runtime-service` integration has passed
 - `runtime-service -> interaction-data-service` has been wired into the local bring-up scripts
 - `lightrag-service` HTTP + MCP are now wired into the default local one-click startup scripts
-- `platform-web` is the official platform frontend host, while `runtime-web` remains the optional runtime debug shell
-- `apps/lightrag-service` is now part of the default local one-click bring-up, while the Compose stack still keeps it as an explicit opt-in lane
+- `platform-web` is the official platform frontend host
 - Harness and OpenSpec now cover routing, the B3 pre-apply gate, durable verification evidence, spec sync, archive, and CI enforcement
 - The current release is [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 

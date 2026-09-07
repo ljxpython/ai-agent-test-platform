@@ -34,7 +34,6 @@
 ```mermaid
 flowchart LR
     Web[apps/platform-web<br/>Agent Platform Console]
-    RuntimeWeb[apps/runtime-web<br/>Runtime 调试前端]
     API[apps/platform-api<br/>Control Plane API]
     Runtime[apps/runtime-service<br/>Runtime Plane]
     IDS[apps/interaction-data-service<br/>Result Domain]
@@ -42,7 +41,6 @@ flowchart LR
     Queue[(db_polling / Redis Queue)]
 
     Web --> API
-    RuntimeWeb --> Runtime
     API --> Runtime
     API --> IDS
     API --> DB

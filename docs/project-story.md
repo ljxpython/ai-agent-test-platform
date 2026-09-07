@@ -33,7 +33,7 @@
 这次调整的目标，是把这两条线的经验整合成现在的 `Agent Platform`：
 
 - 平台控制面：`platform-api` + `platform-web`
-- 运行时执行面：`runtime-service` + `runtime-web`
+- 运行时执行面：`runtime-service`
 
 补充说明：
 

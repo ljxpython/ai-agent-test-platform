@@ -35,12 +35,6 @@
 - 平台侧 RAG HTTP 地址
 - runtime 私有 MCP SSE 地址
 
-补充说明：
-
-- `apps/lightrag-service` 可以作为可选仓库内知识服务单独运行
-- 它不属于默认 Compose 成员；默认四服务容器栈不会自动把它带起来
-- 宿主机直跑该可选服务时，repo-local 默认 MCP SSE 地址按 `http://127.0.0.1:8621/sse` 约定
-
 地址如何填写，另见：
 
 - [`docs/container-address-guide.md`](./container-address-guide.md)

@@ -137,7 +137,7 @@ nginx 前端约束：
 
 ### 2.1 LightRAG / RAG
 
-LightRAG 可以作为**可选仓库内服务**使用（仓库路径：`apps/lightrag-service`），也可以继续作为外部兼容依赖接入。
+LightRAG 可以作为外部兼容依赖接入。
 当前默认的 Compose 栈**不会**自动启动它，因此基础容器栈仍保持四服务默认成员不变。
 
 支持两条可选地址：
@@ -154,10 +154,10 @@ LightRAG 可以作为**可选仓库内服务**使用（仓库路径：`apps/ligh
 
 当前验证结果：
 
-- repo-local host-run LightRAG MCP SSE 默认口径：`http://127.0.0.1:8621/sse`
-  - 这是宿主机直接运行可选 `apps/lightrag-service` 时的默认本地地址
+- host-run LightRAG MCP SSE 默认口径：`http://127.0.0.1:8621/sse`
+  - 这是宿主机直接运行 LightRAG 时的默认本地地址
 - `TEST_CASE_V2_KNOWLEDGE_MCP_URL=http://host.docker.internal:8621/sse`
-  - 这是容器内 `runtime-service` 访问宿主机上可选 `apps/lightrag-service` 时的推荐地址
+  - 这是容器内 `runtime-service` 访问宿主机上 LightRAG 时的推荐地址
   - 已被 runtime 配置正确读取
   - 已验证容器内可达，返回 `text/event-stream`
 - `PLATFORM_API_KNOWLEDGE_UPSTREAM_URL=http://host.docker.internal:9621`
@@ -177,9 +177,9 @@ LightRAG 可以作为**可选仓库内服务**使用（仓库路径：`apps/ligh
 长期配置归属：
 
 - 运行时轻量开关：
-  - `apps/runtime-service/runtime_service/.env`
+  - `apps/runtime-service/.env`
 - 模型组配置：
-  - `apps/runtime-service/runtime_service/conf/settings.local.yaml`
+  - `apps/runtime-service/conf/settings.local.yaml`
 
 容器化交付配置：
 

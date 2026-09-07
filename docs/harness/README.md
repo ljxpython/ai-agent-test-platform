@@ -93,7 +93,6 @@ Harness 只负责导航、分级、验证深度和人工门禁。它不得复制
 | `platform-web` | `apps/platform-web/docs/frontend-development-playbook.md`、`apps/platform-web/docs/control-plane-page-standard.md` |
 | `platform-api` | `apps/platform-api/docs/handbook/`、`apps/platform-api/docs/standards/`、`apps/platform-api/tests/` |
 | `runtime-service` | `apps/runtime-service/docs/`、`apps/runtime-service/tests/` |
-| `runtime-web` | `apps/runtime-web/docs/standards/runtime-web-debug-standard.md` |
 | `interaction-data-service` | `apps/interaction-data-service/docs/`、`apps/interaction-data-service/tests/` |
 
 Runtime 的 R0-R6 是这个范式在 `runtime-service` 的领域实例。阶段设计、实现对齐和证据

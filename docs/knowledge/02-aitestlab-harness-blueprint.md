@@ -68,24 +68,9 @@ platform-web -> platform-api -> runtime-service -> interaction-data-service
 - `apps/runtime-service`：LangGraph Runtime / Agent 执行层
 - `apps/interaction-data-service`：结果域服务 / 落库与查询
 
-这条链路代表“产品化、治理化、可交付”的主路径。
+这条链路代表”产品化、治理化、可交付”的主路径。
 
-### 2.2 正式调试链路
-
-当前仓库的正式调试链路是：
-
-```text
-runtime-web -> runtime-service
-```
-
-职责分别是：
-
-- `apps/runtime-web`：通用 Runtime 调试前端
-- `apps/runtime-service`：统一执行层
-
-这条链路代表“快速验证、聚焦 Runtime、自我排障”的主路径。
-
-### 2.3 历史与参考入口
+### 2.2 历史与参考入口
 
 当前仓库还保留了一些历史应用或迁移参考资源，例如：
 
@@ -203,7 +188,6 @@ runtime-web -> runtime-service
 | 平台前端层 | `apps/platform-web` | 正式工作台宿主 | 用户入口、页面工作区、平台交互、管理台 UI | 不直接承载 Agent 内部编排逻辑 |
 | 平台治理层 | `apps/platform-api` | 正式控制面 / Runtime 网关 | 鉴权、项目边界、审计、catalog、能力治理、Runtime 网关 | 不改写 Runtime 内部 graph 范式 |
 | Runtime 执行层 | `apps/runtime-service` | Agent Runtime Platform | graph、middleware、model、tools、MCP、运行时契约、Agent 服务 | 不吞平台治理职责 |
-| 调试前端层 | `apps/runtime-web` | 通用 Runtime 调试器 | 直连 Runtime、发送 context、快速调试与排查 | 不做 graph 专属平台逻辑 |
 | 结果域层 | `apps/interaction-data-service` | 结果数据承接层 | 结果落库、结果查询、结果域隔离 | 不反向污染平台主数据模型 |
 | 仓库级知识层 | `docs/` | 仓库级真源 | 开发范式、部署、环境矩阵、发布、知识文档 | 不替代服务内部细节标准 |
 | 仓库级脚本层 | `scripts/` | 快速操作入口 | 启停、健康检查、联调脚本 | 不写复杂业务逻辑 |
@@ -274,18 +258,6 @@ Repo 级 Harness 要解决的是：
 - 平台级 metadata / policy / audit
 - 页面工作区与交互稳定性
 
-### 5.4 Debug Harness
-
-`runtime-web` 是非常关键的一层，因为它能让 Runtime 在不经过整个平台链路的情况下被单独验证。
-
-这层的原则必须保持克制：
-
-- 它是通用 Runtime 调试 UI
-- 它不是 graph 专属开发后台
-- 它应该透传通用运行时字段，而不是承载各 graph 私有配置面板
-
-这层越克制，越有利于长期复用。
-
 ---
 
 ## 6. AITestLab 的标准开发流
@@ -322,8 +294,7 @@ Repo 级 Harness 要解决的是：
 - 仓库级规则看根目录 `docs/`
 - Runtime 规则看 `runtime-service/docs/standards/`
 - 平台规则看对应服务内部 docs
-- 调试优先走 `runtime-web`
-- 联调整体验证再走平台正式链路
+- 联调整体验证走平台正式链路
 
 ### 6.4 做验证时
 
@@ -392,9 +363,9 @@ Repo 级 Harness 要解决的是：
 
 优先问：
 
-- `runtime-web -> runtime-service` 是否正常？
-- 如果调试链路正常，但平台链路异常，优先查 `platform-api` 或 `platform-web`
-- 如果调试链路都不正常，优先查 `runtime-service`
+- Runtime 服务本身是否正常？
+- 如果 Runtime 正常但平台链路异常，优先查 `platform-api` 或 `platform-web`
+- 如果 Runtime 本身不正常，优先查 `runtime-service`
 
 ### 8.2 再判定是契约问题、实现问题还是数据问题
 

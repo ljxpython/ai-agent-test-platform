@@ -185,10 +185,6 @@ v1；历史 verification 不要求批量迁移，但不得作为当前状态格�
 - 可执行门禁：`apps/runtime-service/tests/` 中与本次 concern 对应的测试；Runtime R0-R6
   阶段证据和缺口见 `apps/runtime-service/docs/knowledge/31-runtime-refactor-alignment-audit.md`
 
-### `runtime-web`
-
-- `apps/runtime-web/docs/standards/runtime-web-debug-standard.md`
-
 ### `interaction-data-service`
 
 - 当前 API：`apps/interaction-data-service/docs/test-case-service-api-design.md`

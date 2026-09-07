@@ -31,16 +31,11 @@
 - `apps/platform-api`: `2142`
 - `apps/platform-web`: `3000`
 
-可选调试入口：
-
-- `apps/runtime-web`: `3001`
-
 ### 1.2 当前默认链路
 
 - 平台主链：`platform-web -> platform-api -> runtime-service`
 - 结果域链路：`platform-api -> interaction-data-service`
 - Runtime 落库链路：`runtime-service -> interaction-data-service`
-- 可选调试链路：`runtime-web -> runtime-service`
 
 ### 1.3 非主链应用说明
 
@@ -61,11 +56,10 @@
 - `apps/runtime-service/runtime_service/.env`
 - `apps/runtime-service/runtime_service/conf/settings.yaml`
 - `apps/runtime-service/runtime_service/conf/settings.local.yaml`
-- `apps/runtime-web/.env`（仅在启用 `runtime-web` 时）
 
 ### 2.2 其他说明
 
-本文不展开非主链应用的配置口径。本地联调时，`runtime-web` 应直连 `http://localhost:8123`，不要把它指到控制面地址。
+本文不展开非主链应用的配置口径。
 
 ## 3. 推荐启动顺序
 
@@ -73,7 +67,6 @@
 2. 启动 `interaction-data-service`
 3. 启动 `platform-api`
 4. 启动 `platform-web`
-5. 如需 runtime 调试，再启动 `runtime-web`
 
 这个顺序对应的是当前正式 harness 主链，而不是历史服务全集启动顺序。
 
@@ -115,13 +108,6 @@ cd apps/platform-web
 VITE_DEV_PORT=3000 pnpm dev
 ```
 
-### 4.5 `apps/runtime-web`（可选）
-
-```bash
-cd apps/runtime-web
-PORT=3001 pnpm dev
-```
-
 ## 5. 最小健康检查
 
 ### 5.0 `interaction-data-service`
@@ -148,7 +134,6 @@ curl http://127.0.0.1:2142/api/langgraph/info
 ### 5.3 页面访问
 
 - `platform-web`: `http://127.0.0.1:3000`
-- `runtime-web`: `http://127.0.0.1:3001`
 
 如果 `platform-api` 的 `/api/langgraph/info` 返回 `200`，说明平台到 runtime 的主联调链路已经打通。
 
@@ -181,5 +166,3 @@ scripts/dev-down.sh
 - `apps/platform-api` 是当前正式控制面宿主
 - `apps/runtime-service` 是正式 runtime 执行层
 - `apps/interaction-data-service` 是正式结果域服务
-- `apps/runtime-web` 是可选调试壳，不是默认产品入口
-- 先保证正式四服务演示链路可独立运行，再按需处理可选调试入口

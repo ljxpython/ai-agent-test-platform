@@ -1,6 +1,6 @@
 # 前端 API 地址与本地/远端调试说明
 
-本文只说明当前正式前端 `platform-web` 与可选调试壳 `runtime-web` 的地址配置方式，避免把浏览器端请求错误地指向 `localhost` 或错误宿主。
+本文只说明当前正式前端 `platform-web` 的地址配置方式，避免把浏览器端请求错误地指向 `localhost` 或错误宿主。
 
 ## 1. 核心原则
 
@@ -19,7 +19,7 @@
 
 ## 2. 推荐配置矩阵
 
-### 2.1 五个服务都在 Mac 本地运行
+### 2.1 服务都在 Mac 本地运行
 
 适用场景：
 
@@ -35,12 +35,6 @@ VITE_PLATFORM_API_URL=http://localhost:2142
 VITE_PLATFORM_API_RUNTIME_ENABLED=true
 VITE_DEV_PROXY_TARGET=http://localhost:2142
 VITE_DEV_PORT=3000
-```
-
-```env
-# apps/runtime-web/.env.local
-NEXT_PUBLIC_API_URL=http://localhost:8123
-NEXT_PUBLIC_ASSISTANT_ID=assistant
 ```
 
 ### 2.2 前端在 Mac，本次联调的控制面在远端服务器
@@ -127,7 +121,6 @@ location.reload();
 - `VITE_PLATFORM_API_URL` 作为平台 API 基础地址
 - `VITE_PLATFORM_API_RUNTIME_ENABLED` 作为平台运行时相关能力开关
 - `VITE_DEV_PROXY_TARGET` 作为本地开发代理目标
-- `runtime-web` 继续保持直连 `runtime-service`
 
 相关文件：
 
@@ -135,18 +128,7 @@ location.reload();
 - `apps/platform-web/src/services/http/client.ts`
 - `apps/platform-web/src/services/langgraph/client.ts`
 
-## 6. `runtime-web` 额外说明
-
-`runtime-web` 默认应直连 `runtime-service`。
-
-如果你希望从外部机器访问 `runtime-web`，那么 `runtime-service` 也必须能被该外部机器访问；否则即使前端页面能打开，浏览器里的请求仍然会失败。
-
-也就是说，下面两件事必须同时成立：
-
-- `runtime-web` 对外可访问
-- `runtime-service` 对外可访问，或被反代到一个对外可访问的地址
-
-## 7. 最后建议
+## 6. 最后建议
 
 如果你需要在“Mac 本地开发”和“服务器公网访问”之间频繁切换，建议：
 

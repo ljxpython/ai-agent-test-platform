@@ -87,7 +87,6 @@
 - `apps/platform-web`：页面宿主、工作区、平台前端交互
 - `apps/platform-api`：平台治理、网关、鉴权、项目边界
 - `apps/runtime-service`：graph、middleware、runtime contract、model、tools、MCP
-- `apps/runtime-web`：Runtime 调试 UI
 - `apps/interaction-data-service`：结果持久化与查询
 - 根目录 `docs/`：仓库级知识、流程、部署、发布、范式
 
@@ -173,7 +172,6 @@
 - Runtime 学习资料：进 `apps/runtime-service/runtime_service/docs/knowledge/`
 - Runtime 排障：进 `apps/runtime-service/runtime_service/docs/runbooks/`
 - 仓库级思想方法：进根目录 `docs/knowledge/`
-- 调试前端通用逻辑：进 `apps/runtime-web`
 - 平台治理逻辑：进 `apps/platform-api`
 
 ---
@@ -207,15 +205,6 @@
    - runtime contract
    - service 模块
 4. 最后再写代码
-
-#### 对 `runtime-web`
-
-优先保证：
-
-- 通用调试能力
-- 通用 context 传递
-- 不 graph-specific
-- 不替正式产品链路背锅
 
 #### 对平台层
 
@@ -265,22 +254,7 @@
 
 本地验证之后，再做链路验证。
 
-### 8.1 链路验证分两类
-
-#### A. 调试链路验证
-
-```text
-runtime-web -> runtime-service
-```
-
-适合验证：
-
-- Runtime 本体行为
-- context 透传
-- graph / middleware / tools 行为
-- 调试交互是否正常
-
-#### B. 正式平台链路验证
+### 8.1 正式平台链路验证
 
 ```text
 platform-web -> platform-api -> runtime-service -> interaction-data-service
@@ -295,14 +269,6 @@ platform-web -> platform-api -> runtime-service -> interaction-data-service
 - 结果域承接
 
 ### 8.2 推荐验证顺序
-
-先调试链路，再正式链路。
-
-原因很简单：
-
-- 调试链路更短
-- 问题范围更小
-- 更容易把 Runtime 问题和平台问题分开
 
 ---
 

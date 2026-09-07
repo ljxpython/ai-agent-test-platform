@@ -302,11 +302,10 @@ runbook、日志、trace、失败快照、最小复现路径都必须纳入设�
 - 平台治理层：`apps/platform-api`
 - 平台前端宿主：`apps/platform-web`
 - Runtime 执行层：`apps/runtime-service`
-- Runtime 调试入口：`apps/runtime-web`
 - 结果域服务：`apps/interaction-data-service`
 - 根级脚本、部署文档、环境矩阵、release runbook
 
-所以这个仓库不应该再被当成“几个应用的集合”，而应该理解成：
+所以这个仓库不应该再被当成”几个应用的集合”，而应该理解成：
 
 > 一个可以支持 AI 持续开发、持续调试、持续联调、持续验收、持续交付的工程 Harness。
 
@@ -324,7 +323,6 @@ runbook、日志、trace、失败快照、最小复现路径都必须纳入设�
 - tool registry 是公开能力目录
 - harness tests 是开发范式守门员
 - runbooks 是故障处置路径
-- `runtime-web` 是通用调试前端，不是 graph 专属定制页面
 
 ### 6.3 当前项目里的推荐分层
 
@@ -453,17 +451,6 @@ graph 本身尽量只保留：
 - 哪些工具是 graph 内部固定依赖
 - 上层传入的工具集合如何被验证
 - 无效工具如何失败
-
-### 8.5 把 `runtime-web` 保持为通用调试前端
-
-`runtime-web` 的职责应保持克制：
-
-- 直连 runtime
-- 传递 `context`
-- 帮助调试运行时行为
-- 不做 graph-specific 规则面板
-
-它是通用调试 UI，不是某个 graph 的专用后台。
 
 ### 8.6 把 Harness Tests 做成硬规则守门员
 

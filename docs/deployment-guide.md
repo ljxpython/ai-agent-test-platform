@@ -24,12 +24,6 @@ runtime-service -> interaction-data-service
 platform-api -> interaction-data-service
 ```
 
-可选调试链路：
-
-```text
-runtime-web -> runtime-service
-```
-
 ### 1.2 当前正式服务集合
 
 默认本地 demo / 联调集合：
@@ -38,10 +32,6 @@ runtime-web -> runtime-service
 - `apps/interaction-data-service`
 - `apps/platform-api`
 - `apps/platform-web`
-
-可选调试入口：
-
-- `apps/runtime-web`
 
 本文只覆盖这套正式默认链路，不展开非主链应用。
 
@@ -56,7 +46,6 @@ runtime-web -> runtime-service
 - `interaction-data-service`: `8081`
 - `platform-api`: `2142`
 - `platform-web`: `3000`
-- `runtime-web`: `3001`（可选）
 
 ## 2. 这个仓库为什么这样部署
 
@@ -65,7 +54,6 @@ runtime-web -> runtime-service
 - 平台治理层：`platform-web` + `platform-api`
 - 运行时执行层：`runtime-service`
 - 结果域承接层：`interaction-data-service`
-- 可选调试壳：`runtime-web`
 
 也就是说，这篇文档解决的是“怎么把当前正式链路跑起来”，不是“所有历史服务怎么一起启动”。
 
@@ -208,21 +196,6 @@ VITE_DEV_PORT=3000
 VITE_LANGGRAPH_DEBUG_URL=
 ```
 
-### 4.6 `apps/runtime-web`（可选）
-
-仅在你要使用 runtime 调试壳时检查：
-
-- `apps/runtime-web/.env`
-
-默认应直连：
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8123
-NEXT_PUBLIC_ASSISTANT_ID=assistant
-```
-
-不要把它指向控制面地址；`runtime-web` 应始终直连 `runtime-service`。
-
 ## 5. 推荐启动方式
 
 ### 5.1 推荐优先使用根脚本
@@ -249,7 +222,6 @@ scripts/dev-down.sh
 2. `interaction-data-service`
 3. `platform-api`
 4. `platform-web`
-5. `runtime-web`（可选）
 
 ## 6. 各服务启动命令
 
@@ -283,13 +255,6 @@ cd apps/platform-web
 VITE_DEV_PORT=3000 pnpm dev
 ```
 
-### 6.5 `apps/runtime-web`（可选）
-
-```bash
-cd apps/runtime-web
-PORT=3001 pnpm dev
-```
-
 ## 7. 最小健康检查
 
 ### 7.1 服务健康
@@ -305,7 +270,6 @@ curl http://127.0.0.1:2142/api/langgraph/info
 
 - `platform-web`: `http://localhost:3000`
 - `platform-web` 兼容入口：`http://127.0.0.1:3000`
-- `runtime-web`: `http://127.0.0.1:3001`（可选）
 
 如果 `platform-api` 的 `/api/langgraph/info` 返回 `200`，且 `interaction-data-service` 的 `/_service/health` 返回 `200`，说明当前正式平台链路和结果域链路已经基本打通。
 

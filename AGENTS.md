@@ -84,8 +84,6 @@ Research alone is not B3 unless its decision affects a governed boundary.
 - `runtime-service`
   - standards: `apps/runtime-service/docs/standards/*.md` (greenfield standards will be regenerated)
   - executable contracts: `apps/runtime-service/tests/*.py`
-- `runtime-web`
-  - `apps/runtime-web/docs/standards/runtime-web-debug-standard.md`
 - `interaction-data-service`
   - current API: `apps/interaction-data-service/docs/test-case-service-api-design.md`
   - ownership: `apps/interaction-data-service/docs/standards/result-domain-boundary-standard.md`

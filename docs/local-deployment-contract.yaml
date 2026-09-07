@@ -75,18 +75,6 @@ profiles:
       - runtime-service -> interaction-data-service
       - platform-api -> lightrag-service
       - runtime-service -> lightrag-service
-  runtime-debug:
-    description: Optional runtime debug profile
-    services:
-      - runtime-web
-    chains:
-      - runtime-web -> runtime-service
-  optional-repo-services:
-    description: Services present in the repo but outside the default local startup set
-    services:
-      - runtime-web
-    chains:
-      - runtime-web -> runtime-service
 
 global:
   ports:
@@ -94,7 +82,6 @@ global:
     runtime-service: 8123
     platform-api: 2142
     platform-web: 3000
-    runtime-web: 3001
     lightrag-service: 9621
     lightrag-service-mcp: 8621
   dependencies:
@@ -113,7 +100,6 @@ global:
     - Use app-local config files only
     - platform-web is the official platform frontend host for default local deployment
     - platform-api is the official control-plane host for default local deployment
-    - runtime-web default local upstream is http://localhost:8123
   helper_scripts:
     - scripts/dev-up.sh
     - scripts/check-health.sh
@@ -256,29 +242,6 @@ services:
       - http://127.0.0.1:3000
 
 
-  runtime-web:
-    role: Runtime debug frontend
-    in_default_local: false
-    classification: optional-repo-service
-    repo_path: apps/runtime-web
-    port: 3001
-    upstreams:
-      - runtime-service
-    config_files:
-      required:
-        - apps/runtime-web/.env
-    minimum_required_env:
-      - NEXT_PUBLIC_API_URL=http://localhost:8123
-      - NEXT_PUBLIC_ASSISTANT_ID=assistant
-    hard_rules:
-      - Do not use http://localhost:2024 as the default local debug upstream
-    start:
-      workdir: apps/runtime-web
-      command: PORT=3001 pnpm dev
-    access_urls:
-      - http://127.0.0.1:3001
-
-
   lightrag-service:
     role: Repo-local LightRAG knowledge service
     in_default_local: true
@@ -300,7 +263,7 @@ services:
       - INPUT_DIR=./data/inputs (host-run default)
     start:
       workdir: .
-      command: bash scripts/lightrag-service-up.sh
+      command: echo "lightrag-service is optional and not started by default"
     health_checks:
       - curl http://127.0.0.1:9621/health
       - curl http://127.0.0.1:8621/sse
@@ -351,7 +314,6 @@ forbidden_assumptions:
   - read_source_code_for_normal_local_deploy
   - require_app_readme_for_normal_local_deploy
   - treat_platform_api_2024_as_official_control_plane
-  - treat_runtime_web_template_target_2024_as_current_default
   - invent_model_credentials
   - claim_frontend_source_missing_without_verifying_target_file_and_alias
   - omit_blocked_reasons_in_summary

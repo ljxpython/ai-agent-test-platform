@@ -21,7 +21,6 @@
 - 当前正式平台前端宿主是 `apps/platform-web`
 - 当前正式平台控制面是 `apps/platform-api`
 - 当前正式平台链路是 `platform-web -> platform-api -> runtime-service`
-- `runtime-web` 继续作为独立调试入口
 
 如果你要的是“现在该怎么判、怎么升级、怎么走最短链”，先读：
 
@@ -44,10 +43,9 @@
 
 ## 2. 一句话理解当前架构
 
-当前默认链路可以概括成两条：
+当前默认链路可以概括成：
 
 - 平台链路：`platform-web -> platform-api -> runtime-service`
-- 调试链路：`runtime-web -> runtime-service`
 
 再加上一个结果域服务：
 
@@ -57,7 +55,6 @@
 
 - `platform-web` / `platform-api` 负责平台控制面
 - `runtime-service` 负责智能体运行时
-- `runtime-web` 负责运行时调试
 - `interaction-data-service` 负责结果域数据
 
 ## 3. 为什么要这么设计
@@ -96,39 +93,29 @@
 - `platform-web`：正式平台工作台、管理页面、平台聊天入口
 - `platform-api`：鉴权、项目治理、审计、catalog、运行时网关
 - `runtime-service`：graph 注册、模型参数解析、工具装配、MCP、智能体执行
-- `runtime-web`：直连 Runtime 的调试前端
 - `interaction-data-service`：结果域落库与查询
 
-这套拆法的意义不是“服务多看起来高级”，而是为了让每一层都只承担自己该承担的责任。
+这套拆法的意义不是”服务多看起来高级”，而是为了让每一层都只承担自己该承担的责任。
 
 平台侧不去吞智能体逻辑，运行时不去硬扛平台治理，结果域服务不去污染平台主数据，这才是后续能长期演进的前提。
 
-### 3.3 调试链路必须独立存在
+### 3.3 调试与验证
 
-`runtime-web` 的存在不是装饰品，它解决的是一个很实际的问题：
+在开发智能体时，建议：
 
-如果每次开发智能体都必须先接完整个平台链路，你的调试成本会很高，排查问题也会混在权限、网关、页面逻辑里一起爆炸。
+- 先在 `runtime-service` 内完成 graph / tools / prompts
+- 本地验证运行时接口
+- 使用服务级脚本进行功能验证
 
-所以当前项目保留了独立调试链路：
+等智能体在服务层调通之后，再接到 `platform-web` / `platform-api` 里，成本就会非常低。
 
-- `runtime-web -> runtime-service`
-
-这条链路的价值是：
-
-- 先验证智能体本身是不是工作正常
-- 先验证 prompt、tools、MCP、graph 编排是不是符合预期
-- 先验证运行时接口是不是稳定
-- 在不引入平台治理复杂度的前提下快速迭代
-
-等你把智能体在 `runtime-web` 上调通之后，再接到 `platform-web` / `platform-api` 里，成本就会非常低。
-
-这里所谓“零成本、无适配”，本质上指的是：
+这里所谓”零成本、无适配”，本质上指的是：
 
 - 你开发和调试的本来就是同一个 `runtime-service`
 - 平台侧消费的也是同一套 Runtime 契约
 - 只要你没有绕开现有边界、私自把业务逻辑写死在平台层，那么后续接平台通常不需要重写 Agent
 
-也就是说，真正的秘诀不是“平台魔法适配”，而是“一开始就守住边界”。
+也就是说，真正的秘诀不是”平台魔法适配”，而是”一开始就守住边界”。
 
 ### 3.4 结果域再拆一层，平台会更轻
 
@@ -150,7 +137,6 @@
 - `platform-web`
 - `platform-api`
 - `runtime-service`
-- `runtime-web`
 - `interaction-data-service`
 
 都可以按各自职责独立构建、独立部署、独立扩缩容。
@@ -180,7 +166,7 @@
 所以，后面新增智能体时，默认思路应该是：
 
 - 先在 `runtime-service` 里实现
-- 先在 `runtime-web` 或 runtime devtools 里验证
+- 使用 runtime devtools 或服务级脚本验证
 - 稳定后再挂到平台入口
 
 不要一上来就把智能体逻辑散落到平台前后端里，那是给后面埋雷。
@@ -243,7 +229,7 @@ graph = create_agent(
 
 - 如果是权限、项目、成员、审计、catalog、平台配置，改 `platform-api` / `platform-web`
 - 如果是 prompt、tool、MCP、graph、模型装配、Agent 行为，改 `runtime-service`
-- 如果是运行时联调和交互验证，先用 `runtime-web`
+- 如果是运行时联调和交互验证，使用 runtime devtools 或服务级脚本
 - 如果是业务结果持久化与查询，改 `interaction-data-service`
 
 这个判断做对了，后面开发基本就顺了；判断做错了，代码很快就会串层。
@@ -256,7 +242,7 @@ graph = create_agent(
 2. 在 `runtime-service` 内完成 graph / tools / prompts
 3. 注册 graph
 4. 本地验证运行时接口
-5. 用 `runtime-web` 做交互验证
+5. 使用服务级脚本进行功能验证
 
 如果这一步都没过，就不要急着接平台页面。
 
@@ -304,7 +290,7 @@ graph = create_agent(
 1. 平台侧是浅封装，不是把智能体运行时深度吞进去。
 2. 平台侧优先专注权限、管理、审计、catalog、治理能力。
 3. 智能体和 AI 相关开发，主战场永远在 `runtime-service`。
-4. `runtime-web` 是调试入口，先把智能体在这里调通，再接平台。
+4. 先在 `runtime-service` 内完成开发和验证，稳定后再接平台。
 5. 调试完成后，只要遵守现有契约，就可以无缝接入 `platform-api` / `platform-web`，不需要为平台重写一套 Agent。
 6. `interaction-data-service` 负责结果域，避免平台主数据和业务结果表混成一锅粥。
 7. 后面用 Docker 独立部署，是当前解耦设计的自然延伸，不是另一套新思路。
@@ -320,7 +306,6 @@ graph = create_agent(
 - `apps/platform-api/docs/README.md`
 - `apps/platform-api/docs/handbook/project-handbook.md`
 - `apps/platform-web/docs/control-plane-page-standard.md`
-- `apps/runtime-web/README.md`
 - `apps/runtime-service/docs/README.md`
 - `apps/runtime-service/runtime_service/docs/05-template-to-runnable-agent-10min.md`
 - `apps/interaction-data-service/README.md`
@@ -430,17 +415,6 @@ graph = create_agent(
 - 绕过 `platform-api` 直连结果域服务
 - 把导出、权限、聚合逻辑硬写在前端
 
-#### `runtime-web`
-
-只负责：
-
-- 调试入口
-- 快速验证运行时行为
-- 在不引入平台治理复杂度的情况下先把 Agent 调通
-
-不要拿它替代正式平台入口，但也不要低估它的价值。
-Agent 没在 `runtime-web` 或服务级脚本里调通之前，不要急着接 `platform-web`。
-
 ### 9.4 开发前必须写清楚的“链路图”
 
 每一轮需求都建议先写一段文本链路，至少写到这个颗粒度：
@@ -464,7 +438,7 @@ platform-web
 例如智能体生成能力：
 
 ```text
-runtime-web 或 platform-web chat
+platform-web chat
   -> runtime-service test_case_agent
     -> skills / tools / middleware
       -> interaction-data-service
@@ -728,7 +702,6 @@ runtime-web 或 platform-web chat
   - interaction-data-service:
   - platform-api:
   - platform-web:
-  - runtime-web:
 - 本轮主改动层：
 - 本轮不改动层：
 
@@ -761,7 +734,6 @@ runtime-web 或 platform-web chat
 - interaction-data-service 负责：
 - platform-api 负责：
 - platform-web 负责：
-- runtime-web 负责：
 
 ## 6. 接口与数据设计
 
@@ -848,7 +820,7 @@ runtime-web 或 platform-web chat
 - [ ] runtime-service 已启动并健康检查通过
 - [ ] interaction-data-service 已启动并健康检查通过
 - [ ] platform-api 已启动并健康检查通过
-- [ ] platform-web / runtime-web 已按需启动
+- [ ] platform-web 已按需启动
 
 ## C. 服务层真实验证
 

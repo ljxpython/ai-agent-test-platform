@@ -34,7 +34,7 @@
 基于 `LangGraph / LangChain` 的企业级 AI 平台架构，可在此基础上进行二次开发。  
 它把**平台治理层**和**Agent Runtime 执行层**拆开，既支持平台侧的认证、项目管理、审计、catalog 管理，也支持 Agent 侧的图编排、模型装配、Tools / MCP / Skills 接入与快速调试，适合作为企业内部 AI 平台和智能体应用的基础骨架。
 
-当前仓库默认提供一套正式五服务演示链路，并保留可选 `runtime-web` 调试入口，适合：
+当前仓库默认提供一套正式五服务演示链路，适合：
 
 - 想基于主流 Agent 技术栈做二次开发的团队
 - 想同时建设平台能力和 Agent 执行能力的项目
@@ -164,22 +164,16 @@ $route-project-change <任务描述>
 - `apps/runtime-service`：LangGraph 执行层 / Agent Runtime
 - `apps/lightrag-service`：仓库内知识服务，同时提供 `platform-api` 侧 LightRAG HTTP 和 `runtime-service` 侧 project-scoped MCP
 
-可选仓库内服务：
-
-- `apps/runtime-web`：直连 Runtime 的调试前端
-
 ### 主要链路
 
 - 平台链路：`platform-web -> platform-api -> runtime-service`
-- 调试链路：`runtime-web -> runtime-service`
 - 结果链路：`runtime-service -> interaction-data-service`
 - 知识 HTTP 链路：`platform-api -> lightrag-service`
 - 知识 MCP 链路：`runtime-service -> lightrag-service`
 
-### 当前两个前端入口分别做什么
+### 前端入口
 
 - `platform-web`：当前正式平台工作台入口，承接 `Agent Platform Console`、Agent 页面和平台治理相关前端能力
-- `runtime-web`：直连 `runtime-service` 的调试前端，适合做 Agent 调试、交互验证和 Runtime 快速迭代
 
 ## 架构图
 
@@ -196,7 +190,6 @@ $route-project-change <任务描述>
 3. `lightrag-service`
 4. `platform-api`
 5. `platform-web`
-6. 如需 runtime 调试，再启动 `runtime-web`
 
 ### 根目录脚本
 
@@ -289,12 +282,10 @@ VITE_DEV_PORT=3002 pnpm --dir "apps/platform-web" dev
 - `lightrag-service` MCP SSE：`8621`
 - `platform-api`：`2142`
 - `platform-web`：`3000`
-- `runtime-web`：`3001`（可选）
 
 ### 成功启动后访问地址
 
 - `platform-web`：`http://127.0.0.1:3000`
-- `runtime-web`：`http://127.0.0.1:3001`
 
 ### 最小健康检查
 
@@ -323,14 +314,13 @@ AITestLab/
 │   ├── platform-api/
 │   ├── platform-web/
 │   ├── runtime-service/
-│   ├── runtime-web/
 │   └── ...
 ├── .codex/skills/
 ├── .harness/
 ├── docs/
 ├── openspec/
 ├── scripts/
-└── archive/
+└── deploy/
 ```
 
 - `apps/`：业务应用目录，包含当前默认联调服务与其他按需维护的应用目录
@@ -465,8 +455,7 @@ default:
 - `platform-api -> runtime-service` 联调已通过
 - `runtime-service -> interaction-data-service` 已接入本地联调脚本
 - `lightrag-service` 的 HTTP + MCP 已接入默认本地一键启动脚本
-- `platform-web` 是当前正式平台前端入口，`runtime-web` 继续作为可选调试壳
-- `apps/lightrag-service` 当前已进入默认本地一键启动集合，但 Compose 栈仍按需单独接入
+- `platform-web` 是当前正式平台前端入口
 - Harness + OpenSpec 已形成路由、B3 实施前审批、持久验证证据、spec sync、archive 和 CI 检查闭环
 - 当前正式版本为 [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 

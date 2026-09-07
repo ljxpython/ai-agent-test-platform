@@ -25,10 +25,9 @@ Prompt 决定这次让模型做什么；Context 决定模型看见什么；Harne
 
 ```text
 platform-web -> platform-api -> runtime-service -> interaction-data-service
-runtime-web ------------------> runtime-service
 ```
 
-平台治理、Runtime 执行、调试入口和结果域有不同 owner。AI 如果不先识别
+平台治理、Runtime 执行和结果域有不同 owner。AI 如果不先识别
 locus，很容易把权限写进 Runtime、把 Agent 逻辑写进平台，或用全链路验证
 替代本地排查。
 
