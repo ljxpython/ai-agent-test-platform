@@ -373,7 +373,7 @@ frontend.log
 # 日志文件
 logs/
 *.log
-/.playwright-cli/
+**/.playwright-cli/
 uploads
 
 # sqlite 数据库
