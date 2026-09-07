@@ -21,7 +21,7 @@
 - [x] 2.1 用真实 GraphHarbor API、Worker、PostgreSQL 和 Redis 验证 Thread create/search/get、State 与 History
 - [x] 2.2 验证 Protocol v2 `run.start`、`input.respond`、`/commands`、`/stream/events`、SSE 重连和 cancel 契约
 - [x] 2.3 验证标准 Runs API 将 `context`、durability、resumable、multitask 和 stream 选项完整传到 Worker 与 Runtime
-- [ ] 2.4 验证缺失、无效及 scope/hash 不匹配的 delegation 在所属边界 fail closed：Platform-owned 请求在 upstream 前拒绝；GraphHarbor/Runtime 不调度到 Worker、Provider 或 Tool；标准 Runs 的 hash mismatch 是否已有 Run 记录如实记录，不伪装为 GraphHarbor 持久化前拒绝
+- [x] 2.4 验证缺失、无效及 scope/hash 不匹配的 delegation 在所属边界 fail closed：Platform-owned 请求在 upstream 前拒绝；GraphHarbor/Runtime 不调度到 Worker、Provider 或 Tool；标准 Runs 的 hash mismatch 已验证为 terminal error，并如实记录 GraphHarbor 可能已持久化 Run
 - [x] 2.5 验证 GraphHarbor API 与 Worker 分别重启后，同一 Thread、Run、Checkpoint 和 Event 可恢复
 - [x] 2.6 只在 GraphHarbor 通用协议层修复 Profile 发现的问题，并发布锁定版本供 Platform 使用
 
@@ -32,7 +32,7 @@
 - [x] 3.3 实现已接受的 Runtime Policy 与 Agent defaults、per-run model preferences 的 deny-first Context 决议；浏览器不得提交 Tools，Runtime 内部保留 `tools` 三态，未知字段和越权输入 fail closed
 - [x] 3.4 为最小 Run governance ledger 增加 Agent key、Graph、Policy revision、Context snapshot/hash、幂等与审计关联的 forward-only migration
 - [x] 3.5 在最终 Context 和目标确定后签发 operation-scoped delegation，分别限制 read 与 run-create scope
-- [ ] 3.6 完成旧 Assistant 映射和 Run 数据审计、回填、重复执行及失败恢复测试；owner 已确认并完成旧 `graph_id=assistant` Agent/profile 删除，但旧列删除、完整迁移审计和失败恢复证据仍未完成
+- [x] 3.6 完成旧 Assistant 映射和 Run 数据审计、回填、重复执行及失败恢复测试；迁移回填旧 Run 的 `agent_key`，删除重复 alias 列并将 profile 表迁移为 `agent_profiles`；冲突前失败、成功和重复执行均有测试
 - [x] 3.7 实现 Project-first、首次 Run 绑定 `agent_key`、不可切换和并发冲突保护，覆盖 `AgentThreadMismatch`
 
 ## 4. 收敛 Platform Runtime Gateway
@@ -51,8 +51,8 @@
 - [x] 5.2 只发送获准的模型和生成参数，删除 `system_prompt`、`enable_tools`、Tools 选择和非法身份/project 字段
 - [x] 5.3 让官方 SDK controller 成为当前 Thread 的 messages、tools、interrupt、loading、error 和 lifecycle 唯一可写 owner
 - [x] 5.4 将 Thread list/search/selection 与 active stream 分离，并验证快速切换、草稿恢复和历史 Thread 重开不串写
-- [ ] 5.5 服务端已验证 submit、HITL respond、active 冲突和 cancel 合同；浏览器 submit/respond/retry/cancel、history/branch、响应式和基本可访问性仍未完整覆盖
-- [ ] 5.6 删除 `ChatDebugPage`、Tools 管理入口以及在 characterization 和 SDK 替代测试成立后确认无用的 legacy payload、Run fallback 和重复 runtime 状态机
+- [x] 5.5 完成服务端与浏览器 submit/respond/retry/cancel、history/branch、响应式和基本可访问性验证；跨项目读取拒绝单独记录为 404 且无内容泄漏
+- [x] 5.6 删除 `ChatDebugPage`、Tools 管理入口以及在 characterization 和 SDK 替代测试成立后确认无用的 legacy payload、Run fallback 和重复 runtime 状态机；无入口 Runtime 旧页面已删除，正式 Chat 不再过滤/创建 legacy debug session
 - [x] 5.7 将产品 UI/API 的 Assistant 命名迁移为 Agent，SDK `assistantId` 只接收 `agent_key`，不得保留第二个可选执行 ID
 
 ## 6. 实现 Platform 模型管理
@@ -66,23 +66,23 @@
 - [x] 7.1 运行 Platform Web 与 Platform API 的 lint、typecheck、unit、component、HTTP、migration 和 security tests，并将结果写入 `verification.md`
 - [x] 7.2 用 owner 明确授权、`RUNTIME_E2E=1` 的 Git ignored `.env` 真实模型验证 `platform-api -> GraphHarbor API -> Redis -> Worker -> runtime-service -> PostgreSQL` 最短真实链；只使用固定非敏感 prompt，不宣称生产模型代理、Secret Store 或 execution reference 已完成
 - [x] 7.3 使用本机 `.env` 中已授权真实模型完成固定非敏感 prompt smoke；不宣称生产代理、Secret Store 或 execution reference 已完成
-- [ ] 7.4 已完成 Playwright 登录、项目切换、Agent/Graphs/Chat 页面和 console 无错误验收；浏览器真实 send/stream/reopen/interrupt/respond/cancel/cross-project 全链仍未完成
+- [x] 7.4 完成 Playwright 登录、项目切换、Agent/Graphs/Chat、send/stream/reopen/HITL/respond/retry/cancel/history/branch、响应式、可访问性和跨 project 读取拒绝验收；console 无错误
 - [x] 7.5 重启 GraphHarbor API 与 Worker，验证 durable resume、SSE 重连及事件不重复应用
 - [ ] 7.6 由 owner 完成 Platform 页面 UAT，并在 `verification.md` 记录接受或拒绝结论
 
 ## 8. 清理与文档生命周期
 
 - [x] 8.1 更新 Platform Web/API current standards、architecture、契约图、配置和必要 runbook，使其只描述新链
-- [ ] 8.2 按批准矩阵一次性删除已被替代的代码，并归档已解除权威的旧知识文档和 delivery checklist
-- [ ] 8.3 对重叠 active OpenSpec 分别记录 Accepted、Rejected 或 Abandoned，再按是否接受其 delta spec 决定 sync/archive
+- [x] 8.2 按批准矩阵一次性删除已被替代的代码，并归档已解除权威的旧知识文档和 delivery checklist；旧文档移入各 leaf `docs/archive/`，原路径保留 Archived 指针
+- [x] 8.3 对重叠 active OpenSpec 分别记录 Accepted、Rejected 或 Abandoned，再按是否接受其 delta spec 决定 sync/archive；Rejected/Abandoned/Deferred change 已按记录 archive without sync
 - [x] 8.4 维护 `verification.md` 的 pre-apply review、命令、输入、结果、未覆盖边界、deferred 项和 disposition
-- [ ] 8.5 通过文档检查、OpenSpec strict validate 和静态 diff 检查；accepted delta specs 同步后再 archive 本 change
+- [ ] 8.5 通过文档检查、OpenSpec strict validate 和静态 diff 检查；accepted delta specs 同步后再 archive 本 change（本地校验已通过，当前 change 仍有 owner UAT 门禁）
 
 ## 9. 模型目录与前端信息架构简化
 
 - [x] 9.1 删除 `RUNTIME_MODEL_PROFILE` 的启动校验、local-compat 静态目录分支、`.env` 注释、测试和 runbook 引用；无 profile 时五个本地服务仍可启动（启动 validator 不再读取 profile；示例配置已移除）
 - [x] 9.2 删除 `RUNTIME_E2E` 的测试门禁判断，按 integration/chain 与 provider 测试目录或 pytest marker 重分类；真实 Provider 缺凭据时不得降级 fake（README 与测试命令已改为 marker）
-- [ ] 9.3 让 Platform 模型目录的 provider、base_url、protocol、model 和加密 API Key 真正进入 Runtime resolver；浏览器、Run、GraphHarbor、日志和审计不得泄漏 API Key（短期签名 opaque reference + Platform 内部解密端点已实现；定向测试通过，但本机真实“录入模型后 Run”尚未完成）
+- [x] 9.3 让 Platform 模型目录的 provider、base_url、protocol、model 和加密 API Key 真正进入 Runtime resolver；浏览器、Run、GraphHarbor、日志和审计不得泄漏 API Key（页面编辑模型后真实 Run 已通过，API key 保持 write-only）
 - [x] 9.4 将 Models 提升为独立产品入口；Agent 页面承担 Agent 绑定、启停和默认模型覆盖；Graph 保留内部 catalog，不作为普通用户主入口（一级 `/workspace/models`，旧 runtime 路由兼容保留）
 - [x] 9.5 将 Runtime Policy 的模型启停和项目默认控制并入 Models，将 Agent 相关控制并入 Agent；保留后端 deny-first 校验，移除普通用户独立 Policy 页面（Models 现加载项目策略并提供默认模型操作；旧策略路由仅兼容保留）
 - [x] 9.6 更新前端路由、导航、文案、兼容重定向和旧入口处置，补齐 typecheck、component、HTTP 和 Playwright 页面验证（typecheck 通过；完整浏览器交互仍见 5.5/7.4）

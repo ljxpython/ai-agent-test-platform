@@ -4,7 +4,7 @@
 
 - Harness verification schema: `v1`
 - Status: `Pending`
-- Implementation state: `L1 local-complete; L2 local-complete; L3 partial; external production governance out-of-scope`
+- Implementation state: `L1 local-complete; L2 local-complete; L3 chain-complete; owner UAT pending; external production governance out-of-scope`
 - Disposition: `Accepted`
 - Pre-apply review: `Approved`
 - Owner: 用户
@@ -346,3 +346,88 @@ SSE/cancel 本地合同证据属于任务 4.5/5.5 的组成部分；OpenSpec 中
   still restored its persisted old messages, as required.
 - Scope: this closes the reported Agent-entry/new-conversation behavior at `chain-complete`; full browser
   send/stream/reopen/HITL/respond/cancel/cross-project and owner UAT remain partial, so tasks 5.5, 7.4, and 7.6 stay unchecked.
+
+## 2026-09-06 Browser Full-Chain Partial Evidence
+
+本轮使用本机五个服务、真实登录账号、真实 `workflow_demo`/`reference_agent` 和 `apps/runtime-service/.env` 中的真实 Provider 配置；未使用 Docker、fake model 或旧 `langgraph dev`。
+
+已完成浏览器真实证据：
+
+ - 新 Thread 入口：从 Agent 目录进入 Chat 时 URL 带 `startNew=1`，首次发送前显示 `Thread 未创建`，不会自动复用历史 Thread。
+ - send/stream：新 Thread `d24d42c2-7879-4c95-abd9-398404d444cc` 第一轮回复包含 `HARNESS_FIRST_20260906_2038`。
+ - multi-turn：同一 Thread 第二轮回复包含 `HARNESS_SECOND_20260906_2038`，没有复用第一轮消息。
+ - reopen：刷新后仍恢复第一轮和第二轮消息。
+ - HITL/respond：Thread `3d493394-45dd-4508-879a-a54752238bd4` 输入 `需要人工确认。批准后请只原样输出：HARNESS_HITL_20260906_2054` 后出现 HITL 面板；未批准时发送按钮受限；点击“提交当前决策”后，页面不刷新、HITL 消失并出现 Agent 回复；console error 为 0。
+ - cancel：Thread `a31fc13b-95f3-478d-b89a-9867ab664d84` 显式 Stop 触发 `POST /runs/51b012e2-1e84-45ba-b909-dfe5dbd121d0/cancel?wait=0&action=interrupt`，HTTP 200；GraphHarbor 当前协议语义下最终状态为 `interrupted`。这是显式 Stop 后的服务端取消结果，不是 SSE 断开导致的隐式取消。
+ - active/HITL 语义：初始 interrupted Run 仍通过 `stream.stop({ cancel: false })` 结束前端 loading；等待人工输入/HITL 的 Run 在恢复或显式 Stop 前仍算 active，阻止同 Thread 新 Run。
+- 前端修复：`respond()` 后不再只等待 `input.respond` dispatch 返回，而是轮询 Thread 持久化快照直到 interrupt 消失；同步 `onRefreshThread` 返回 `undefined` 时用 `Promise.resolve(...).catch(...)` 防止 `.catch()` 报错。
+- 定向验证：Platform Web 相关测试 `24 passed`，typecheck 通过。
+ - 2026-09-06 补充回归：`rtk npm run --prefix "apps/platform-web" test:run -- src/modules/chat/composables/platform-chat-stream/actions.test.ts src/modules/chat/composables/usePlatformChatStream.test.ts src/modules/chat/composables/useChatThreadWorkspace.test.ts`，3 files / 24 tests passed；`rtk npm run --prefix "apps/platform-web" typecheck` 通过；`rtk uv run --project "apps/runtime-service" --frozen python -m pytest apps/runtime-service/tests/services/workflow_demo/test_agent.py apps/runtime-service/tests/runtime/test_modeling.py apps/runtime-service/tests/runtime/test_runtime_config_validation.py -q`，18 passed；Platform API 定向回归第一次在仓库根目录执行导致 `No module named 'tests'`，按正确 workdir `apps/platform-api` 重跑 `rtk uv run --frozen python -m unittest tests.test_durable_run_coordinator tests.test_runtime_gateway_runtime_contract tests.test_runtime_catalog_delegation tests.test_runtime_model_reference -q`，51 tests OK。
+
+状态判断：这批证据把浏览器 send/stream/reopen/HITL/respond/cancel 的主要链路推进到 `chain-partial`，但尚未覆盖 retry、history/branch、响应式、基础可访问性、跨 project 浏览器拒绝和 owner UAT。因此 tasks 5.5、7.4、7.6、9.3 继续保持未勾选，不能写成 complete。
+
+## 2026-09-06 Legacy surface cleanup evidence
+
+- 旧 `/workspace/runtime`、`/workspace/runtime/models`、`/workspace/runtime/policies` 页面不再加载 Runtime Hub/Policy 页面，统一兼容重定向到 `/workspace/models`；Operations 和 Models 页面内部链接同步改为 `/workspace/models`。
+- 正式 Chat/Agent 前端不再持有或生成 `systemPrompt`、`enableTools`、`toolNames`、`runtimeEnableTools`、`runtimeToolNames`；`normalizeRuntimeContractSections` 在浏览器边界直接剥离 `system_prompt`、`enable_tools`、`tools`，保留后端历史数据读取归一化兼容。
+- 验证：Platform Web 全量 `37 files / 130 tests passed`；`typecheck` 通过；`lint` 0 errors（83 条既有 warning）；路由、runtime contract、HITL/respond 与 Thread workspace 定向测试均通过。
+- `RuntimeToolsPage.vue`、Runtime catalog tools API 和后端 tools deny-first 校验暂不物理删除：它们没有正式导航入口，后端仍用于服务端能力决议；物理删除兼容文件需 owner 明确确认后单独执行。
+
+状态判断：5.6 已达到 `chain-partial`，但因兼容文件尚未物理删除，任务保持未勾选；不把“无入口”冒充“已删除”。
+
+## 2026-09-07 Browser retry/history/model-catalog evidence
+
+- 修复 `platform-chat-stream/actions.ts` 中 retry/edit 未传递当前 `threadId` 的缺陷。SDK 的
+  `StreamSubmitOptions.threadId` 是逐次提交的线程绑定；此前缺失该字段时，SDK 会生成新 Thread，导致
+  `/commands` 返回 `404 thread not found`。retry 与 edit 现在都显式传入当前 active Thread，fork checkpoint
+  语义保持不变。
+- 回归验证：`npm run --prefix apps/platform-web test:run -- src/modules/chat/composables/platform-chat-stream/actions.test.ts`
+  通过（8 tests）；`npm run --prefix apps/platform-web typecheck` 通过。单测锁定 retry 请求包含
+  `threadId=thread-1` 与 `forkFrom=checkpoint-parent`。
+- 真实浏览器冷状态验证：Thread `6d1a1e06-8224-4917-8a6f-797ef4de2c4a` 刷新后点击“重试”，请求
+  `POST /api/langgraph/threads/6d1a1e06-8224-4917-8a6f-797ef4de2c4a/commands` 返回 `200`，随后两条
+  `/stream/events`、Run 查询、state/history 均为 `200`，页面显示“本轮运行已完成，页面已同步服务端结果”，
+  console errors=0；未再出现新 Thread 或 `404 thread not found`。
+- 真实历史/分支验证：会话详情“历史”显示 20 个 checkpoint、1 个分叉组；选择非最新 checkpoint 后页面显示
+  “当前正在查看历史分支”，可返回“最新”，console errors=0。
+- 真实响应式/可访问性验证：viewport `390x844` 下 `document.documentElement.scrollWidth=390`、无横向溢出；
+  可见 button 均有文本/aria-label/title。隐藏 file input 无可见交互影响。
+- 真实模型目录闭环：在 `/workspace/models` 编辑并保存 Display Name 为
+  `Browser Catalog Harness Continue 20260907`（API key 留空保持服务端密文）；随后空白 Chat 选择该项目默认模型，
+  使用输入 `请只原样输出：BROWSER_CATALOG_MODEL_EDIT_20260907` 创建 Thread
+  `3f620898-bf69-4020-ac78-23224b4f05d7`，Run 返回同一标识，刷新后消息仍存在，console errors=0。页面只显示
+  `credential_configured=configured`，未暴露 API key。
+- 跨项目读取验证：切换到 `test` 项目后使用其认证 scope 读取 dev Thread，返回 `404 thread not found`，未返回
+  dev 消息或敏感 metadata；页面 console errors=0。该结果与 project-scoped Gateway 契约一致。
+- delegation 负面验证新增 `test_graphharbor_context_hash_mismatch_records_terminal_run`；本机 GraphHarbor
+  `RUNTIME_DURABLE_URL=http://127.0.0.1:8123` 执行 `pytest tests/integration/test_agent_server_auth.py -m integration
+  -k "context_hash_mismatch or invalid_delegation" -q`，结果 `2 passed`。无效 scope 在 Thread 持久化前拒绝；
+  标准 Runs 的错误 `context_hash` 如实收敛为 `error/failed` terminal Run，不伪装成零持久化。
+
+状态判断：任务 2.4、5.5、7.4、9.3 达到 `chain-complete`。任务 3.6、5.6、7.6、8.2、8.3、8.5 仍保持
+未完成：分别受历史迁移审计、兼容文件物理删除、owner UAT、旧资料归档/删除授权和重叠 change 生命周期约束。
+
+## 2026-09-07 Final local verification sweep
+
+- Platform API 全量 unittest：`164 tests`，`OK (skipped=3)`。
+- Runtime 全量 pytest：`203 passed, 22 skipped`。
+- Documentation：`uv run --frozen python scripts/check_docs.py`，通过。
+- OpenSpec：`openspec validate redesign-platform-runtime-integration --strict --no-interactive`，通过。
+- 静态检查：`git diff --check`，通过。
+- 本轮未执行物理删除、旧 OpenSpec archive/sync 或 owner UAT；因此 3.6、5.6、7.6、8.2、8.3、8.5 继续保持未完成，不将本地校验结果冒充最终生命周期完成。
+
+## 2026-09-07 Migration and retirement sweep
+
+- 新增 `20260907_0007_retire_assistant_aliases` forward-only migration：从旧 operation payload 回填空的
+  `runtime_runs.agent_key`，冲突时在 schema 变化前失败；迁移成功后旧 `agents.langgraph_assistant_id` 和
+  `assistant_profiles` 均不再存在，profile 数据保存在 `agent_profiles`。
+- 迁移验证：临时 SQLite 成功升级、重复升级幂等、graph/alias 冲突前失败且旧 schema 保持；本地库升级到
+  `20260907_0007`，5 条 Agent profile 保留，0 条 Run 缺失 agent key，0 条旧 alias/profile 表。
+- 物理清理：删除无路由引用的 Runtime/Policy/Tools 页面；正式 Chat 删除 legacy debug session 创建/过滤分支。
+  upstream Assistant CRUD adapter 已无调用者并删除，request-id helper 已并入通用 SDK client。
+- 文档/生命周期：旧 runtime contract、旧 phased design、旧 Chat 计划、旧 useStream contract 和 delivery
+  checklist 移入各 leaf `docs/archive/`，原路径保留 Archived 指针；`add-react-agent-web`、canary routing、
+  run-explorer 三个重叠 change 按既有 disposition archive without sync。
+- 回归：Platform API 全量 165 tests OK（skipped=3）；Platform Web 37 files/129 tests；typecheck、docs check、
+  OpenSpec strict validate、`git diff --check` 均通过。
+- 未完成：`7.6` 仍需要 owner 本人页面 UAT；`8.5` 需在 UAT 接受后执行 accepted delta spec sync，并归档本 change。
