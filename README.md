@@ -62,7 +62,7 @@
 
 如果你希望后续的人类开发者或 AI 代理都按同一套开发规范进入任务，建议先按下面顺序阅读：
 
-1. [AGENTS.md](AGENTS.md) —— 开发流程、改动分级标准（本地/链路/治理改动）
+1. [AGENTS.md](AGENTS.md) —— 开发流程、改动分级标准（单项目/链路/治理改动）
 2. [Docs 总入口](docs/README.md)
 
 一句话理解：
@@ -71,11 +71,7 @@
 - `docs/projects/`：链路/治理改动的项目文档（方案、任务、验证记录）
 - 各 app/service 自己的 `docs/`：服务内部标准
 
-需要判断任务应该走本地、链路还是治理改动时，在 Codex 中调用：
-
-```text
-$route-change <任务描述>
-```
+改动分级由 AI 自动判断（不需要手动调用命令），依据见 `AGENTS.md`。
 
 规划链路/治理改动项目、记录实现细节、执行验证分别使用 `$plan-project`、`$implement-feature`、`$verify-change`。
 
@@ -434,7 +430,7 @@ default:
 - `platform-api -> runtime-service` 联调已通过
 - `runtime-service -> interaction-data-service` 已接入本地联调脚本
 - `platform-web` 是当前正式平台前端入口
-- 开发流程已收口到 `AGENTS.md`：改动分级（本地/链路/治理）、`plan-project`/`route-change`/`implement-feature`/`verify-change` Skills
+- 开发流程已收口到 `AGENTS.md`：改动分级（单项目/链路/治理）由 AI 自动判断并按需自动调用 `plan-project`/`implement-feature`/`verify-change` Skills
 - 当前正式版本为 [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 
 当前仍保持的约定：

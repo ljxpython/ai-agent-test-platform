@@ -73,11 +73,7 @@ The current entry docs for that harness are:
 1. `AGENTS.md`
 2. `docs/README.md`
 
-Use the explicit change router in Codex when a task needs a local/chain/governed change decision:
-
-```text
-$route-change <task description>
-```
+Change level (single-project / chain / governed) is judged automatically by the AI on every request — no manual command needed. See `AGENTS.md` for the rubric.
 
 The router does not override root rules, leaf standards, human approval, or verification
 gates. Use `$plan-project`, `$implement-feature`, and `$verify-change` to plan chain/governed change projects,
@@ -339,7 +335,7 @@ This repo has already completed:
 - `platform-api -> runtime-service` integration has passed
 - `runtime-service -> interaction-data-service` has been wired into the local bring-up scripts
 - `platform-web` is the official platform frontend host
-- The development workflow is collapsed into `AGENTS.md`: change levels (local/chain/governed) plus the `plan-project`/`route-change`/`implement-feature`/`verify-change` Skills
+- The development workflow is collapsed into `AGENTS.md`: change levels (single-project/chain/governed) are judged automatically by the AI, which calls `plan-project`/`implement-feature`/`verify-change` Skills as needed
 - The current release is [`v0.3.1`](https://github.com/ljxpython/ai-agent-platform/releases/tag/v0.3.1)
 
 Current conventions that are still kept:

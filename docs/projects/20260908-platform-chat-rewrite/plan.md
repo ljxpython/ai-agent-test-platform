@@ -4,7 +4,7 @@
 
 runtime-service 进行了一次重构（新增了 middleware 层、runtime 鉴权体系、reference agent 等），导致平台侧的对话功能出现异常。同时，原来的聊天 UI 功能较弱，无法展示 agent 的生命周期活动（tool call 执行、interrupt 请求、子任务等）。
 
-本次借鉴 open-swe 的官方实现（`/Users/lijiaxin/PyCharmMiscProject/research/open-swe`），以其 chat 体验为蓝图，对平台层对话功能进行完全重写。
+本次借鉴 open-swe 的官方实现，以其 chat 体验为蓝图，对平台层对话功能进行完全重写。
 
 ## 目标
 

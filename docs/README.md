@@ -24,15 +24,18 @@
 - [提交与 Changelog 规范](./guides/commit-and-changelog-guidelines.md)
 - [更新日志](./CHANGELOG.md)
 - [发布记录](./releases/)
+- [功能现状总览](./FEATURES.md) —— 按服务分组的当前功能清单，看仓库现在有什么直接看这份
 
-链路/治理改动的项目文档统一放在 [projects/](./projects/) 下，使用 `/plan-project` Skill 创建。
+链路/治理改动的项目文档统一放在 [projects/](./projects/) 下，AI 判断出对应级别后自动用 `plan-project` Skill 创建，无需手动调用；单服务改动的留痕记录见对应 `apps/{app}/docs/changes/`，仓库级/工具链改动见 [changes/](./changes/)。三者的选择标准见 `AGENTS.md` 的「文档组织」。
 
 ## 4. 目录说明
 
 - `quickstart/`：新人必读（架构、本地开发、部署）
 - `guides/`：开发规范
+- `FEATURES.md`：全仓库功能现状总览
+- `changes/`：仓库级/工具链级单项目改动记录
 - `projects/`：链路/治理改动的项目文档
-- `decisions/`：技术决策（ADR）
+- `decisions/`：仓库级/跨服务技术决策（ADR）
 - `archive/`：过时内容归档
 - `releases/`：历史发布记录
 - `runbooks/`：运维操作手册

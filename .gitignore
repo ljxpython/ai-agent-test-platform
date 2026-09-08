@@ -439,9 +439,9 @@ deploy/.env.stack
 !/.codex/config.toml
 !/.codex/skills/
 /.codex/skills/*
-!/.codex/skills/openspec-*/
-!/.codex/skills/openspec-*/SKILL.md
-!/.codex/skills/route-project-change/
-!/.codex/skills/route-project-change/SKILL.md
-!/.codex/skills/route-project-change/agents/
-!/.codex/skills/route-project-change/agents/openai.yaml
+!/.codex/skills/plan-project/
+!/.codex/skills/plan-project/SKILL.md
+!/.codex/skills/implement-feature/
+!/.codex/skills/implement-feature/SKILL.md
+!/.codex/skills/verify-change/
+!/.codex/skills/verify-change/SKILL.md
