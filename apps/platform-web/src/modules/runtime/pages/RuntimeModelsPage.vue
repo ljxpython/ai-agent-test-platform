@@ -28,6 +28,9 @@ import { useUiStore } from '@/stores/ui'
 import type { RuntimeModelItem, RuntimeModelPolicyValue } from '@/types/management'
 import { copyText } from '@/utils/clipboard'
 import { formatDateTime, shortId } from '@/utils/format'
+import RuntimeModelEditor, { type ModelEditorSubmitPayload } from '../components/RuntimeModelEditor.vue'
+import RuntimeModelDetailDialog from '../components/RuntimeModelDetailDialog.vue'
+import ProviderStationCard, { type ProviderStation } from '../components/ProviderStationCard.vue'
 
 function getSyncTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'synced' || status === 'ready') {
@@ -51,9 +54,12 @@ const refreshing = ref(false)
 const error = ref('')
 const notice = ref('')
 const editorOpen = ref(false)
-const editingModelId = ref('')
+const editingModel = ref<RuntimeModelItem | null>(null)
 const saving = ref(false)
-const form = ref({ provider: '', display_name: '', base_url: '', protocol: 'openai-compatible', model: '', api_key: '', enabled: true })
+const detailDialogOpen = ref(false)
+const detailTargetModel = ref<RuntimeModelItem | null>(null)
+const targetStation = ref<ProviderStation | null>(null)
+const viewMode = ref<'stations' | 'table'>('stations')
 const lastSyncedAt = ref<string | null>(null)
 const { activeProjectId } = useWorkspaceProjectContext()
 const uiStore = useUiStore()
@@ -127,8 +133,59 @@ const filteredItems = computed(() => {
   })
 })
 
+function formatStationName(provider: string): string {
+  const lower = provider.toLowerCase()
+  if (lower.includes('deepseek-proxy')) return 'DeepSeek 中转站'
+  if (lower.includes('gpt-proxy')) return 'GPT 中转站'
+  if (lower.includes('deepseek')) return 'DeepSeek 官方站'
+  if (lower.includes('openai')) return 'OpenAI 官方站'
+  if (lower.includes('ollama')) return 'Ollama 本地服务站'
+  if (lower.includes('qwen')) return '通义千问 (DashScope) 站'
+  if (lower.includes('glm')) return '智谱清言 (GLM) 站'
+  if (lower.includes('anthropic')) return 'Anthropic Claude 服务站'
+  return `${provider.toUpperCase()} 服务站`
+}
+
+const providerStations = computed<ProviderStation[]>(() => {
+  const map = new Map<string, RuntimeModelItem[]>()
+  for (const item of filteredItems.value) {
+    const key = item.provider || 'default'
+    if (!map.has(key)) {
+      map.set(key, [])
+    }
+    map.get(key)!.push(item)
+  }
+
+  return Array.from(map.entries()).map(([provider, modelList]) => {
+    const first = modelList[0]
+    const hasCredential = modelList.some((m) => m.credential_configured)
+    const hasDefault = modelList.some((m) => m.is_default)
+    const enabledCount = modelList.filter((m) => m.enabled !== false).length
+
+    return {
+      id: provider,
+      name: formatStationName(provider),
+      provider,
+      baseUrl: first?.base_url || '',
+      protocol: first?.protocol || 'openai-compatible',
+      credentialConfigured: hasCredential,
+      modelCount: modelList.length,
+      enabledCount,
+      models: modelList,
+      isDefaultStation: hasDefault
+    }
+  })
+})
+
 const defaultCount = computed(() => items.value.filter((item) => item.is_default).length)
 const stats = computed(() => [
+  {
+    label: '中转站总量',
+    value: providerStations.value.length,
+    hint: '已接入的服务端点与渠道数量',
+    icon: 'globe',
+    tone: 'primary'
+  },
   {
     label: '模型总量',
     value: items.value.length,
@@ -149,13 +206,6 @@ const stats = computed(() => [
     hint: query.value ? `按关键词“${query.value}”筛选` : '当前全部模型结果',
     icon: 'overview',
     tone: 'warning'
-  },
-  {
-    label: '最近同步',
-    value: lastSyncedAt.value ? formatDateTime(lastSyncedAt.value) : '--',
-    hint: '模型目录最近一次同步时间',
-    icon: 'activity',
-    tone: 'danger'
   }
 ])
 
@@ -249,52 +299,74 @@ async function handleCopyValue(label: string, value: string) {
   })
 }
 
-function handlePendingAction(message: string) {
-  uiStore.pushToast({
-    type: 'info',
-    title: '详情暂未开放',
-    message
-  })
-}
+
 
 function openCreateModel() {
-  editingModelId.value = ''
-  form.value = { provider: '', display_name: '', base_url: '', protocol: 'openai-compatible', model: '', api_key: '', enabled: true }
+  targetStation.value = null
+  editingModel.value = null
   editorOpen.value = true
 }
 
 function openEditModel(model: RuntimeModelItem) {
-  editingModelId.value = model.id
-  form.value = {
-    provider: model.provider || '',
-    display_name: model.display_name || '',
-    base_url: model.base_url || '',
-    protocol: model.protocol || 'openai-compatible',
-    model: model.model || model.model_id,
-    api_key: '',
-    enabled: model.enabled !== false
-  }
+  targetStation.value = null
+  editingModel.value = model
   editorOpen.value = true
 }
 
-async function saveModel() {
+function handleAddFromStation(station: ProviderStation) {
+  targetStation.value = station
+  editingModel.value = null
+  editorOpen.value = true
+}
+
+async function handleSaveModel(payload: ModelEditorSubmitPayload) {
   if (!canManageModels.value || saving.value) return
-  const values = { ...form.value }
-  if (!values.provider.trim() || !values.display_name.trim() || !values.base_url.trim() || !values.protocol.trim() || !values.model.trim() || (!editingModelId.value && !values.api_key.trim())) {
-    error.value = '请填写完整的模型连接信息；编辑时 API key 可留空。'
-    return
-  }
   saving.value = true
   error.value = ''
+  notice.value = ''
+
   try {
-    if (editingModelId.value) {
-      const { api_key, ...rest } = values
-      await updateRuntimeModel(activeProjectId.value, editingModelId.value, api_key.trim() ? values : rest)
-      notice.value = '模型配置已更新'
+    if (payload.isEdit && payload.editingId) {
+      const updateData: Record<string, unknown> = {
+        provider: payload.provider,
+        display_name: payload.display_name,
+        base_url: payload.base_url,
+        protocol: payload.protocol,
+        model: payload.models[0]?.id || payload.display_name,
+        enabled: payload.enabled
+      }
+      if (payload.api_key) {
+        updateData.api_key = payload.api_key
+      }
+      await updateRuntimeModel(activeProjectId.value, payload.editingId, updateData as never)
+      notice.value = `模型“${payload.display_name}”配置已成功更新`
     } else {
-      await createRuntimeModel(activeProjectId.value, values)
-      notice.value = '模型配置已创建'
+      // 批量创建模型
+      const createTasks = payload.models.map((m) =>
+        createRuntimeModel(activeProjectId.value, {
+          provider: payload.provider,
+          display_name: m.name || m.id,
+          base_url: payload.base_url,
+          protocol: payload.protocol,
+          model: m.id,
+          api_key: payload.api_key,
+          enabled: payload.enabled
+        })
+      )
+      const results = await Promise.allSettled(createTasks)
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length
+      const failed = results.filter((r) => r.status === 'rejected')
+
+      if (failed.length === 0) {
+        notice.value = `已成功添加 ${succeeded} 个模型并完成配置`
+      } else if (succeeded > 0) {
+        notice.value = `成功添加 ${succeeded} 个模型，其中 ${failed.length} 个模型添加失败`
+      } else {
+        const firstError = (failed[0] as PromiseRejectedResult)?.reason
+        throw new Error(firstError instanceof Error ? firstError.message : '批量添加模型失败，请检查网络或配置')
+      }
     }
+
     editorOpen.value = false
     await loadModels()
   } catch (saveError) {
@@ -302,6 +374,16 @@ async function saveModel() {
   } finally {
     saving.value = false
   }
+}
+
+function openModelDetail(model: RuntimeModelItem) {
+  detailTargetModel.value = model
+  detailDialogOpen.value = true
+}
+
+function handleEditFromDetail(model: RuntimeModelItem) {
+  detailDialogOpen.value = false
+  openEditModel(model)
 }
 
 function modelActions(model: RuntimeModelItem): ActionMenuItem[] {
@@ -321,9 +403,9 @@ function modelActions(model: RuntimeModelItem): ActionMenuItem[] {
     },
     {
       key: 'detail',
-      label: '查看详情（暂未开放）',
+      label: '查看详情',
       icon: 'eye',
-      onSelect: () => handlePendingAction(`模型 ${model.display_name || model.model_id} 的详情页暂未开放，请先查看当前目录信息。`)
+      onSelect: () => openModelDetail(model)
     }
   ]
   if (canManageModels.value) {
@@ -386,12 +468,6 @@ watch(
       description="模型目录页负责把 model_id、display_name、默认项和同步状态都拉到新工作台，不再依赖旧页面排查配置。"
     >
       <template #actions>
-        <router-link
-          class="pw-btn pw-btn-secondary"
-          to="/workspace/models"
-        >
-          返回 Runtime
-        </router-link>
         <BaseButton
           variant="secondary"
           :disabled="refreshing || !canRefreshCatalog"
@@ -412,35 +488,14 @@ watch(
       </template>
     </PageHeader>
 
-    <section
+    <RuntimeModelEditor
       v-if="editorOpen"
-      class="pw-panel space-y-4 p-4"
-    >
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
-          {{ editingModelId ? '编辑模型' : '新增模型' }}
-        </h2>
-        <BaseButton
-          variant="ghost"
-          :disabled="saving"
-          @click="editorOpen = false"
-        >
-          取消
-        </BaseButton>
-      </div>
-      <div class="grid gap-4 md:grid-cols-2">
-        <label class="block"><span class="pw-input-label">Provider</span><input v-model="form.provider" class="pw-input"></label>
-        <label class="block"><span class="pw-input-label">Display Name</span><input v-model="form.display_name" class="pw-input"></label>
-        <label class="block md:col-span-2"><span class="pw-input-label">Base URL</span><input v-model="form.base_url" class="pw-input" inputmode="url"></label>
-        <label class="block"><span class="pw-input-label">Protocol</span><select v-model="form.protocol" class="pw-input"><option value="openai-compatible">openai-compatible</option><option value="openai">openai</option><option value="deepseek">deepseek</option></select></label>
-        <label class="block"><span class="pw-input-label">Model</span><input v-model="form.model" class="pw-input"></label>
-        <label class="block md:col-span-2"><span class="pw-input-label">API key {{ editingModelId ? '(留空表示不变)' : '' }}</span><input v-model="form.api_key" class="pw-input" type="password" autocomplete="new-password"></label>
-        <label class="flex items-center gap-2 text-sm"><input v-model="form.enabled" type="checkbox" class="pw-table-checkbox">启用模型</label>
-      </div>
-      <div class="flex justify-end">
-        <BaseButton :disabled="saving" @click="saveModel">{{ saving ? '保存中...' : '保存模型' }}</BaseButton>
-      </div>
-    </section>
+      :editing-model="editingModel"
+      :initial-station="targetStation"
+      :busy="saving"
+      @close="editorOpen = false"
+      @submit="handleSaveModel"
+    />
 
     <StateBanner
       v-if="error"
@@ -471,26 +526,91 @@ watch(
     <TablePageLayout>
       <template #filters>
         <FilterToolbar>
-          <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_auto]">
-            <SearchInput
-              v-model="queryInput"
-              placeholder="按 model_id 或 display_name 搜索"
-            />
-            <BaseButton
-              variant="secondary"
-              @click="resetFilters"
-            >
-              清空
-            </BaseButton>
-            <BaseButton @click="applyFilters">
-              应用筛选
-            </BaseButton>
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="grid flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+              <SearchInput
+                v-model="queryInput"
+                placeholder="按 model_id 或 display_name 搜索"
+              />
+              <BaseButton
+                variant="secondary"
+                @click="resetFilters"
+              >
+                清空
+              </BaseButton>
+              <BaseButton @click="applyFilters">
+                应用筛选
+              </BaseButton>
+            </div>
+
+            <!-- 视图模式切换：中转站聚合视图 vs 全量表格视图 -->
+            <div class="inline-flex items-center gap-1 rounded-xl border border-gray-200/80 bg-gray-50/80 p-1 dark:border-dark-700 dark:bg-dark-900/60 shrink-0">
+              <button
+                type="button"
+                class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                :class="viewMode === 'stations' ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-800 dark:text-white font-semibold' : 'text-gray-500 hover:text-gray-900 dark:text-dark-400 dark:hover:text-dark-200'"
+                @click="viewMode = 'stations'"
+              >
+                <BaseIcon
+                  name="globe"
+                  size="xs"
+                />
+                <span>中转站视图 ({{ providerStations.length }})</span>
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                :class="viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-800 dark:text-white font-semibold' : 'text-gray-500 hover:text-gray-900 dark:text-dark-400 dark:hover:text-dark-200'"
+                @click="viewMode = 'table'"
+              >
+                <BaseIcon
+                  name="table"
+                  size="xs"
+                />
+                <span>扁平表格 ({{ filteredItems.length }})</span>
+              </button>
+            </div>
           </div>
         </FilterToolbar>
       </template>
 
       <template #table>
+        <!-- 中转站卡片聚合视图 -->
+        <div
+          v-if="viewMode === 'stations'"
+          class="space-y-4"
+        >
+          <div
+            v-if="providerStations.length === 0"
+            class="pw-panel flex flex-col items-center justify-center py-16 text-center"
+          >
+            <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-dark-800 dark:text-dark-500">
+              <BaseIcon
+                name="globe"
+                size="lg"
+              />
+            </div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              没有找到中转站或模型配置
+            </h3>
+            <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
+              {{ items.length ? '没有模型命中当前搜索条件。' : '当前 runtime 没有返回任何模型目录。' }}
+            </p>
+          </div>
+
+          <ProviderStationCard
+            v-for="station in providerStations"
+            :key="station.id"
+            :station="station"
+            :get-model-actions="modelActions"
+            @add-model="handleAddFromStation"
+            @view-detail="openModelDetail"
+          />
+        </div>
+
+        <!-- 全量扁平 DataTable 视图 -->
         <DataTable
+          v-else
           :columns="columns"
           :rows="modelRows"
           :loading="loading"
@@ -561,7 +681,7 @@ watch(
       </template>
 
       <template
-        v-if="pagination.total.value > 0"
+        v-if="viewMode === 'table' && pagination.total.value > 0"
         #footer
       >
         <PaginationBar
@@ -574,5 +694,12 @@ watch(
         />
       </template>
     </TablePageLayout>
+
+    <RuntimeModelDetailDialog
+      :show="detailDialogOpen"
+      :model="detailTargetModel"
+      @close="detailDialogOpen = false"
+      @edit="handleEditFromDetail"
+    />
   </section>
 </template>

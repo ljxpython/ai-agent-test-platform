@@ -112,3 +112,69 @@ def test_build_model_does_not_accept_raw_context() -> None:
     with pytest.raises(RuntimeResolutionError) as error:
         modeling.build_model(RuntimeContext())  # type: ignore[arg-type]
     assert error.value.code == "runtime.model.invalid_config"
+
+
+def test_build_model_supports_proxy_providers_and_protocols(monkeypatch: pytest.MonkeyPatch) -> None:
+    deepseek_calls: dict[str, object] = {}
+    openai_calls: dict[str, object] = {}
+
+    def fake_deepseek(**kwargs: object) -> object:
+        deepseek_calls.update(kwargs)
+        return object()
+
+    def fake_openai(**kwargs: object) -> object:
+        openai_calls.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(modeling, "ChatDeepSeek", fake_deepseek)
+    monkeypatch.setattr(modeling, "ChatOpenAI", fake_openai)
+
+    # 1. deepseek-proxy
+    modeling.build_model(
+        _resolved("DeepSeek-V4-Flash"),
+        env={},
+        connection={
+            "provider": "deepseek-proxy",
+            "base_url": "http://proxy.test/v1",
+            "protocol": "openai-compatible",
+            "model": "DeepSeek-V4-Flash",
+            "api_key": "test-key-ds",
+        },
+    )
+    assert deepseek_calls["model"] == "DeepSeek-V4-Flash"
+    assert deepseek_calls["api_key"] == "test-key-ds"
+    assert deepseek_calls["base_url"] == "http://proxy.test/v1"
+
+    # 2. gpt-proxy
+    modeling.build_model(
+        _resolved("gpt-4o"),
+        env={},
+        connection={
+            "provider": "gpt-proxy",
+            "base_url": "http://proxy.test/v1",
+            "protocol": "openai-compatible",
+            "model": "gpt-4o",
+            "api_key": "test-key-gpt",
+        },
+    )
+    assert openai_calls["model"] == "gpt-4o"
+    assert openai_calls["api_key"] == "test-key-gpt"
+    assert openai_calls["base_url"] == "http://proxy.test/v1"
+
+    # 3. 自定义中转站 (custom provider + base_url)
+    openai_calls.clear()
+    modeling.build_model(
+        _resolved("my-custom-model"),
+        env={},
+        connection={
+            "provider": "custom-relay",
+            "base_url": "http://relay.test/v1",
+            "protocol": "openai-compatible",
+            "model": "my-custom-model",
+            "api_key": "relay-key",
+        },
+    )
+    assert openai_calls["model"] == "my-custom-model"
+    assert openai_calls["api_key"] == "relay-key"
+    assert openai_calls["base_url"] == "http://relay.test/v1"
+

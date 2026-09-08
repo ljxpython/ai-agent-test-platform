@@ -7,3 +7,5 @@ coverage
 .env.local
 .env.*.local
 .login-response.json
+playwright-report/
+test-results/

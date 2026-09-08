@@ -5,6 +5,7 @@ import BaseIcon from '@/components/base/BaseIcon.vue'
 import type { RuntimeModelItem } from '@/types/management'
 import { CHAT_ATTACHMENT_ACCEPT, type ChatAttachmentBlock } from '@/utils/chat-content'
 import ChatAttachmentPreview from './ChatAttachmentPreview.vue'
+import ChatModelSelector from './ChatModelSelector.vue'
 
 const props = defineProps<{
   modelValue: string
@@ -46,6 +47,7 @@ const composerModel = computed({
 
 const isDenseMode = computed(() => Boolean(props.compact))
 const isFocusMode = computed(() => Boolean(props.focusMode))
+
 const composerCollapsedHeight = computed(() => {
   if (isDenseMode.value) {
     return 28
@@ -226,39 +228,15 @@ onMounted(async () => {
               @change="emit('file-input-change', $event)"
             >
 
-            <!-- Model Selector (open-swe style) -->
-            <div
+            <!-- Model Selector (Luxury Popover) -->
+            <ChatModelSelector
               v-if="models && models.length > 0"
-              class="relative inline-flex items-center shrink-0"
-            >
-              <select
-                :value="selectedModelId || ''"
-                class="appearance-none rounded-lg border border-gray-200/80 bg-gray-50/80 py-1.5 pl-7 pr-7 text-xs text-gray-700 transition hover:bg-gray-100/80 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-dark-700 dark:bg-dark-800/80 dark:text-dark-200 dark:hover:bg-dark-700/80"
-                title="选择运行模型"
-                @change="emit('update:selectedModelId', ($event.target as HTMLSelectElement).value)"
-              >
-                <option value="">
-                  默认模型{{ defaultModelName ? ` (${defaultModelName})` : '' }}
-                </option>
-                <option
-                  v-for="m in models"
-                  :key="m.id || m.model_id"
-                  :value="m.model_id"
-                >
-                  {{ m.display_name || m.model_id }}
-                </option>
-              </select>
-              <BaseIcon
-                name="sparkle"
-                size="xs"
-                class="pointer-events-none absolute left-2 text-primary-500"
-              />
-              <BaseIcon
-                name="chevron-down"
-                size="xs"
-                class="pointer-events-none absolute right-2 text-gray-400 dark:text-dark-400"
-              />
-            </div>
+              :models="models"
+              :selected-model-id="selectedModelId"
+              :default-model-name="defaultModelName"
+              :disabled="isRunning || hasBlockingInterrupt"
+              @update:selected-model-id="emit('update:selectedModelId', $event)"
+            />
           </div>
 
           <div

@@ -117,19 +117,28 @@ export function createChatMessageActions(context: MessageActionContext) {
       }
     }
 
-    const updated = parentCheckpointId
-      ? await context.editHumanMessage(messageId, nextContent, parentCheckpointId)
-      : await context.editHumanMessage(messageId, nextContent)
-    if (updated) {
-      cancelEditMessage()
-      return {
-        ok: true as const
-      }
-    }
+    // 校验通过后立即退出编辑态，恢复常规消息展示，避免长耗时流式将用户阻塞在编辑框
+    cancelEditMessage()
 
-    return {
-      ok: false as const,
-      reason: 'edit-failed'
+    try {
+      const updated = parentCheckpointId
+        ? await context.editHumanMessage(messageId, nextContent, parentCheckpointId)
+        : await context.editHumanMessage(messageId, nextContent)
+      if (updated) {
+        return {
+          ok: true as const
+        }
+      }
+
+      return {
+        ok: false as const,
+        reason: 'edit-failed'
+      }
+    } catch {
+      return {
+        ok: false as const,
+        reason: 'edit-failed'
+      }
     }
   }
 

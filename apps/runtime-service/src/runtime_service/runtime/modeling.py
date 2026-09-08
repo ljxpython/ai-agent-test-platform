@@ -46,24 +46,38 @@ def build_model(
     settings = os.environ if env is None else env
     provider, separator, model_name = config.model_id.partition(":")
     model_name = model_name if separator else config.model_id
+    protocol = ""
+
     if connection is not None:
         provider = str(connection.get("provider", provider)).strip().lower()
         model_name = connection.get("model", model_name)
+        protocol = str(connection.get("protocol", "")).strip().lower()
+
     kwargs = _generation_kwargs(config)
 
     try:
-        if provider == "deepseek":
+        conn_api_key = connection.get("api_key") if connection is not None else None
+        conn_base_url = connection.get("base_url") if connection is not None else None
+
+        if provider in ("deepseek", "deepseek-proxy") or protocol == "deepseek":
             return ChatDeepSeek(
                 model=model_name,
-                api_key=connection.get("api_key") if connection is not None else _required(settings, "DEEPSEEK_PROXY_API_KEY"),
-                base_url=connection.get("base_url") if connection is not None else _required(settings, "DEEPSEEK_PROXY_URL"),
+                api_key=conn_api_key or _required(settings, "DEEPSEEK_PROXY_API_KEY"),
+                base_url=conn_base_url or _required(settings, "DEEPSEEK_PROXY_URL"),
                 **kwargs,
             )
-        if provider == "openai":
+        if provider in ("openai", "gpt-proxy") or protocol in ("openai", "openai-compatible", "openai_compatible"):
             return ChatOpenAI(
                 model=model_name,
-                api_key=connection.get("api_key") if connection is not None else _required(settings, "GPT_PROXY_API_KEY"),
-                base_url=connection.get("base_url") if connection is not None else _required(settings, "GPT_PROXY_URL"),
+                api_key=conn_api_key or settings.get("GPT_PROXY_API_KEY") or "EMPTY",
+                base_url=conn_base_url or _required(settings, "GPT_PROXY_URL"),
+                **kwargs,
+            )
+        if connection is not None and conn_base_url:
+            return ChatOpenAI(
+                model=model_name,
+                api_key=conn_api_key or "EMPTY",
+                base_url=conn_base_url,
                 **kwargs,
             )
         return init_chat_model(config.model_id, **kwargs)

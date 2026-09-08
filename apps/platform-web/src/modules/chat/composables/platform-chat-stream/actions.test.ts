@@ -212,4 +212,24 @@ describe('platform chat stream actions', () => {
 
     expect(deps.options.onRefreshThread).toHaveBeenCalledWith('thread-1')
   })
+
+  it('passes onError callback to stream.submit during retry and edit', async () => {
+    const deps = createDeps()
+    deps.messageMetadataById = computed(() => ({
+      'human-1': {
+        messageId: 'human-1',
+        parentCheckpoint: { checkpoint_id: 'cp-1' }
+      }
+    }))
+    const actions = createPlatformChatStreamActions(deps)
+
+    await expect(actions.editHumanMessage('human-1', 'new content')).resolves.toBe(true)
+    expect(deps.stream.submit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        forkFrom: 'cp-1',
+        onError: expect.any(Function)
+      })
+    )
+  })
 })

@@ -695,6 +695,62 @@ class DurableRunCoordinatorTest(unittest.IsolatedAsyncioTestCase):
             json.dumps([event.metadata_json for event in events]),
         )
 
+    async def test_cancelled_interrupted_run_reconciles_before_new_command(self) -> None:
+        """Verify that when user cancels a run and upstream returns interrupted (real GraphHarbor behavior),
+        the subsequent new command reconciles the old run into cancelled state without 409 conflict.
+        """
+        # 1. Start run-1
+        await self.service.send_thread_command(
+            actor=self.actor,
+            project_id="project-1",
+            thread_id="thread-1",
+            payload=self._command(content="message 1"),
+            idempotency_key="request-1",
+        )
+
+        # Upstream get_thread_run will return interrupted (real GraphHarbor behavior upon cancel)
+        self.upstream.get_thread_run.return_value = {
+            "run_id": "run-1",
+            "status": "interrupted",
+            "metadata": {},
+        }
+
+        # 2. User cancels run-1
+        await self.service.cancel_thread_run(
+            actor=self.actor,
+            project_id="project-1",
+            thread_id="thread-1",
+            run_id="run-1",
+            payload=None,
+        )
+
+        # 3. User immediately sends next command without explicitly calling get_thread_run
+        self.upstream.send_thread_command.return_value = {
+            "type": "success",
+            "id": 2,
+            "result": {"run_id": "run-2"},
+        }
+        next_run = await self.service.send_thread_command(
+            actor=self.actor,
+            project_id="project-1",
+            thread_id="thread-1",
+            payload=self._command(content="message 2 after stop"),
+            idempotency_key="request-2",
+        )
+        self.assertEqual(next_run["result"]["run_id"], "run-2")
+
+        # 4. Verify run-1 is now terminal (cancelled) and inactive
+        with self._session_factory() as session:
+            old_run = SqlAlchemyDurableRunsRepository(session).get_by_run_id(
+                project_id="project-1",
+                thread_id="thread-1",
+                run_id="run-1",
+            )
+            self.assertIsNotNone(old_run)
+            self.assertFalse(old_run.active)  # type: ignore[union-attr]
+            self.assertEqual(old_run.status, "cancelled")  # type: ignore[union-attr]
+
 
 if __name__ == "__main__":
     unittest.main()
+

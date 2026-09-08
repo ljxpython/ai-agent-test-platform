@@ -213,11 +213,12 @@ def _terminal_operation_status(snapshot: Any) -> OperationStatus | None:
     if not isinstance(snapshot, dict):
         return None
     status = clean_str(snapshot.get("status"))
+    reason = clean_str(snapshot.get("reason"))
     if status in {"success", "succeeded", "completed"}:
         return OperationStatus.SUCCEEDED
     if status in {"error", "failed", "timeout"}:
         return OperationStatus.FAILED
-    if status in {"cancelled", "canceled"}:
+    if status in {"cancelled", "canceled"} or reason in {"cancel_requested", "cancelled", "canceled"}:
         return OperationStatus.CANCELLED
     return None
 
@@ -1095,20 +1096,36 @@ class RuntimeGatewayService:
             ) is not None:
                 return
             active_run = runs.get_active(project_id=project_id, thread_id=thread_id)
+            is_cancel_requested = False
             if active_run is not None:
                 operation = SqlAlchemyOperationsRepository(uow.session).get_by_id(
                     active_run.operation_id
                 )
                 if operation is not None and operation.cancel_requested_at is not None:
-                    return
+                    is_cancel_requested = True
 
         if active_run is None or not active_run.run_id:
             return
         try:
             snapshot = await self._upstream.get_thread_run(thread_id, active_run.run_id)
-        except PlatformApiError:
-            # The ledger remains authoritative until an upstream terminal fact is available.
-            return
+        except PlatformApiError as exc:
+            if is_cancel_requested and getattr(exc, "code", "") == "not_found":
+                snapshot = {"status": "cancelled"}
+            else:
+                # The ledger remains authoritative until an upstream terminal fact is available.
+                return
+
+        if is_cancel_requested:
+            snapshot_reason = clean_str(snapshot.get("reason"))
+            snapshot_status = clean_str(snapshot.get("status"))
+            if (
+                snapshot_reason in {"cancel_requested", "cancelled", "canceled"}
+                or snapshot_status in {"cancelled", "canceled", "interrupted"}
+            ):
+                snapshot = {**snapshot, "status": "cancelled"}
+            else:
+                return
+
         await self._sync_durable_run_terminal_state(
             actor=actor,
             project_id=project_id,
@@ -2209,4 +2226,22 @@ class RuntimeGatewayService:
             thread_id=thread_id,
             run_id=run_id,
         )
+        try:
+            snapshot = await self._upstream.get_thread_run(thread_id, run_id)
+            if isinstance(snapshot, dict):
+                snapshot_reason = clean_str(snapshot.get("reason"))
+                snapshot_status = clean_str(snapshot.get("status"))
+                if (
+                    snapshot_reason in {"cancel_requested", "cancelled", "canceled"}
+                    or snapshot_status in {"cancelled", "canceled", "interrupted"}
+                ):
+                    await self._sync_durable_run_terminal_state(
+                        actor=actor,
+                        project_id=project_id,
+                        thread_id=thread_id,
+                        run_id=run_id,
+                        snapshot={**snapshot, "status": "cancelled"},
+                    )
+        except Exception:
+            pass
         return result

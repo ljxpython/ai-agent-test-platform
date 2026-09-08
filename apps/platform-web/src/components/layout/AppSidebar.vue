@@ -364,7 +364,7 @@ watch(
         @click="uiStore.toggleSidebar"
       >
         <BaseIcon
-          :name="uiStore.sidebarCollapsed ? 'expand' : 'collapse'"
+          :name="uiStore.sidebarCollapsed ? 'chevron-right' : 'chevron-left'"
           size="md"
           class="shrink-0"
         />

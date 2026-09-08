@@ -78,4 +78,42 @@ describe('chat message actions', () => {
     await actions.handleRetryMessage('ai-1')
     expect(retryMessage).toHaveBeenCalledWith('ai-1')
   })
+
+  it('submitEditMessage 会立即收起编辑框并在失败时返回 edit-failed', async () => {
+    let editingStateDuringSubmit = 'unset'
+    const editHumanMessage = vi.fn(async () => {
+      // 检查此时编辑态是否已被清空
+      editingStateDuringSubmit = editingMessageId.value
+      return false
+    })
+
+    const editingMessageId = ref('')
+    const editingMessageValue = ref('')
+
+    const actions = createChatMessageActions({
+      messageMetadataById: ref({
+        'human-1': {
+          parentCheckpoint: { checkpoint_id: 'cp-1', thread_id: 't-1', checkpoint_ns: '' }
+        }
+      }),
+      sending: ref(false),
+      hasBlockingInterrupt: ref(false),
+      editingMessageId,
+      editingMessageValue,
+      selectBranch: vi.fn(),
+      retryMessage: vi.fn(async () => true),
+      editHumanMessage
+    })
+
+    const message = { id: 'human-1', type: 'human', content: 'test content' } as Message
+    actions.startEditMessage(message, 'human-1')
+    expect(editingMessageId.value).toBe('human-1')
+
+    const result = await actions.submitEditMessage(message, 'human-1')
+
+    // 验证在 editHumanMessage 执行时，编辑态已经被立即收起
+    expect(editingStateDuringSubmit).toBe('')
+    expect(editingMessageId.value).toBe('')
+    expect(result).toEqual({ ok: false, reason: 'edit-failed' })
+  })
 })

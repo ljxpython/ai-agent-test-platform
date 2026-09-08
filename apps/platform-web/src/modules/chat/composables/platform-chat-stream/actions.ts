@@ -208,11 +208,15 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
     const runtimeSubmitOptions = buildChatRunSubmitOptions(deps.options.runOptions)
 
     try {
-      await deps.stream.submit(undefined, {
+      const submission = deps.stream.submit(undefined, {
         threadId,
         forkFrom: checkpointId,
         ...runtimeSubmitOptions,
+        onError: (submitError: unknown) => {
+          deps.detailError.value = normalizeRuntimeGatewayError(submitError, '重新执行失败').message
+        }
       })
+      await submission
       deps.commandPending.value = false
       return true
     } catch (runError) {
@@ -230,7 +234,11 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
   ) {
     const threadId = deps.options.activeThreadId.value.trim()
     const metadata = deps.messageMetadataById.value[messageId]
-    const checkpointId = forkFrom?.trim() || metadata?.parentCheckpoint?.checkpoint_id?.trim() || ''
+    const checkpointId =
+      forkFrom?.trim() ||
+      metadata?.parentCheckpoint?.checkpoint_id?.trim() ||
+      deps.messageMetadataById.value[messageId]?.parentCheckpoint?.checkpoint_id?.trim() ||
+      ''
 
     if (!threadId || !checkpointId || deps.isBusy.value) {
       return false
@@ -245,7 +253,7 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
     const runtimeSubmitOptions = buildChatRunSubmitOptions(deps.options.runOptions)
 
     try {
-      await deps.stream.submit(
+      const submission = deps.stream.submit(
         {
           messages: [optimisticMessage]
         },
@@ -253,8 +261,12 @@ export function createPlatformChatStreamActions(deps: PlatformChatStreamActionDe
           threadId,
           forkFrom: checkpointId,
           ...runtimeSubmitOptions,
+          onError: (submitError: unknown) => {
+            deps.detailError.value = normalizeRuntimeGatewayError(submitError, '编辑重发失败').message
+          }
         }
       )
+      await submission
       deps.commandPending.value = false
       return true
     } catch (runError) {

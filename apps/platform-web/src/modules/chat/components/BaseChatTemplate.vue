@@ -728,6 +728,12 @@ async function submitEditMessage(message: Message, messageId: string, parentChec
       title: '消息内容不能为空',
       message: '至少保留一段文本或者附件。'
     })
+  } else if (!result.ok && result.reason === 'edit-failed') {
+    uiStore.pushToast({
+      type: 'error',
+      title: '编辑重发失败',
+      message: '无法基于当前历史节点重发消息，请检查模型配置或稍后重试。'
+    })
   }
 
   if (result.ok) {
@@ -746,6 +752,12 @@ async function handleRetryMessage(messageId: string, parentCheckpointId?: string
       type: 'success',
       title: '已重新生成回复',
       message: '当前回复会从对应 checkpoint 重新执行。'
+    })
+  } else {
+    uiStore.pushToast({
+      type: 'error',
+      title: '重新生成失败',
+      message: '无法基于当前历史节点重新生成，请检查模型配置或稍后重试。'
     })
   }
 }
