@@ -5,8 +5,6 @@ import type { LocationQueryRaw } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
-import SurfaceCard from '@/components/base/SurfaceCard.vue'
-import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/platform/EmptyState.vue'
 import StateBanner from '@/components/platform/StateBanner.vue'
 import { useWorkspaceProjectContext } from '@/composables/useWorkspaceProjectContext'
@@ -18,9 +16,10 @@ import ChatArtifactPanel from './ChatArtifactPanel.vue'
 import ChatComposer from './ChatComposer.vue'
 import ChatContextDrawer from './ChatContextDrawer.vue'
 import ChatInterruptPanel from './ChatInterruptPanel.vue'
+import ChatAgentStatusBar from './ChatAgentStatusBar.vue'
 import ChatMessageList from './ChatMessageList.vue'
 import ChatRunOptionsDialog from './ChatRunOptionsDialog.vue'
-import ChatThreadDrawer from './ChatThreadDrawer.vue'
+import ChatThreadSidebar from './ChatThreadSidebar.vue'
 import { buildChatCompactModeView } from '../compact-mode-view-model'
 import { normalizeChatInspectorFiles } from '../inspector-view-model'
 import { buildChatLiveFollowView } from '../live-follow-view-model'
@@ -71,14 +70,13 @@ const { activeProjectId, activeProject } = useWorkspaceProjectContext()
 const composerInput = ref('')
 const threadSearch = ref('')
 const threadStatusFilter = ref<ChatThreadStatusFilter>('all')
-const threadsDrawerOpen = ref(false)
+const sidebarCollapsed = ref(false)
 const contextDrawerOpen = ref(false)
 const runtimeOptionsDialogOpen = ref(false)
 const inspectorInitialTab = ref<InspectorTabKey>('overview')
 const messagesViewport = ref<HTMLDivElement | null>(null)
 const messagesContent = ref<HTMLDivElement | null>(null)
 const isFocusMode = ref(false)
-const workspaceHeaderCollapsed = ref(false)
 const runtimeInfoDismissed = ref(false)
 const deletingThreadId = ref('')
 const editingMessageId = ref('')
@@ -115,6 +113,11 @@ const displayMessages = computed(() =>
 const composerAttachments = computed(() => attachmentState.attachments.value)
 const planView = computed(() => buildChatPlanView(workspace.displayState.value))
 const inspectorFiles = computed(() => normalizeChatInspectorFiles(workspace.displayState.value))
+const defaultModelDisplayName = computed(() => {
+  const defId = workspace.defaultModelId.value
+  const found = workspace.runtimeModels.value.find((m) => m.model_id === defId)
+  return found?.display_name || defId || ''
+})
 const allowRunOptions = computed(() => props.features?.allowRunOptions ?? true)
 const showHistory = computed(() => props.features?.showHistory ?? true)
 const showArtifacts = computed(() => props.features?.showArtifacts ?? true)
@@ -399,14 +402,8 @@ function toggleFocusMode(nextValue?: boolean) {
     return
   }
 
-  threadsDrawerOpen.value = false
   contextDrawerOpen.value = false
   runtimeOptionsDialogOpen.value = false
-}
-
-function toggleWorkspaceHeaderCollapsed(nextValue?: boolean) {
-  workspaceHeaderCollapsed.value =
-    typeof nextValue === 'boolean' ? nextValue : !workspaceHeaderCollapsed.value
 }
 
 function handleFocusModeKeydown(event: KeyboardEvent) {
@@ -821,7 +818,6 @@ async function handleSend() {
 
 async function handleSelectThread(threadId: string) {
   await workspace.selectThread(threadId)
-  threadsDrawerOpen.value = false
 }
 
 function handleResetTarget() {
@@ -936,14 +932,6 @@ async function handleStartNewThread() {
       </div>
     </div>
 
-    <PageHeader
-      v-if="!isFocusMode"
-      :eyebrow="props.target?.targetType === 'graph' ? 'Graph Chat' : 'Agent Chat'"
-      :title="display.title"
-      :description="display.description"
-      :compact="isSurfaceCompact"
-    />
-
     <StateBanner
       v-if="contextNotice && !isSurfaceCompact"
       title="上下文说明"
@@ -974,16 +962,6 @@ async function handleStartNewThread() {
       :description="workspace.runtimeError.value"
       variant="warning"
       :compact="isSurfaceCompact"
-    />
-
-    <StateBanner
-      v-if="!isFocusMode && workspace.detailInfo.value && !runtimeInfoDismissed"
-      title="运行状态更新"
-      :description="workspace.detailInfo.value"
-      variant="info"
-      :compact="isSurfaceCompact"
-      dismissible
-      @close="runtimeInfoDismissed = true"
     />
 
     <StateBanner
@@ -1025,18 +1003,57 @@ async function handleStartNewThread() {
       @action="workspace.refreshActiveThread"
     />
 
-    <SurfaceCard
+    <div
       v-else
-      class="pw-chat-workspace p-0"
+      class="flex flex-1 min-h-0 h-full gap-4 overflow-hidden"
     >
+      <ChatThreadSidebar
+        v-if="!isFocusMode && !sidebarCollapsed"
+        :show-context-bar="showContextBar"
+        :target-text="workspace.targetText.value"
+        :target-type-text="workspace.targetTypeText.value"
+        :search="threadSearch"
+        :status-filter="threadStatusFilter"
+        :filters="threadStatusFilters"
+        :loading="workspace.loadingThreads.value"
+        :thread-count="workspace.threadItems.value.length"
+        :filtered-count="filteredThreadSummary.length"
+        :can-start-thread="workspace.canStartThread.value"
+        :active-thread-id="workspace.activeThreadId.value"
+        :deleting-thread-id="deletingThreadId"
+        :groups="groupedThreadSummary"
+        @update:search="threadSearch = $event"
+        @update:status-filter="threadStatusFilter = $event"
+        @start-new-thread="handleStartNewThread"
+        @select-thread="handleSelectThread"
+        @delete-thread="handleDeleteThread"
+        @collapse="sidebarCollapsed = true"
+      />
+
+      <div
+        class="pw-chat-workspace flex flex-1 min-w-0 min-h-0 h-full flex-col overflow-hidden"
+      >
       <div
         v-if="!isFocusMode"
         class="pw-chat-workspace-header"
-        :class="workspaceHeaderCollapsed ? 'py-1' : ''"
       >
         <div class="flex h-8 items-center gap-3">
+          <BaseButton
+            v-if="sidebarCollapsed"
+            variant="secondary"
+            class="h-8 px-2.5 text-xs shrink-0"
+            title="展开历史会话"
+            @click="sidebarCollapsed = false"
+          >
+            <BaseIcon
+              name="chevron-right"
+              size="sm"
+            />
+            <span class="hidden sm:inline">展开历史</span>
+          </BaseButton>
+
           <div
-            v-if="showContextBar && !workspaceHeaderCollapsed"
+            v-if="showContextBar"
             class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto"
             :class="isSurfaceCompact ? 'gap-1.5' : ''"
           >
@@ -1056,7 +1073,7 @@ async function handleStartNewThread() {
             :class="isSurfaceCompact ? 'gap-1.5' : ''"
           >
             <div
-              v-if="liveFollowView.visible && !workspaceHeaderCollapsed"
+              v-if="liveFollowView.visible"
               class="pw-pill-soft gap-1.5 px-2.5 py-1.5 text-[11px] font-medium"
               :class="[liveFollowPillClass, isSurfaceCompact ? 'gap-1.5 px-2.5 py-1.5 text-[11px]' : '']"
             >
@@ -1066,85 +1083,55 @@ async function handleStartNewThread() {
               />
               <span>{{ liveFollowView.pillLabel }}</span>
             </div>
-            <template v-if="!workspaceHeaderCollapsed">
-              <BaseButton
-                variant="secondary"
-                class="h-8 px-3 text-xs"
-                @click="toggleFocusMode(true)"
-              >
-                <BaseIcon
-                  name="focus"
-                  size="sm"
-                />
-                专注模式
-              </BaseButton>
-              <div class="flex items-center gap-1">
-                <BaseButton
-                  variant="secondary"
-                  class="h-8 px-3 text-xs"
-                  @click="threadsDrawerOpen = true"
-                >
-                  <BaseIcon
-                    name="threads"
-                    size="sm"
-                  />
-                  会话 {{ workspace.threadItems.value.length }}
-                </BaseButton>
-              </div>
-              <BaseButton
-                variant="secondary"
-                class="h-8 px-3 text-xs"
-                @click="openInspectorDrawer('overview')"
-              >
-                <BaseIcon
-                  name="overview"
-                  size="sm"
-                />
-                会话详情
-              </BaseButton>
-              <div v-if="allowRunOptions">
-                <BaseButton
-                  variant="secondary"
-                  class="h-8 px-3 text-xs"
-                  @click="openRuntimeOptionsDialog"
-                >
-                  <BaseIcon
-                    name="runtime"
-                    size="sm"
-                  />
-                  运行参数
-                </BaseButton>
-              </div>
-              <BaseButton
-                variant="secondary"
-                class="h-8 px-3 text-xs"
-                :disabled="workspace.loadingThreads.value || workspace.loadingThreadDetail.value"
-                @click="workspace.refreshActiveThread"
-              >
-                <BaseIcon
-                  name="refresh"
-                  size="sm"
-                />
-                重新同步
-              </BaseButton>
-              <BaseButton
-                class="h-8 px-3 text-xs"
-                :disabled="!workspace.canStartThread.value"
-                @click="handleStartNewThread"
-              >
-                <BaseIcon
-                  name="chat"
-                  size="sm"
-                />
-                新对话
-              </BaseButton>
-            </template>
+
             <BaseButton
               variant="secondary"
               class="h-8 px-3 text-xs"
-              @click="toggleWorkspaceHeaderCollapsed(!workspaceHeaderCollapsed)"
+              @click="toggleFocusMode(true)"
             >
-              {{ workspaceHeaderCollapsed ? '打开顶部栏' : '收起顶部栏' }}
+              <BaseIcon
+                name="focus"
+                size="sm"
+              />
+              专注模式
+            </BaseButton>
+            
+            <BaseButton
+              variant="secondary"
+              class="h-8 px-3 text-xs"
+              @click="openInspectorDrawer('overview')"
+            >
+              <BaseIcon
+                name="overview"
+                size="sm"
+              />
+              会话详情
+            </BaseButton>
+
+            <div v-if="allowRunOptions">
+              <BaseButton
+                variant="secondary"
+                class="h-8 px-3 text-xs"
+                @click="openRuntimeOptionsDialog"
+              >
+                <BaseIcon
+                  name="runtime"
+                  size="sm"
+                />
+                运行参数
+              </BaseButton>
+            </div>
+
+            <BaseButton
+              class="h-8 px-3 text-xs"
+              :disabled="!workspace.canStartThread.value"
+              @click="handleStartNewThread"
+            >
+              <BaseIcon
+                name="chat"
+                size="sm"
+              />
+              新对话
             </BaseButton>
           </div>
         </div>
@@ -1171,6 +1158,15 @@ async function handleStartNewThread() {
               ref="messagesContent"
               class="pw-chat-stream-content"
             >
+              <ChatAgentStatusBar
+                class="mb-4 sticky top-0 z-10"
+                :is-running="workspace.sending.value"
+                :is-interrupted="hasBlockingInterrupt"
+                :error="workspace.detailError.value"
+                :last-event-at="workspace.lastEventAt.value"
+                @resume="workspace.resumeAllInterruptedRuns({})"
+                @cancel="workspace.cancelActiveRun()"
+              />
               <div
                 v-if="workspace.loadingThreadDetail.value && renderMessages.length === 0"
                 class="space-y-4"
@@ -1182,9 +1178,10 @@ async function handleStartNewThread() {
                 />
               </div>
 
+
               <ChatMessageList
                 v-else-if="displayMessages.length > 0"
-                :display-messages="displayMessages"
+                :display-messages="workspace.uiMessages.value"
                 :all-messages="renderMessages"
                 :editing-message-id="editingMessageId"
                 :editing-message-value="editingMessageValue"
@@ -1301,6 +1298,10 @@ async function handleStartNewThread() {
         :last-event-at="workspace.lastEventAt.value"
         :compact="isSurfaceCompact"
         :focus-mode="isFocusMode"
+        :models="workspace.runtimeModels.value"
+        :selected-model-id="workspace.runOptions.modelId"
+        :default-model-name="defaultModelDisplayName"
+        @update:selected-model-id="workspace.runOptions.modelId = $event"
         @send="handleSend"
         @cancel="handleCancelRun"
         @new-thread="handleStartNewThread"
@@ -1308,30 +1309,10 @@ async function handleStartNewThread() {
         @composer-paste="attachmentState.handlePaste"
         @remove-attachment="attachmentState.removeAttachment"
       />
-    </SurfaceCard>
+      </div>
+    </div>
 
-    <ChatThreadDrawer
-      :show="threadsDrawerOpen"
-      :show-context-bar="showContextBar"
-      :target-text="workspace.targetText.value"
-      :target-type-text="workspace.targetTypeText.value"
-      :search="threadSearch"
-      :status-filter="threadStatusFilter"
-      :filters="threadStatusFilters"
-      :loading="workspace.loadingThreads.value"
-      :thread-count="workspace.threadItems.value.length"
-      :filtered-count="filteredThreadSummary.length"
-      :can-start-thread="workspace.canStartThread.value"
-      :active-thread-id="workspace.activeThreadId.value"
-      :deleting-thread-id="deletingThreadId"
-      :groups="groupedThreadSummary"
-      @close="threadsDrawerOpen = false"
-      @update:search="threadSearch = $event"
-      @update:status-filter="threadStatusFilter = $event"
-      @start-new-thread="handleStartNewThread"
-      @select-thread="handleSelectThread"
-      @delete-thread="handleDeleteThread"
-    />
+    
 
     <ChatContextDrawer
       :show="contextDrawerOpen"

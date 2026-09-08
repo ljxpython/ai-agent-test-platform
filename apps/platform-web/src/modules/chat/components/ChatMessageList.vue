@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import type { Message } from '@langchain/langgraph-sdk'
 import type { AssembledToolCall, AnyStream, MessageMetadata } from '@langchain/vue'
-import { computed } from 'vue'
 import MarkdownContent from '@/components/platform/MarkdownContent.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
-import { getMessageAttachments, getMessageText } from '@/utils/threads'
 import type { ChatMessageMetadata } from '../branching'
-import type { ChatDisplayMessage } from '../message-view-model'
-import { buildChatMessageMetaView } from '../message-meta-view-model'
-import ChatAttachmentPreview from './ChatAttachmentPreview.vue'
-import ChatMessageMeta from './ChatMessageMeta.vue'
+import type { AgentDisplayMessage } from '../agent-types'
+import ChatToolCallCard from './ChatToolCallCard.vue'
+import ChatReasoningBlock from './ChatReasoningBlock.vue'
 import ChatMessageRuntimeMetadata from './ChatMessageRuntimeMetadata.vue'
 
 const props = defineProps<{
-  displayMessages: ChatDisplayMessage[]
+  displayMessages: AgentDisplayMessage[]
   allMessages: Message[]
   editingMessageId: string
   editingMessageValue: string
@@ -43,10 +40,15 @@ function handleEditingInput(event: Event) {
   emit('update:editingMessageValue', (event.target as HTMLTextAreaElement | null)?.value || '')
 }
 
-function hasMetaSummary(message: Message) {
-  const metaView = buildChatMessageMetaView(message, props.allMessages, props.toolCalls)
-  return metaView.toolCalls.length > 0 || metaView.subAgentCards.length > 0
+function getOriginalMessage(id: string): Message | undefined {
+  return props.allMessages.find(m => m.id === id)
 }
+
+import { computed } from 'vue'
+
+const visibleDisplayMessages = computed(() =>
+  props.displayMessages.filter((entry) => entry.chunks && entry.chunks.length > 0)
+)
 
 function getParentCheckpointId(messageId: string, runtimeMetadata?: MessageMetadata) {
   return (
@@ -55,20 +57,12 @@ function getParentCheckpointId(messageId: string, runtimeMetadata?: MessageMetad
     undefined
   )
 }
-
-const emptyPlaceholderSuppressedIds = computed(() => {
-  return new Set(
-    props.displayMessages
-      .filter((entry) => entry.message.type === 'ai' && hasMetaSummary(entry.message))
-      .map((entry) => entry.id)
-  )
-})
 </script>
 
 <template>
   <div class="space-y-8">
     <ChatMessageRuntimeMetadata
-      v-for="displayEntry in displayMessages"
+      v-for="displayEntry in visibleDisplayMessages"
       :key="displayEntry.id"
       v-slot="{ metadata }"
       :stream="streamHandle"
@@ -76,130 +70,92 @@ const emptyPlaceholderSuppressedIds = computed(() => {
     >
       <article
         class="pw-chat-turn"
-        :class="displayEntry.message.type === 'human' ? 'items-end' : 'items-start'"
+        :class="displayEntry.author === 'user' ? 'items-end' : 'items-start'"
       >
         <div
           class="pw-chat-turn-heading"
-          :class="displayEntry.message.type === 'human' ? 'self-end' : 'self-start'"
+          :class="displayEntry.author === 'user' ? 'self-end' : 'self-start'"
         >
-          <template v-if="displayEntry.message.type === 'ai'">
+          <template v-if="displayEntry.author === 'agent'">
             <span class="pw-chat-agent-mark">
-              <BaseIcon
-                name="chat"
-                size="sm"
-              />
+              <BaseIcon name="chat" size="sm" />
             </span>
             <span class="font-semibold text-gray-900 dark:text-white">Agent</span>
-            <span v-if="displayEntry.timeText">{{ displayEntry.timeText }}</span>
           </template>
           <template v-else>
-            <span class="font-medium text-gray-500 dark:text-dark-300">{{ displayEntry.roleLabel }}</span>
+            <span class="font-medium text-gray-500 dark:text-dark-300">你</span>
           </template>
         </div>
 
         <div
-          class="pw-chat-bubble max-w-[780px]"
+          class="max-w-[780px]"
           :class="[
-            displayEntry.message.type === 'human'
-              ? 'pw-chat-user-message w-auto self-end'
-              : displayEntry.message.type === 'ai'
-                ? 'pw-chat-agent-message w-full self-start'
-                : 'pw-chat-system-message w-full self-start'
+            displayEntry.author === 'user'
+              ? 'w-auto self-end rounded-2xl rounded-tr-sm border border-primary-200 bg-primary-50/90 px-5 py-3.5 shadow-xs text-primary-950'
+              : 'w-full self-start rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs dark:border-dark-800 dark:bg-dark-900'
           ]"
         >
-          <div
-            v-if="getMessageAttachments(displayEntry.message.content).length > 0"
-            class="flex flex-wrap gap-3"
-            :class="displayEntry.message.type === 'human' ? 'justify-end' : ''"
-          >
-            <ChatAttachmentPreview
-              v-for="(attachment, attachmentIndex) in getMessageAttachments(displayEntry.message.content)"
-              :key="`${displayEntry.id}-attachment-${attachmentIndex}`"
-              :block="attachment"
-              compact
-            />
-          </div>
+          <!-- Editing -->
           <textarea
             v-if="editingMessageId === displayEntry.id"
             :value="editingMessageValue"
             rows="5"
             class="pw-input resize-y border-0 bg-transparent px-0 py-0 text-sm leading-7 shadow-none focus:ring-0"
-            :class="getMessageAttachments(displayEntry.message.content).length > 0 ? 'mt-3' : ''"
             @input="handleEditingInput"
           />
-          <pre
-            v-else-if="displayEntry.message.type !== 'ai' && getMessageText(displayEntry.message.content)"
-            class="whitespace-pre-wrap break-words text-sm leading-7"
-            :class="getMessageAttachments(displayEntry.message.content).length > 0 ? 'mt-3' : ''"
-          >{{ getMessageText(displayEntry.message.content) }}</pre>
-          <MarkdownContent
-            v-else-if="getMessageText(displayEntry.message.content)"
-            :content="getMessageText(displayEntry.message.content)"
-            :class="getMessageAttachments(displayEntry.message.content).length > 0 ? 'mt-3' : ''"
-          />
-          <div
-            v-else-if="
-              getMessageAttachments(displayEntry.message.content).length === 0 &&
-                !emptyPlaceholderSuppressedIds.has(displayEntry.id)
-            "
-            class="text-sm leading-7 text-gray-500 dark:text-dark-300"
-          >
-            当前消息没有可渲染的文本内容。
-          </div>
+
+          <!-- View Chunks -->
+          <template v-else>
+            <div class="space-y-4">
+              <div v-for="(chunk, idx) in (displayEntry.chunks || [])" :key="`${displayEntry.id}-chunk-${idx}`">
+                <!-- Text -->
+                <MarkdownContent v-if="chunk.kind === 'text'" :content="chunk.text" />
+                <!-- Reasoning -->
+                <ChatReasoningBlock
+                  v-else-if="chunk.kind === 'reasoning'"
+                  :content="chunk.text"
+                />
+                <!-- Image -->
+                <div v-else-if="chunk.kind === 'image'">
+                  <img :src="`data:${chunk.mimeType};base64,${chunk.base64}`" class="max-w-xs rounded shadow" />
+                </div>
+                <!-- Tool Execution -->
+                <ChatToolCallCard v-else-if="chunk.kind === 'tool-execution'" :chunk="chunk" />
+              </div>
+            </div>
+          </template>
         </div>
 
-        <div
-          v-if="displayEntry.message.type === 'ai'"
-          class="pw-chat-run-rail w-full max-w-[780px] self-start"
-        >
-          <ChatMessageMeta
-            :message="displayEntry.message"
-            :all-messages="allMessages"
-            :tool-calls="toolCalls"
-            @expanded-change="emit('message-meta-expanded-change', displayEntry.id, $event)"
-          />
-        </div>
-
-        <div
-          class="flex max-w-[780px] flex-wrap items-center gap-2 text-xs"
-          :class="displayEntry.message.type === 'human' ? 'w-auto justify-end self-end' : 'w-full justify-start self-start'"
-        >
+        <!-- Toolbar -->
+        <div v-if="getOriginalMessage(displayEntry.id)" class="flex max-w-[780px] flex-wrap items-center gap-2 text-xs" :class="displayEntry.author === 'user' ? 'w-auto justify-end self-end' : 'w-full justify-start self-start'">
           <template v-if="editingMessageId === displayEntry.id">
-            <button
-              type="button"
-              class="pw-table-tool-button h-8 rounded-lg px-3 text-xs"
-              @click="emit('cancel-edit')"
-            >
+            <button type="button" class="pw-table-tool-button h-8 rounded-lg px-3 text-xs" @click="emit('cancel-edit')">
               取消编辑
             </button>
             <button
               type="button"
               class="pw-btn-primary inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="isRunning"
-              @click="emit('submit-edit', displayEntry.message, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
+              @click="emit('submit-edit', getOriginalMessage(displayEntry.id)!, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
             >
               提交重发
             </button>
           </template>
 
           <template v-else>
-            <button
-              type="button"
-              class="pw-table-tool-button h-8 rounded-lg px-3 text-xs"
-              @click="emit('copy-message', displayEntry.message)"
-            >
+            <button type="button" class="pw-table-tool-button h-8 rounded-lg px-3 text-xs" @click="emit('copy-message', getOriginalMessage(displayEntry.id)!)">
               复制
             </button>
             <button
-              v-if="canEditMessage(displayEntry.message, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
+              v-if="canEditMessage(getOriginalMessage(displayEntry.id)!, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
               type="button"
               class="pw-table-tool-button h-8 rounded-lg px-3 text-xs"
-              @click="emit('start-edit', displayEntry.message, displayEntry.id)"
+              @click="emit('start-edit', getOriginalMessage(displayEntry.id)!, displayEntry.id)"
             >
               编辑
             </button>
             <button
-              v-if="canRetryMessage(displayEntry.message, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
+              v-if="canRetryMessage(getOriginalMessage(displayEntry.id)!, displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
               type="button"
               class="pw-table-tool-button h-8 rounded-lg px-3 text-xs"
               @click="emit('retry-message', displayEntry.id, getParentCheckpointId(displayEntry.id, metadata))"
@@ -207,57 +163,34 @@ const emptyPlaceholderSuppressedIds = computed(() => {
               重试
             </button>
 
-            <div
-              v-if="hasBranchSwitcher(displayEntry.id)"
-              class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1 dark:border-dark-700 dark:bg-dark-900"
-            >
+            <div v-if="hasBranchSwitcher(displayEntry.id)" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1">
               <button
                 type="button"
-                class="rounded-md p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white"
+                class="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
                 :disabled="getMessageBranchIndex(displayEntry.id) <= 0 || isRunning"
                 @click="emit('select-previous-branch', displayEntry.id)"
               >
-                <BaseIcon
-                  name="chevron-left"
-                  size="xs"
-                />
+                <BaseIcon name="chevron-left" size="xs" />
               </button>
-              <span class="min-w-[64px] text-center font-medium text-gray-500 dark:text-dark-300">
-                {{ getMessageBranchIndex(displayEntry.id) + 1 }} /
-                {{ getMessageMeta(displayEntry.id)?.branchOptions?.length }}
+              <span class="min-w-[64px] text-center font-medium text-gray-500">
+                {{ getMessageBranchIndex(displayEntry.id) + 1 }} / {{ getMessageMeta(displayEntry.id)?.branchOptions?.length }}
               </span>
               <button
                 type="button"
-                class="rounded-md p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white"
-                :disabled="
-                  getMessageBranchIndex(displayEntry.id) >=
-                    ((getMessageMeta(displayEntry.id)?.branchOptions?.length ?? 1) - 1) || isRunning
-                "
+                class="rounded-md p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                :disabled="getMessageBranchIndex(displayEntry.id) >= ((getMessageMeta(displayEntry.id)?.branchOptions?.length ?? 1) - 1) || isRunning"
                 @click="emit('select-next-branch', displayEntry.id)"
               >
-                <BaseIcon
-                  name="chevron-right"
-                  size="xs"
-                />
+                <BaseIcon name="chevron-right" size="xs" />
               </button>
             </div>
           </template>
         </div>
 
-        <div
-          v-if="displayEntry.timeText && displayEntry.message.type !== 'ai'"
-          class="max-w-[780px] text-[11px] leading-5 text-gray-400 dark:text-dark-400"
-          :class="displayEntry.message.type === 'human' ? 'w-auto self-end text-right' : 'w-full self-start text-left'"
-        >
-          {{ displayEntry.timeText }}
-        </div>
       </article>
     </ChatMessageRuntimeMetadata>
 
-    <div
-      v-if="isRunning"
-      class="pw-chat-live-step"
-    >
+    <div v-if="isRunning" class="pw-chat-live-step">
       <span class="pw-chat-live-dot animate-pulse" />
       <span>Agent 正在处理当前回合</span>
     </div>

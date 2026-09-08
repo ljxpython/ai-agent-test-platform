@@ -22,9 +22,10 @@ import {
   toLegacyMessage
 } from './platform-chat-stream/helpers'
 import type { ChatState, UsePlatformChatStreamOptions } from './platform-chat-stream/types'
+import { streamMessagesToUi } from '../stream-messages-to-ui'
+import type { AgentDisplayMessage } from '../agent-types'
 
 export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
-  const projectId = options.projectId.value.trim()
   const commandPending = ref(false)
   const cancelling = ref(false)
   const detailError = ref('')
@@ -37,6 +38,7 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
 
   const reconcileMissedTerminal = async (runId: string) => {
     const threadId = options.activeThreadId.value.trim()
+    const projectId = options.projectId.value.trim();
     if (!projectId || !threadId || !runId) return
 
     for (let attempt = 0; attempt < 20 && stream.isLoading.value; attempt += 1) {
@@ -68,10 +70,11 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
   }
 
   const authorizedFetch = createLanggraphAuthorizedFetch()
+  const creationProjectId = options.projectId.value.trim()
   const scopedFetch: typeof fetch = (input, init) => {
     const headers = new Headers(init?.headers)
-    if (projectId) {
-      headers.set('x-project-id', projectId)
+    if (creationProjectId) {
+      headers.set('x-project-id', creationProjectId)
     } else {
       headers.delete('x-project-id')
     }
@@ -184,16 +187,32 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
     const liveMessages = streamMatchesActiveThread.value
       ? stream.messages.value.map((message) => toLegacyMessage(message))
       : []
-    const persistedMessages = persistedHeadState.value?.messages
-    if (preferPersistedProjection.value && Array.isArray(persistedMessages)) {
-      return persistedMessages as Message[]
-    }
-    if (stream.isLoading.value || liveMessages.length > 0) {
-      return liveMessages
+    const persistedMessages = Array.isArray(persistedHeadState.value?.messages)
+      ? (persistedHeadState.value?.messages as Message[])
+      : []
+
+    if (preferPersistedProjection.value && persistedMessages.length > 0) {
+      return persistedMessages
     }
 
-    return Array.isArray(persistedMessages) ? (persistedMessages as Message[]) : liveMessages
+    if (stream.isLoading.value || liveMessages.length > 0) {
+      if (persistedMessages.length === 0) {
+        return liveMessages
+      }
+      const persistedIds = new Set(persistedMessages.map((m) => m.id).filter(Boolean))
+      const additionalLive = liveMessages.filter((m) => !m.id || !persistedIds.has(m.id))
+      return [...persistedMessages, ...additionalLive]
+    }
+
+    return persistedMessages
   })
+
+  // === 新增的解析层，不破坏原有 messages ===
+  const uiMessages = computed<AgentDisplayMessage[]>(() => {
+    const rawToolCalls = streamMatchesActiveThread.value ? stream.toolCalls.value : []
+    return streamMessagesToUi(messages.value, rawToolCalls)
+  })
+
   const messageMetadataById = computed(() =>
     buildChatMessageMetadata(messages.value, historyStates.value, branchContext.value)
   )
@@ -282,6 +301,7 @@ export function usePlatformChatStream(options: UsePlatformChatStreamOptions) {
     }),
     messageMetadataById,
     messages,
+    uiMessages, // <== 新增暴露
     resetStreamView: actions.resetStreamView,
     resumeAllInterruptedRuns: actions.resumeAllInterruptedRuns,
     resumeInterruptedRun: actions.resumeInterruptedRun,

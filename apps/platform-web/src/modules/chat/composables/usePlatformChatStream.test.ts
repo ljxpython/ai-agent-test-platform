@@ -74,6 +74,20 @@ function createOptions(onRefreshThread = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe('usePlatformChatStream', () => {
+  it('exposes grouped uiMessages powered by streamMessagesToUi', async () => {
+    const stream = createStream()
+    stream.messages.value = [new HumanMessage({ id: 'msg-1', content: 'test message' })]
+    streamMock.value = stream
+    const options = createOptions()
+    const adapter = usePlatformChatStream(options)
+    
+    await nextTick()
+
+    expect(adapter.uiMessages.value.length).toBe(1)
+    expect(adapter.uiMessages.value[0].author).toBe('user')
+    expect(adapter.uiMessages.value[0].chunks[0].text).toBe('test message')
+  })
+
   it('uses the built-in Agent Server transport without a custom adapter or legacy fallback', () => {
     streamMock.value = createStream()
     usePlatformChatStream(createOptions())

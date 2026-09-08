@@ -203,6 +203,7 @@ export function useChatWorkspace(options: UseChatWorkspaceOptions) {
     loadingThreads: threadWorkspace.loadingThreads,
     messageMetadataById: streamState.messageMetadataById as ComputedRef<Record<string, ChatMessageMetadata>>,
     messages: streamState.messages,
+    uiMessages: streamState.uiMessages, // <== 新增暴露给 UI 供新版使用
     refreshActiveThread: threadWorkspace.refreshActiveThread,
     retryMessage: streamState.retryMessage,
     runOptions,
